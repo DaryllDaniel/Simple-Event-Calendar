@@ -92,7 +92,10 @@
         <div id="messageBox" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4">
             <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full text-center">
                 <p id="messageText" class="text-gray-800 mb-4"></p>
-                <button id="closeMessageBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">OK</button>
+                <div id="messageButtons" class="flex justify-center space-x-4">
+                    <button id="confirmMessageBtn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-md hover:bg-red-700 transition-colors">Confirm</button>
+                    <button id="closeMessageBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">Cancel</button>
+                </div>
             </div>
         </div>
     </div>
@@ -100,7 +103,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, addDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global variables for Firebase
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -130,22 +133,41 @@
         const monthlyEventsList = document.getElementById('monthlyEventsList');
         const messageBox = document.getElementById('messageBox');
         const messageText = document.getElementById('messageText');
+        const messageButtons = document.getElementById('messageButtons');
         const closeMessageBtn = document.getElementById('closeMessageBtn');
+        const confirmMessageBtn = document.getElementById('confirmMessageBtn');
         const userIdDisplay = document.getElementById('userId');
 
 
-        // Function to show the custom message box
+        // Function to show a simple message
         const showMessage = (text) => {
             messageText.textContent = text;
+            messageButtons.classList.add('hidden'); // Hide buttons for a simple message
             messageBox.style.display = 'flex';
         };
+
+        // Function to show a confirmation prompt
+        const showConfirmation = (text, onConfirmCallback) => {
+            messageText.textContent = text;
+            messageButtons.classList.remove('hidden'); // Show buttons
+            messageBox.style.display = 'flex';
+
+            const handleConfirm = () => {
+                onConfirmCallback();
+                closeMessage();
+                confirmMessageBtn.removeEventListener('click', handleConfirm);
+            };
+
+            confirmMessageBtn.addEventListener('click', handleConfirm);
+        };
+
 
         // Function to close the custom message box
         const closeMessage = () => {
             messageBox.style.display = 'none';
         };
         closeMessageBtn.addEventListener('click', closeMessage);
-
+        
         // Helper function to handle exponential backoff for API calls
         const withExponentialBackoff = async (func, ...args) => {
             let delay = 1000;
@@ -230,6 +252,18 @@
             renderMonthlyOverview(); // Call the new function to update the monthly overview
         };
 
+        // Handle deleting an event
+        const handleDeleteEvent = async (docId) => {
+            try {
+                const eventRef = doc(db, `/artifacts/${appId}/users/${userId}/events/${docId}`);
+                await withExponentialBackoff(deleteDoc, eventRef);
+                showMessage('Activity successfully deleted!');
+            } catch (error) {
+                console.error("Error deleting document: ", error);
+                showMessage("Failed to delete activity. Please try again.");
+            }
+        };
+
         // Render events for the currently selected date
         const renderEventsForSelectedDate = () => {
             eventsList.innerHTML = '';
@@ -240,14 +274,24 @@
             if (dailyEvents.length > 0) {
                 dailyEvents.forEach(event => {
                     const listItem = document.createElement('li');
-                    listItem.classList.add('flex', 'items-center', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
+                    listItem.classList.add('flex', 'items-center', 'justify-between', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200', 'group'); // Add group for hover effect
                     listItem.innerHTML = `
-                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
-                        <div>
-                            <h4 class="font-semibold text-gray-800">${event.title}</h4>
-                            <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">${event.title}</h4>
+                                <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
+                            </div>
                         </div>
+                        <button class="delete-event-btn text-red-500 hover:text-red-700 transition-colors opacity-0 group-hover:opacity-100" data-doc-id="${event.id}">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"></path></svg>
+                        </button>
                     `;
+                    // Add a click listener for the delete button.
+                    const deleteButton = listItem.querySelector('.delete-event-btn');
+                    deleteButton.addEventListener('click', () => {
+                        showConfirmation('Are you sure you want to delete this activity?', () => handleDeleteEvent(event.id));
+                    });
                     eventsList.appendChild(listItem);
                 });
             } else {
@@ -360,7 +404,7 @@
                     onSnapshot(eventsRef, (querySnapshot) => {
                         events = {}; // Reset events object
                         querySnapshot.forEach((doc) => {
-                            const event = doc.data();
+                            const event = { ...doc.data(), id: doc.id }; // Store doc ID
                             if (!events[event.date]) {
                                 events[event.date] = [];
                             }
@@ -386,4 +430,5 @@
     </script>
 </body>
 </html>
+
 
