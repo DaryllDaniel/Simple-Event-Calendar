@@ -20,7 +20,6 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
     <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl">
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Activity Calendar</h1>
-        <p class="text-center text-sm text-gray-500 mb-4">Your User ID (for data saving): <span id="userId" class="font-mono font-semibold text-gray-700">Loading...</span></p>
 
         <!-- Calendar and Event Form Container -->
         <div class="md:flex gap-8">
@@ -83,7 +82,7 @@
             <h3 class="text-2xl font-semibold text-gray-800 mb-4">Monthly Activities Overview</h3>
             <ul id="monthlyEventsList" class="space-y-2">
                 <!-- Monthly events will be displayed here -->
-                    <li class="text-gray-500 text-center p-4">Loading monthly activities...</li>
+                <li class="text-gray-500 text-center p-4">Loading monthly activities...</li>
             </ul>
         </div>
 
@@ -100,48 +99,9 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, addDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // IMPORTANT: If you are running this code outside of the Canvas environment,
-        // you must provide your own Firebase configuration here.
-        // 1. Go to your Firebase project settings in the console.
-        // 2. Select 'Add app' -> 'Web' and copy the firebaseConfig object.
-        // 3. Paste it below, replacing the placeholder object.
- // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyB9FkVBo79CmwCVImigIhmWEfZRSKzxtVM",
-    authDomain: "simple-event-calendar-6ae73.firebaseapp.com",
-    projectId: "simple-event-calendar-6ae73",
-    storageBucket: "simple-event-calendar-6ae73.firebasestorage.app",
-    messagingSenderId: "930104432193",
-    appId: "1:930104432193:web:e2b0a19c84c9841175d8c0",
-    measurementId: "G-G8GC73XWFT"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : providedFirebaseConfig;
+    <script>
+        // No Firebase imports are needed for this local storage version
         
-        // The rest of these global variables are specific to the Canvas environment
-        // and do not need to be changed.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : '';
-
-        let db;
-        let auth;
-        let userId;
-
         let events = {};
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
@@ -164,8 +124,11 @@
         const messageButtons = document.getElementById('messageButtons');
         const closeMessageBtn = document.getElementById('closeMessageBtn');
         const confirmMessageBtn = document.getElementById('confirmMessageBtn');
-        const userIdDisplay = document.getElementById('userId');
-
+        
+        // A simple function to create a unique ID for each event
+        const createUniqueId = () => {
+            return '_' + Math.random().toString(36).substr(2, 9);
+        };
 
         // Function to show a simple message
         const showMessage = (text) => {
@@ -195,24 +158,21 @@
             messageBox.style.display = 'none';
         };
         closeMessageBtn.addEventListener('click', closeMessage);
-        
-        // Helper function to handle exponential backoff for API calls
-        const withExponentialBackoff = async (func, ...args) => {
-            let delay = 1000;
-            for (let i = 0; i < 5; i++) {
-                try {
-                    return await func(...args);
-                } catch (error) {
-                    if (error.code === 'resource-exhausted') {
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        delay *= 2;
-                    } else {
-                        throw error;
-                    }
-                }
-            }
-            throw new Error("API call failed after multiple retries.");
+
+        // --- Local Storage Functions ---
+
+        // Save events to local storage
+        const saveEventsToLocalStorage = () => {
+            localStorage.setItem('calendarEvents', JSON.stringify(events));
         };
+
+        // Load events from local storage
+        const loadEventsFromLocalStorage = () => {
+            const storedEvents = localStorage.getItem('calendarEvents');
+            return storedEvents ? JSON.parse(storedEvents) : {};
+        };
+        
+        // --- End of Local Storage Functions ---
 
         // Render the calendar for a given month and year
         const renderCalendar = () => {
@@ -281,14 +241,25 @@
         };
 
         // Handle deleting an event
-        const handleDeleteEvent = async (docId) => {
-            try {
-                const eventRef = doc(db, `/artifacts/${appId}/users/${userId}/events/${docId}`);
-                await withExponentialBackoff(deleteDoc, eventRef);
+        const handleDeleteEvent = (docId) => {
+            let deleted = false;
+            for (const date in events) {
+                const initialLength = events[date].length;
+                events[date] = events[date].filter(event => event.id !== docId);
+                if (events[date].length < initialLength) {
+                    deleted = true;
+                    // If the list for this date is now empty, remove the key entirely
+                    if (events[date].length === 0) {
+                        delete events[date];
+                    }
+                    break;
+                }
+            }
+
+            if (deleted) {
+                saveEventsToLocalStorage();
+                renderCalendar();
                 showMessage('Activity successfully deleted!');
-            } catch (error) {
-                console.error("Error deleting document: ", error);
-                showMessage("Failed to delete activity. Please try again.");
             }
         };
 
@@ -366,7 +337,7 @@
 
 
         // Handle form submission
-        eventForm.addEventListener('submit', async (e) => {
+        eventForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const date = eventDateInput.value;
             const title = eventTitleInput.value;
@@ -378,19 +349,26 @@
                 return;
             }
 
-            // Use Firestore to add the new event
-            try {
-                const docRef = await withExponentialBackoff(addDoc, collection(db, `/artifacts/${appId}/users/${userId}/events`), {
-                    date,
-                    title,
-                    description,
-                    color
-                });
-                console.log("Document written with ID: ", docRef.id);
-            } catch (error) {
-                console.error("Error adding document: ", error);
-                showMessage("Failed to add activity. Please try again.");
+            // Create a new event object with a unique ID
+            const newEvent = {
+                id: createUniqueId(),
+                date,
+                title,
+                description,
+                color
+            };
+
+            // Add to the events object
+            if (!events[date]) {
+                events[date] = [];
             }
+            events[date].push(newEvent);
+
+            // Save to local storage
+            saveEventsToLocalStorage();
+            
+            // Re-render everything with the new data
+            renderCalendar();
             
             // Clear form
             eventTitleInput.value = '';
@@ -418,55 +396,10 @@
 
         // Initial setup and data fetching
         window.onload = () => {
-            // Check if Firebase config is available
-            if (!firebaseConfig || !firebaseConfig.projectId || firebaseConfig.projectId.includes("YOUR")) {
-                const userIdDisplay = document.getElementById('userId');
-                userIdDisplay.textContent = "Configuration error";
-                showMessage("Firebase is not configured! Please provide your own Firebase configuration in the script block.");
-                return;
-            }
-
-            initializeApp(firebaseConfig);
-            auth = getAuth();
-            db = getFirestore();
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    userId = user.uid;
-                    userIdDisplay.textContent = userId;
-
-                    // Set up real-time listener for events
-                    const eventsRef = collection(db, `/artifacts/${appId}/users/${userId}/events`);
-                    onSnapshot(eventsRef, (querySnapshot) => {
-                        events = {}; // Reset events object
-                        querySnapshot.forEach((doc) => {
-                            const event = { ...doc.data(), id: doc.id }; // Store doc ID
-                            if (!events[event.date]) {
-                                events[event.date] = [];
-                            }
-                            events[event.date].push(event);
-                        });
-                        // Re-render everything with the new data
-                        renderCalendar();
-                    });
-
-                } else {
-                    if (initialAuthToken) {
-                        try {
-                            await signInWithCustomToken(auth, initialAuthToken);
-                        } catch (error) {
-                            console.error("Error signing in with custom token: ", error);
-                            await signInAnonymously(auth);
-                        }
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                }
-            });
-
+            events = loadEventsFromLocalStorage();
             const today = new Date();
             eventDateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-            // The initial render is handled by the onSnapshot listener once data is fetched.
+            renderCalendar();
         };
     </script>
 </body>
