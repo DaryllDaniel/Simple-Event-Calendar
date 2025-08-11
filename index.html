@@ -10,14 +10,10 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        .event-dot {
-            position: absolute;
-            bottom: 4px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 8px;
-            height: 8px;
-            border-radius: 9999px; /* rounded-full */
+        .day-cell.has-events {
+            color: #1f2937; /* Default text color for visibility */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Add text shadow for readability on any color */
+            transition: background-color 0.2s, background 0.2s;
         }
     </style>
 </head>
@@ -159,17 +155,31 @@
 
                 const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
-                // Highlight the selected date
-                if (fullDate === `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`) {
-                    dayCell.classList.add('bg-blue-200', 'hover:bg-blue-300');
+                // Color the day cell if there are events
+                if (events[fullDate] && events[fullDate].length > 0) {
+                    dayCell.classList.add('has-events');
+                    const eventColors = events[fullDate].map(event => event.color);
+                    
+                    if (eventColors.length === 1) {
+                        dayCell.style.background = eventColors[0];
+                    } else {
+                        // Create a linear gradient for multiple colors
+                        let gradientString = 'linear-gradient(to right';
+                        const numColors = eventColors.length;
+                        eventColors.forEach((color, index) => {
+                            const start = (index / numColors) * 100;
+                            const end = ((index + 1) / numColors) * 100;
+                            gradientString += `, ${color} ${start}%, ${color} ${end}%`;
+                        });
+                        gradientString += ')';
+                        dayCell.style.background = gradientString;
+                    }
                 }
 
-                // Add a dot if there are events on this day, using the first event's color
-                if (events[fullDate] && events[fullDate].length > 0) {
-                    const eventDot = document.createElement('div');
-                    eventDot.classList.add('event-dot');
-                    eventDot.style.backgroundColor = events[fullDate][0].color; // Use the color of the first event
-                    dayCell.appendChild(eventDot);
+                // Highlight the selected date with a distinct color
+                if (fullDate === `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`) {
+                    dayCell.style.background = 'rgba(191, 219, 254, 0.5)'; // Light blue with transparency
+                    dayCell.classList.add('hover:bg-opacity-80');
                 }
 
                 // Handle click to select a date
