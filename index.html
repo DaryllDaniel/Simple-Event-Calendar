@@ -77,15 +77,23 @@
             </div>
         </div>
 
-        <!-- Monthly Overview of Events -->
+        <!-- Monthly Overview of Events and Data Management -->
         <div class="mt-8 bg-gray-50 p-4 rounded-xl shadow-inner">
-            <h3 class="text-2xl font-semibold text-gray-800 mb-4">Monthly Activities Overview</h3>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-semibold text-gray-800">Monthly Activities Overview</h3>
+                <div class="flex space-x-2">
+                    <button id="exportBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">Export Data</button>
+                    <label for="importFile" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors cursor-pointer">
+                        Import Data
+                    </label>
+                    <input type="file" id="importFile" accept=".json" class="hidden">
+                </div>
+            </div>
             <ul id="monthlyEventsList" class="space-y-2">
                 <!-- Monthly events will be displayed here -->
                 <li class="text-gray-500 text-center p-4">Loading monthly activities...</li>
             </ul>
         </div>
-
 
         <!-- Custom Message Box (in place of alert()) -->
         <div id="messageBox" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4">
@@ -100,8 +108,6 @@
     </div>
 
     <script>
-        // No Firebase imports are needed for this local storage version
-        
         let events = {};
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
@@ -124,6 +130,8 @@
         const messageButtons = document.getElementById('messageButtons');
         const closeMessageBtn = document.getElementById('closeMessageBtn');
         const confirmMessageBtn = document.getElementById('confirmMessageBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const importFile = document.getElementById('importFile');
         
         // A simple function to create a unique ID for each event
         const createUniqueId = () => {
@@ -152,7 +160,6 @@
             confirmMessageBtn.addEventListener('click', handleConfirm);
         };
 
-
         // Function to close the custom message box
         const closeMessage = () => {
             messageBox.style.display = 'none';
@@ -172,7 +179,56 @@
             return storedEvents ? JSON.parse(storedEvents) : {};
         };
         
-        // --- End of Local Storage Functions ---
+        // --- Data Import/Export Functions ---
+        exportBtn.addEventListener('click', () => {
+            const data = localStorage.getItem('calendarEvents');
+            if (!data || data === '{}') {
+                showMessage('No data to export.');
+                return;
+            }
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `calendar-data-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessage('Data exported successfully!');
+        });
+
+        importFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+                    // Basic validation to check if the data structure is a valid object
+                    if (typeof importedData === 'object' && importedData !== null) {
+                        showConfirmation('Importing data will overwrite all existing activities. Are you sure?', () => {
+                            events = importedData;
+                            saveEventsToLocalStorage();
+                            renderCalendar();
+                            showMessage('Data imported successfully!');
+                        });
+                    } else {
+                        showMessage('Invalid file format. Please upload a valid JSON file.');
+                    }
+                } catch (error) {
+                    showMessage('Failed to parse JSON file. Please ensure the file is not corrupted.');
+                }
+            };
+            reader.readAsText(file);
+            // Clear the input so the same file can be imported again if needed
+            e.target.value = '';
+        });
+
+        // --- End of Local Storage & Import/Export Functions ---
 
         // Render the calendar for a given month and year
         const renderCalendar = () => {
