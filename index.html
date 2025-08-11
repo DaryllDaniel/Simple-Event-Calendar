@@ -105,9 +105,24 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, addDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables for Firebase
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // IMPORTANT: If you are running this code outside of the Canvas environment,
+        // you must provide your own Firebase configuration here.
+        // 1. Go to your Firebase project settings in the console.
+        // 2. Select 'Add app' -> 'Web' and copy the firebaseConfig object.
+        // 3. Paste it below, replacing the placeholder object.
+        const providedFirebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : providedFirebaseConfig;
+        
+        // The rest of these global variables are specific to the Canvas environment
+        // and do not need to be changed.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : '';
 
         let db;
@@ -390,6 +405,14 @@
 
         // Initial setup and data fetching
         window.onload = () => {
+            // Check if Firebase config is available
+            if (!firebaseConfig || !firebaseConfig.projectId || firebaseConfig.projectId.includes("YOUR")) {
+                const userIdDisplay = document.getElementById('userId');
+                userIdDisplay.textContent = "Configuration error";
+                showMessage("Firebase is not configured! Please provide your own Firebase configuration in the script block.");
+                return;
+            }
+
             initializeApp(firebaseConfig);
             auth = getAuth();
             db = getFirestore();
@@ -416,7 +439,12 @@
 
                 } else {
                     if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
+                        try {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } catch (error) {
+                            console.error("Error signing in with custom token: ", error);
+                            await signInAnonymously(auth);
+                        }
                     } else {
                         await signInAnonymously(auth);
                     }
@@ -430,5 +458,3 @@
     </script>
 </body>
 </html>
-
-
