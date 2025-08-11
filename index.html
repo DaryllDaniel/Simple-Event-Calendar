@@ -110,15 +110,27 @@
         // 1. Go to your Firebase project settings in the console.
         // 2. Select 'Add app' -> 'Web' and copy the firebaseConfig object.
         // 3. Paste it below, replacing the placeholder object.
-        const firebaseConfig = {
-  apiKey: "AIzaSyB9FkVBo79CmwCVImigIhmWEfZRSKzxtVM",
-  authDomain: "simple-event-calendar-6ae73.firebaseapp.com",
-  projectId: "simple-event-calendar-6ae73",
-  storageBucket: "simple-event-calendar-6ae73.firebasestorage.app",
-  messagingSenderId: "930104432193",
-  appId: "1:930104432193:web:e2b0a19c84c9841175d8c0",
-  measurementId: "G-G8GC73XWFT"
-};
+ // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyB9FkVBo79CmwCVImigIhmWEfZRSKzxtVM",
+    authDomain: "simple-event-calendar-6ae73.firebaseapp.com",
+    projectId: "simple-event-calendar-6ae73",
+    storageBucket: "simple-event-calendar-6ae73.firebasestorage.app",
+    messagingSenderId: "930104432193",
+    appId: "1:930104432193:web:e2b0a19c84c9841175d8c0",
+    measurementId: "G-G8GC73XWFT"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : providedFirebaseConfig;
         
         // The rest of these global variables are specific to the Canvas environment
