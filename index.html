@@ -20,6 +20,7 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
     <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl">
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Activity Calendar</h1>
+        <p class="text-center text-sm text-gray-500 mb-4">Your User ID (for data saving): <span id="userId" class="font-mono font-semibold text-gray-700">Loading...</span></p>
 
         <!-- Calendar and Event Form Container -->
         <div class="md:flex gap-8">
@@ -82,6 +83,7 @@
             <h3 class="text-2xl font-semibold text-gray-800 mb-4">Monthly Activities Overview</h3>
             <ul id="monthlyEventsList" class="space-y-2">
                 <!-- Monthly events will be displayed here -->
+                    <li class="text-gray-500 text-center p-4">Loading monthly activities...</li>
             </ul>
         </div>
 
@@ -95,9 +97,20 @@
         </div>
     </div>
 
-    <script>
-        // Use a client-side database to store events, simulating a real app
-        // This is a simple in-memory object.
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : '';
+
+        let db;
+        let auth;
+        let userId;
+
         let events = {};
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
@@ -118,6 +131,8 @@
         const messageBox = document.getElementById('messageBox');
         const messageText = document.getElementById('messageText');
         const closeMessageBtn = document.getElementById('closeMessageBtn');
+        const userIdDisplay = document.getElementById('userId');
+
 
         // Function to show the custom message box
         const showMessage = (text) => {
@@ -131,15 +146,33 @@
         };
         closeMessageBtn.addEventListener('click', closeMessage);
 
+        // Helper function to handle exponential backoff for API calls
+        const withExponentialBackoff = async (func, ...args) => {
+            let delay = 1000;
+            for (let i = 0; i < 5; i++) {
+                try {
+                    return await func(...args);
+                } catch (error) {
+                    if (error.code === 'resource-exhausted') {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+            throw new Error("API call failed after multiple retries.");
+        };
+
         // Render the calendar for a given month and year
-        const renderCalendar = (month, year) => {
+        const renderCalendar = () => {
             calendarGrid.innerHTML = '';
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
             const numDays = lastDay.getDate();
             const startDayOfWeek = firstDay.getDay();
 
-            currentMonthYear.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${year}`;
+            currentMonthYear.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
 
             // Add empty cells for days before the first of the month
             for (let i = 0; i < startDayOfWeek; i++) {
@@ -153,7 +186,7 @@
                 dayCell.classList.add('day-cell', 'p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'hover:bg-gray-100', 'transition-colors', 'relative');
                 dayCell.textContent = day;
 
-                const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
                 // Color the day cell if there are events
                 if (events[fullDate] && events[fullDate].length > 0) {
@@ -184,9 +217,9 @@
 
                 // Handle click to select a date
                 dayCell.addEventListener('click', () => {
-                    selectedDate = new Date(year, month, day);
+                    selectedDate = new Date(currentYear, currentMonth, day);
                     eventDateInput.value = fullDate;
-                    renderCalendar(currentMonth, currentYear); // Re-render to highlight new selected date
+                    renderCalendar(); // Re-render to highlight new selected date
                     renderEventsForSelectedDate();
                 });
 
@@ -261,7 +294,7 @@
 
 
         // Handle form submission
-        eventForm.addEventListener('submit', (e) => {
+        eventForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const date = eventDateInput.value;
             const title = eventTitleInput.value;
@@ -273,19 +306,23 @@
                 return;
             }
 
-            if (!events[date]) {
-                events[date] = [];
+            // Use Firestore to add the new event
+            try {
+                const docRef = await withExponentialBackoff(addDoc, collection(db, `/artifacts/${appId}/users/${userId}/events`), {
+                    date,
+                    title,
+                    description,
+                    color
+                });
+                console.log("Document written with ID: ", docRef.id);
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                showMessage("Failed to add activity. Please try again.");
             }
-
-            events[date].push({ title, description, color });
             
-            // Clear form and re-render calendar
+            // Clear form
             eventTitleInput.value = '';
             eventDescriptionInput.value = '';
-            renderCalendar(currentMonth, currentYear);
-            renderEventsForSelectedDate();
-            renderMonthlyOverview(); // Update the monthly overview
-            showMessage(`Activity "${title}" added successfully!`);
         });
 
         // Handle navigation buttons
@@ -295,7 +332,7 @@
                 currentMonth = 11;
                 currentYear--;
             }
-            renderCalendar(currentMonth, currentYear);
+            renderCalendar();
         });
 
         nextMonthBtn.addEventListener('click', () => {
@@ -304,15 +341,49 @@
                 currentMonth = 0;
                 currentYear++;
             }
-            renderCalendar(currentMonth, currentYear);
+            renderCalendar();
         });
 
-        // Initial render
+        // Initial setup and data fetching
         window.onload = () => {
+            initializeApp(firebaseConfig);
+            auth = getAuth();
+            db = getFirestore();
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    userIdDisplay.textContent = userId;
+
+                    // Set up real-time listener for events
+                    const eventsRef = collection(db, `/artifacts/${appId}/users/${userId}/events`);
+                    onSnapshot(eventsRef, (querySnapshot) => {
+                        events = {}; // Reset events object
+                        querySnapshot.forEach((doc) => {
+                            const event = doc.data();
+                            if (!events[event.date]) {
+                                events[event.date] = [];
+                            }
+                            events[event.date].push(event);
+                        });
+                        // Re-render everything with the new data
+                        renderCalendar();
+                    });
+
+                } else {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                }
+            });
+
             const today = new Date();
             eventDateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-            renderCalendar(currentMonth, currentYear);
+            // The initial render is handled by the onSnapshot listener once data is fetched.
         };
     </script>
 </body>
 </html>
+
