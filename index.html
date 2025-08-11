@@ -110,14 +110,15 @@
         // 1. Go to your Firebase project settings in the console.
         // 2. Select 'Add app' -> 'Web' and copy the firebaseConfig object.
         // 3. Paste it below, replacing the placeholder object.
-        const providedFirebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        const firebaseConfig = {
+  apiKey: "AIzaSyB9FkVBo79CmwCVImigIhmWEfZRSKzxtVM",
+  authDomain: "simple-event-calendar-6ae73.firebaseapp.com",
+  projectId: "simple-event-calendar-6ae73",
+  storageBucket: "simple-event-calendar-6ae73.firebasestorage.app",
+  messagingSenderId: "930104432193",
+  appId: "1:930104432193:web:e2b0a19c84c9841175d8c0",
+  measurementId: "G-G8GC73XWFT"
+};
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : providedFirebaseConfig;
         
         // The rest of these global variables are specific to the Canvas environment
