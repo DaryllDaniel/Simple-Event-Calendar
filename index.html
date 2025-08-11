@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Calendar</title>
+    <!-- Use Tailwind CSS for responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .event-dot {
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            border-radius: 9999px; /* rounded-full */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Activity Calendar</h1>
+
+        <!-- Calendar and Event Form Container -->
+        <div class="md:flex gap-8">
+            <!-- Calendar View -->
+            <div class="flex-1 mb-6 md:mb-0">
+                <div class="flex justify-between items-center mb-4">
+                    <button id="prevMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h2 id="currentMonthYear" class="text-xl font-semibold text-gray-700"></h2>
+                    <button id="nextMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+                <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-500 mb-2">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div id="calendarGrid" class="grid grid-cols-7 gap-1">
+                    <!-- Calendar days will be generated here -->
+                </div>
+            </div>
+
+            <!-- Event Input and Display -->
+            <div class="flex-1 bg-gray-50 p-4 rounded-xl shadow-inner">
+                <h3 class="text-2xl font-semibold text-gray-800 mb-4">Add a New Activity</h3>
+                <form id="eventForm" class="space-y-4">
+                    <div>
+                        <label for="eventDate" class="block text-sm font-medium text-gray-700">Date:</label>
+                        <input type="date" id="eventDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                    </div>
+                    <div>
+                        <label for="eventTitle" class="block text-sm font-medium text-gray-700">Activity:</label>
+                        <input type="text" id="eventTitle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                    </div>
+                    <div>
+                        <label for="eventDescription" class="block text-sm font-medium text-gray-700">Description:</label>
+                        <textarea id="eventDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
+                    </div>
+                    <div>
+                        <label for="eventColor" class="block text-sm font-medium text-gray-700">Color:</label>
+                        <input type="color" id="eventColor" value="#3b82f6" class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        Add Activity
+                    </button>
+                </form>
+
+                <!-- Events for selected date -->
+                <div class="mt-6">
+                    <h3 id="eventsTitle" class="text-xl font-semibold text-gray-800 mb-2">Activities for Selected Date</h3>
+                    <ul id="eventsList" class="space-y-2">
+                        <!-- Events will be displayed here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Overview of Events -->
+        <div class="mt-8 bg-gray-50 p-4 rounded-xl shadow-inner">
+            <h3 class="text-2xl font-semibold text-gray-800 mb-4">Monthly Activities Overview</h3>
+            <ul id="monthlyEventsList" class="space-y-2">
+                <!-- Monthly events will be displayed here -->
+            </ul>
+        </div>
+
+
+        <!-- Custom Message Box (in place of alert()) -->
+        <div id="messageBox" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4">
+            <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full text-center">
+                <p id="messageText" class="text-gray-800 mb-4"></p>
+                <button id="closeMessageBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use a client-side database to store events, simulating a real app
+        // This is a simple in-memory object.
+        let events = {};
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let selectedDate = new Date();
+
+        const calendarGrid = document.getElementById('calendarGrid');
+        const currentMonthYear = document.getElementById('currentMonthYear');
+        const prevMonthBtn = document.getElementById('prevMonthBtn');
+        const nextMonthBtn = document.getElementById('nextMonthBtn');
+        const eventForm = document.getElementById('eventForm');
+        const eventDateInput = document.getElementById('eventDate');
+        const eventTitleInput = document.getElementById('eventTitle');
+        const eventDescriptionInput = document.getElementById('eventDescription');
+        const eventColorInput = document.getElementById('eventColor');
+        const eventsList = document.getElementById('eventsList');
+        const eventsTitle = document.getElementById('eventsTitle');
+        const monthlyEventsList = document.getElementById('monthlyEventsList');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+        const closeMessageBtn = document.getElementById('closeMessageBtn');
+
+        // Function to show the custom message box
+        const showMessage = (text) => {
+            messageText.textContent = text;
+            messageBox.style.display = 'flex';
+        };
+
+        // Function to close the custom message box
+        const closeMessage = () => {
+            messageBox.style.display = 'none';
+        };
+        closeMessageBtn.addEventListener('click', closeMessage);
+
+        // Render the calendar for a given month and year
+        const renderCalendar = (month, year) => {
+            calendarGrid.innerHTML = '';
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const numDays = lastDay.getDate();
+            const startDayOfWeek = firstDay.getDay();
+
+            currentMonthYear.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${year}`;
+
+            // Add empty cells for days before the first of the month
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                calendarGrid.appendChild(emptyCell);
+            }
+
+            // Add day cells
+            for (let day = 1; day <= numDays; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.classList.add('day-cell', 'p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'hover:bg-gray-100', 'transition-colors', 'relative');
+                dayCell.textContent = day;
+
+                const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // Highlight the selected date
+                if (fullDate === `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`) {
+                    dayCell.classList.add('bg-blue-200', 'hover:bg-blue-300');
+                }
+
+                // Add a dot if there are events on this day, using the first event's color
+                if (events[fullDate] && events[fullDate].length > 0) {
+                    const eventDot = document.createElement('div');
+                    eventDot.classList.add('event-dot');
+                    eventDot.style.backgroundColor = events[fullDate][0].color; // Use the color of the first event
+                    dayCell.appendChild(eventDot);
+                }
+
+                // Handle click to select a date
+                dayCell.addEventListener('click', () => {
+                    selectedDate = new Date(year, month, day);
+                    eventDateInput.value = fullDate;
+                    renderCalendar(currentMonth, currentYear); // Re-render to highlight new selected date
+                    renderEventsForSelectedDate();
+                });
+
+                calendarGrid.appendChild(dayCell);
+            }
+
+            renderEventsForSelectedDate();
+            renderMonthlyOverview(); // Call the new function to update the monthly overview
+        };
+
+        // Render events for the currently selected date
+        const renderEventsForSelectedDate = () => {
+            eventsList.innerHTML = '';
+            const fullDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+            eventsTitle.textContent = `Activities for ${selectedDate.toDateString()}`;
+
+            const dailyEvents = events[fullDate] || [];
+            if (dailyEvents.length > 0) {
+                dailyEvents.forEach(event => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('flex', 'items-center', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
+                    listItem.innerHTML = `
+                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
+                        <div>
+                            <h4 class="font-semibold text-gray-800">${event.title}</h4>
+                            <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
+                        </div>
+                    `;
+                    eventsList.appendChild(listItem);
+                });
+            } else {
+                eventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities scheduled.</li>';
+            }
+        };
+
+        // Render a list of all events for the current month
+        const renderMonthlyOverview = () => {
+            monthlyEventsList.innerHTML = '';
+            const allMonthlyEvents = [];
+
+            // Iterate through all events and filter for the current month/year
+            for (const date in events) {
+                const eventDate = new Date(date);
+                if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
+                    events[date].forEach(event => {
+                        allMonthlyEvents.push({ date: eventDate, ...event });
+                    });
+                }
+            }
+
+            // Sort events chronologically
+            allMonthlyEvents.sort((a, b) => a.date - b.date);
+
+            if (allMonthlyEvents.length > 0) {
+                allMonthlyEvents.forEach(event => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('flex', 'items-center', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
+                    listItem.innerHTML = `
+                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">${event.date.toDateString()}</p>
+                            <h4 class="font-semibold text-gray-800">${event.title}</h4>
+                            <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
+                        </div>
+                    `;
+                    monthlyEventsList.appendChild(listItem);
+                });
+            } else {
+                monthlyEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities for this month.</li>';
+            }
+        };
+
+
+        // Handle form submission
+        eventForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const date = eventDateInput.value;
+            const title = eventTitleInput.value;
+            const description = eventDescriptionInput.value;
+            const color = eventColorInput.value;
+
+            if (!date || !title) {
+                showMessage("Please enter both a date and an activity title.");
+                return;
+            }
+
+            if (!events[date]) {
+                events[date] = [];
+            }
+
+            events[date].push({ title, description, color });
+            
+            // Clear form and re-render calendar
+            eventTitleInput.value = '';
+            eventDescriptionInput.value = '';
+            renderCalendar(currentMonth, currentYear);
+            renderEventsForSelectedDate();
+            renderMonthlyOverview(); // Update the monthly overview
+            showMessage(`Activity "${title}" added successfully!`);
+        });
+
+        // Handle navigation buttons
+        prevMonthBtn.addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar(currentMonth, currentYear);
+        });
+
+        nextMonthBtn.addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar(currentMonth, currentYear);
+        });
+
+        // Initial render
+        window.onload = () => {
+            const today = new Date();
+            eventDateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            renderCalendar(currentMonth, currentYear);
+        };
+    </script>
+</body>
+</html>
