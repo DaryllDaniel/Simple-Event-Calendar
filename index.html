@@ -15,12 +15,42 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Add text shadow for readability on any color */
             transition: background-color 0.2s, background 0.2s;
         }
+        /* Custom modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Activity Calendar(PROTOTYPE)</h1>
 
+    <!-- Main Application Container -->
+    <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Activity Calendar</h1>
+
+        <!-- Header with controls and new Monthly Activities button -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
+            <div class="flex space-x-2">
+                <button id="exportBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">Export Data</button>
+                <label for="importFile" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors cursor-pointer">
+                    Import Data
+                </label>
+                <input type="file" id="importFile" accept=".json" class="hidden">
+            </div>
+            <button id="showMonthlyOverviewBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                Show Monthly Activities
+            </button>
+        </div>
+        
         <!-- Calendar and Event Form Container -->
         <div class="md:flex gap-8">
             <!-- Calendar View -->
@@ -76,34 +106,65 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Monthly Overview of Events and Data Management -->
-        <div class="mt-8 bg-gray-50 p-4 rounded-xl shadow-inner">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-2xl font-semibold text-gray-800">Monthly Activities Overview</h3>
-                <div class="flex space-x-2">
-                    <button id="exportBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">Export Data</button>
-                    <label for="importFile" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors cursor-pointer">
-                        Import Data
-                    </label>
-                    <input type="file" id="importFile" accept=".json" class="hidden">
-                </div>
+    <!-- Custom Message Box (in place of alert()) -->
+    <div id="messageBox" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full text-center">
+            <p id="messageText" class="text-gray-800 mb-4"></p>
+            <div id="messageButtons" class="flex justify-center space-x-4">
+                <button id="confirmMessageBtn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-md hover:bg-red-700 transition-colors">Confirm</button>
+                <button id="closeMessageBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">Cancel</button>
             </div>
-            <ul id="monthlyEventsList" class="space-y-2">
-                <!-- Monthly events will be displayed here -->
-                <li class="text-gray-500 text-center p-4">Loading monthly activities...</li>
-            </ul>
         </div>
+    </div>
 
-        <!-- Custom Message Box (in place of alert()) -->
-        <div id="messageBox" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4">
-            <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full text-center">
-                <p id="messageText" class="text-gray-800 mb-4"></p>
-                <div id="messageButtons" class="flex justify-center space-x-4">
-                    <button id="confirmMessageBtn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-md hover:bg-red-700 transition-colors">Confirm</button>
-                    <button id="closeMessageBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">Cancel</button>
+    <!-- Edit Event Modal -->
+    <div id="editModal" class="modal">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+            <h3 class="text-2xl font-semibold text-gray-800 mb-4">Edit Activity</h3>
+            <form id="editForm" class="space-y-4">
+                <input type="hidden" id="editEventId">
+                <div>
+                    <label for="editEventDate" class="block text-sm font-medium text-gray-700">Date:</label>
+                    <input type="date" id="editEventDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
                 </div>
+                <div>
+                    <label for="editEventTitle" class="block text-sm font-medium text-gray-700">Activity:</label>
+                    <input type="text" id="editEventTitle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                </div>
+                <div>
+                    <label for="editEventDescription" class="block text-sm font-medium text-gray-700">Description:</label>
+                    <textarea id="editEventDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
+                </div>
+                <div>
+                    <label for="editEventColor" class="block text-sm font-medium text-gray-700">Color:</label>
+                    <input type="color" id="editEventColor" class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer">
+                </div>
+                <div class="flex justify-between items-center space-x-4">
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        Save Changes
+                    </button>
+                    <button type="button" id="cancelEditBtn" class="w-full bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Monthly Overview Modal -->
+    <div id="monthlyOverviewModal" class="modal">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-semibold text-gray-800">Monthly Activities Dashboard</h3>
+                <button id="closeMonthlyOverviewBtn" class="text-gray-500 hover:text-gray-700 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
+            <ul id="monthlyEventsList" class="space-y-2 max-h-96 overflow-y-auto">
+                <!-- Monthly events will be displayed here -->
+            </ul>
         </div>
     </div>
 
@@ -113,6 +174,7 @@
         let currentYear = new Date().getFullYear();
         let selectedDate = new Date();
 
+        // --- DOM Element References ---
         const calendarGrid = document.getElementById('calendarGrid');
         const currentMonthYear = document.getElementById('currentMonthYear');
         const prevMonthBtn = document.getElementById('prevMonthBtn');
@@ -132,7 +194,22 @@
         const confirmMessageBtn = document.getElementById('confirmMessageBtn');
         const exportBtn = document.getElementById('exportBtn');
         const importFile = document.getElementById('importFile');
+        const showMonthlyOverviewBtn = document.getElementById('showMonthlyOverviewBtn');
         
+        // Edit Modal DOM elements
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editForm');
+        const editEventId = document.getElementById('editEventId');
+        const editEventDate = document.getElementById('editEventDate');
+        const editEventTitle = document.getElementById('editEventTitle');
+        const editEventDescription = document.getElementById('editEventDescription');
+        const editEventColor = document.getElementById('editEventColor');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+        // Monthly Overview Modal DOM elements
+        const monthlyOverviewModal = document.getElementById('monthlyOverviewModal');
+        const closeMonthlyOverviewBtn = document.getElementById('closeMonthlyOverviewBtn');
+
         // A simple function to create a unique ID for each event
         const createUniqueId = () => {
             return '_' + Math.random().toString(36).substr(2, 9);
@@ -156,7 +233,6 @@
                 closeMessage();
                 confirmMessageBtn.removeEventListener('click', handleConfirm);
             };
-
             confirmMessageBtn.addEventListener('click', handleConfirm);
         };
 
@@ -293,7 +369,6 @@
             }
 
             renderEventsForSelectedDate();
-            renderMonthlyOverview(); // Call the new function to update the monthly overview
         };
 
         // Handle deleting an event
@@ -318,6 +393,28 @@
                 showMessage('Activity successfully deleted!');
             }
         };
+        
+        // Handle editing an event
+        const handleEditEvent = (eventId) => {
+            let eventToEdit = null;
+            // Find the event to edit
+            for (const date in events) {
+                const foundEvent = events[date].find(event => event.id === eventId);
+                if (foundEvent) {
+                    eventToEdit = foundEvent;
+                    break;
+                }
+            }
+
+            if (eventToEdit) {
+                editEventId.value = eventToEdit.id;
+                editEventDate.value = eventToEdit.date;
+                editEventTitle.value = eventToEdit.title;
+                editEventDescription.value = eventToEdit.description;
+                editEventColor.value = eventToEdit.color;
+                editModal.style.display = 'flex';
+            }
+        };
 
         // Render events for the currently selected date
         const renderEventsForSelectedDate = () => {
@@ -338,10 +435,20 @@
                                 <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
                             </div>
                         </div>
-                        <button class="delete-event-btn text-red-500 hover:text-red-700 transition-colors opacity-0 group-hover:opacity-100" data-doc-id="${event.id}">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"></path></svg>
-                        </button>
+                        <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="edit-event-btn text-gray-500 hover:text-blue-600 transition-colors" data-event-id="${event.id}">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path></svg>
+                            </button>
+                            <button class="delete-event-btn text-red-500 hover:text-red-700 transition-colors" data-doc-id="${event.id}">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"></path></svg>
+                            </button>
+                        </div>
                     `;
+                    // Add a click listener for the edit button.
+                    const editButton = listItem.querySelector('.edit-event-btn');
+                    editButton.addEventListener('click', () => {
+                        handleEditEvent(event.id);
+                    });
                     // Add a click listener for the delete button.
                     const deleteButton = listItem.querySelector('.delete-event-btn');
                     deleteButton.addEventListener('click', () => {
@@ -354,8 +461,8 @@
             }
         };
 
-        // Render a list of all events for the current month
-        const renderMonthlyOverview = () => {
+        // Render a list of all events for the current month inside a modal
+        const renderMonthlyOverviewModal = () => {
             monthlyEventsList.innerHTML = '';
             const allMonthlyEvents = [];
 
@@ -364,7 +471,7 @@
                 const eventDate = new Date(date);
                 if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
                     events[date].forEach(event => {
-                        allMonthlyEvents.push({ date: eventDate, ...event });
+                        allMonthlyEvents.push({ ...event, date: eventDate });
                     });
                 }
             }
@@ -389,10 +496,10 @@
             } else {
                 monthlyEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities for this month.</li>';
             }
+            monthlyOverviewModal.style.display = 'flex';
         };
 
-
-        // Handle form submission
+        // Handle form submission for new events
         eventForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const date = eventDateInput.value;
@@ -405,7 +512,6 @@
                 return;
             }
 
-            // Create a new event object with a unique ID
             const newEvent = {
                 id: createUniqueId(),
                 date,
@@ -414,21 +520,71 @@
                 color
             };
 
-            // Add to the events object
             if (!events[date]) {
                 events[date] = [];
             }
             events[date].push(newEvent);
 
-            // Save to local storage
             saveEventsToLocalStorage();
-            
-            // Re-render everything with the new data
             renderCalendar();
             
-            // Clear form
             eventTitleInput.value = '';
             eventDescriptionInput.value = '';
+        });
+
+        // Handle form submission for editing events
+        editForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const eventId = editEventId.value;
+            const newDate = editEventDate.value;
+            const newTitle = editEventTitle.value;
+            const newDescription = editEventDescription.value;
+            const newColor = editEventColor.value;
+
+            // Find the event and update it
+            let updated = false;
+            for (const date in events) {
+                // If the date has changed, remove the event from the old date
+                if (date !== newDate) {
+                    events[date] = events[date].filter(event => {
+                        if (event.id === eventId) {
+                            // If the event is found and its date is different, update its properties
+                            event.date = newDate;
+                            event.title = newTitle;
+                            event.description = newDescription;
+                            event.color = newColor;
+                            
+                            // Add it to the new date's events
+                            if (!events[newDate]) {
+                                events[newDate] = [];
+                            }
+                            events[newDate].push(event);
+                            updated = true;
+                            return false; // Filter this event out of the old date's list
+                        }
+                        return true;
+                    });
+                    if (events[date].length === 0) {
+                        delete events[date];
+                    }
+                } else {
+                    // If the date is the same, just find and update the event
+                    const eventToUpdate = events[date].find(event => event.id === eventId);
+                    if (eventToUpdate) {
+                        eventToUpdate.title = newTitle;
+                        eventToUpdate.description = newDescription;
+                        eventToUpdate.color = newColor;
+                        updated = true;
+                    }
+                }
+            }
+
+            if (updated) {
+                saveEventsToLocalStorage();
+                renderCalendar();
+                editModal.style.display = 'none';
+                showMessage('Activity updated successfully!');
+            }
         });
 
         // Handle navigation buttons
@@ -448,6 +604,15 @@
                 currentYear++;
             }
             renderCalendar();
+        });
+
+        cancelEditBtn.addEventListener('click', () => {
+            editModal.style.display = 'none';
+        });
+
+        showMonthlyOverviewBtn.addEventListener('click', renderMonthlyOverviewModal);
+        closeMonthlyOverviewBtn.addEventListener('click', () => {
+            monthlyOverviewModal.style.display = 'none';
         });
 
         // Initial setup and data fetching
