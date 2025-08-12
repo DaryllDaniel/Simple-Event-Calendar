@@ -81,13 +81,6 @@
                 <h3 class="text-2xl font-semibold text-gray-800 mb-4">Add a New Activity</h3>
                 <form id="eventForm" class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Selected Dates:</label>
-                        <div id="selectedDatesContainer" class="mt-1 flex flex-wrap gap-2 p-2 min-h-[40px] rounded-md border-gray-300 shadow-sm bg-white">
-                            <!-- Selected date pills will be generated here -->
-                            <span class="text-gray-500 text-sm">Click a date on the calendar to select it.</span>
-                        </div>
-                    </div>
-                    <div>
                         <label for="eventTitle" class="block text-sm font-medium text-gray-700">Activity:</label>
                         <input type="text" id="eventTitle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
                     </div>
@@ -95,13 +88,28 @@
                         <label for="eventDescription" class="block text-sm font-medium text-gray-700">Description:</label>
                         <textarea id="eventDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
                     </div>
-                    <div>
-                        <label for="eventColor" class="block text-sm font-medium text-gray-700">Color:</label>
-                        <input type="color" id="eventColor" value="#3b82f6" class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer">
+
+                    <!-- NEW HORIZONTAL CONTAINER FOR DATE, COLOR, AND BUTTON -->
+                    <div class="flex flex-col sm:flex-row items-end sm:items-center gap-4">
+                        <!-- Selected Dates container -->
+                        <div class="flex-1 w-full">
+                            <label class="block text-sm font-medium text-gray-700">Selected Dates:</label>
+                            <div id="selectedDatesContainer" class="mt-1 flex flex-wrap gap-2 p-2 min-h-[40px] rounded-md border-gray-300 shadow-sm bg-white">
+                                <span class="text-gray-500 text-sm">Click a date on the calendar to select it.</span>
+                            </div>
+                        </div>
+
+                        <!-- Color selection -->
+                        <div class="w-full sm:w-auto">
+                            <label for="eventColor" class="block text-sm font-medium text-gray-700">Color:</label>
+                            <input type="color" id="eventColor" value="#3b82f6" class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer">
+                        </div>
+
+                        <!-- Add Activity Button -->
+                        <button type="submit" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                            Add Activity
+                        </button>
                     </div>
-                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                        Add Activity
-                    </button>
                 </form>
 
                 <!-- Events for first selected date -->
