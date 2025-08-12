@@ -9,15 +9,39 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            position: relative;
+            z-index: 1;
         }
+
+        /* Blurred background overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://i.ytimg.com/vi/xEp4i60pCxQ/maxresdefault.jpg');
+            background-size: cover;
+            background-position: center;
+            filter: blur(8px);
+            z-index: -1; /* Place the background behind the content */
+        }
+        
+        /* Ensure main content is not blurred */
+        .page-content {
+            z-index: 2;
+            position: relative;
+        }
+
         .day-cell.has-events {
             color: #1f2937; /* Default text color for visibility */
             text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Add text shadow for readability on any color */
             transition: background-color 0.2s, background 0.2s;
         }
-        /* Custom modal styles */
+
+        /* Custom modal styles with fade-in animation */
         .modal {
-            display: none;
             position: fixed;
             z-index: 1000;
             left: 0;
@@ -28,103 +52,117 @@
             background-color: rgba(0,0,0,0.4);
             align-items: center;
             justify-content: center;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            pointer-events: none; /* Prevents clicks on hidden modal */
+        }
+        
+        .modal.show {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
         }
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
 
-    <!-- Container for logo and title, now aligned to the left -->
-    <div class="w-full max-w-4xl flex items-center justify-start mb-6 space-x-4">
-        <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="KCP Logo" class="h-20 rounded-xl shadow-lg">
-        <h1 class="text-3xl font-bold text-gray-800">Activity Calendar Prototype</h1>
-    </div>
+    <!-- All content is wrapped in a container to prevent it from blurring -->
+    <div class="page-content w-full max-w-4xl">
 
-    <!-- Main Application Container -->
-    <div class="bg-white p-6 rounded-xl shadow-lg w-full max-w-4xl">
-        <!-- Header with controls and new Monthly Activities button -->
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
-            <div class="flex space-x-2">
-                <button id="exportBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">Export Data</button>
-                <label for="importFile" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors cursor-pointer">
-                    Import Data
-                </label>
-                <input type="file" id="importFile" accept=".json" class="hidden">
-            </div>
-            <button id="showMonthlyOverviewBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                Show Monthly Activities
-            </button>
+        <!-- Container for logo and title, now aligned to the left -->
+        <div class="flex items-center justify-start mb-6 space-x-4">
+            <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="KCP Logo" class="h-20 rounded-xl shadow-lg">
+            <h1 class="text-3xl font-bold text-gray-800">Activity Calendar Prototype</h1>
         </div>
-        
-        <!-- Calendar and Event Form Container -->
-        <div class="md:flex gap-8">
-            <!-- Calendar View -->
-            <div class="flex-1 mb-6 md:mb-0">
-                <div class="flex justify-between items-center mb-4">
-                    <button id="prevMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
-                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                    </button>
-                    <h2 id="currentMonthYear" class="text-xl font-semibold text-gray-700"></h2>
-                    <button id="nextMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
-                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </button>
+
+        <!-- Main Application Container with reduced opacity background only -->
+        <div class="p-6 rounded-xl shadow-lg w-full" style="background-color: rgba(255, 255, 255, 0.7);">
+            <!-- Header with controls and new Monthly Activities button -->
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
+                <div class="flex space-x-2">
+                    <button id="exportBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">Export Data</button>
+                    <label for="importFile" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors cursor-pointer">
+                        Import Data
+                    </label>
+                    <input type="file" id="importFile" accept=".json" class="hidden">
                 </div>
-                <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-500 mb-2">
-                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                </div>
-                <div id="calendarGrid" class="grid grid-cols-7 gap-1">
-                    <!-- Calendar days will be generated here -->
-                </div>
+                <button id="showMonthlyOverviewBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                    Show Monthly Activities
+                </button>
             </div>
-
-            <!-- Event Input and Display -->
-            <div class="flex-1 bg-gray-50 p-4 rounded-xl shadow-inner">
-                <h3 class="text-2xl font-semibold text-gray-800 mb-4">Add a New Activity</h3>
-                <form id="eventForm" class="space-y-4">
-                    <div>
-                        <label for="eventTitle" class="block text-sm font-medium text-gray-700">Activity:</label>
-                        <input type="text" id="eventTitle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                    </div>
-                    <div>
-                        <label for="eventDescription" class="block text-sm font-medium text-gray-700">Description:</label>
-                        <textarea id="eventDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
-                    </div>
-
-                    <!-- NEW HORIZONTAL CONTAINER FOR DATE, COLOR, AND BUTTON -->
-                    <div class="flex flex-col sm:flex-row items-end sm:items-center gap-4">
-                        <!-- Selected Dates container -->
-                        <div class="flex-1 w-full">
-                            <label class="block text-sm font-medium text-gray-700">Selected Dates:</label>
-                            <div id="selectedDatesContainer" class="mt-1 flex flex-wrap gap-2 p-2 min-h-[40px] rounded-md border-gray-300 shadow-sm bg-white">
-                                <span class="text-gray-500 text-sm">Click a date on the calendar to select it.</span>
-                            </div>
-                        </div>
-
-                        <!-- Color selection -->
-                        <div class="w-full sm:w-auto">
-                            <label for="eventColor" class="block text-sm font-medium text-gray-700">Color:</label>
-                            <input type="color" id="eventColor" value="#3b82f6" class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer">
-                        </div>
-
-                        <!-- Add Activity Button -->
-                        <button type="submit" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                            Add Activity
+            
+            <!-- Calendar and Event Form Container -->
+            <div class="md:flex gap-8">
+                <!-- Calendar View -->
+                <div class="flex-1 mb-6 md:mb-0">
+                    <div class="flex justify-between items-center mb-4">
+                        <button id="prevMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </button>
+                        <h2 id="currentMonthYear" class="text-xl font-semibold text-gray-700"></h2>
+                        <button id="nextMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                         </button>
                     </div>
-                </form>
+                    <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-500 mb-2">
+                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                    </div>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-1">
+                        <!-- Calendar days will be generated here -->
+                    </div>
+                </div>
 
-                <!-- Events for first selected date -->
-                <div class="mt-6">
-                    <h3 id="eventsTitle" class="text-xl font-semibold text-gray-800 mb-2">Activities for Selected Date</h3>
-                    <ul id="eventsList" class="space-y-2">
-                        <!-- Events will be displayed here -->
-                    </ul>
+                <!-- Event Input and Display -->
+                <div class="flex-1 bg-gray-50 p-4 rounded-xl shadow-inner">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Add a New Activity</h3>
+                    <form id="eventForm" class="space-y-4">
+                        <div>
+                            <label for="eventTitle" class="block text-sm font-medium text-gray-700">Activity:</label>
+                            <input type="text" id="eventTitle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                        </div>
+                        <div>
+                            <label for="eventDescription" class="block text-sm font-medium text-gray-700">Description:</label>
+                            <textarea id="eventDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
+                        </div>
+
+                        <!-- NEW HORIZONTAL CONTAINER FOR DATE, COLOR, AND BUTTON -->
+                        <div class="flex flex-col sm:flex-row items-end sm:items-center gap-4">
+                            <!-- Selected Dates container -->
+                            <div class="flex-1 w-full">
+                                <label class="block text-sm font-medium text-gray-700">Selected Dates:</label>
+                                <div id="selectedDatesContainer" class="mt-1 flex flex-wrap gap-2 p-2 min-h-[40px] rounded-md border-gray-300 shadow-sm bg-white">
+                                    <span class="text-gray-500 text-sm">Click a date on the calendar to select it.</span>
+                                </div>
+                            </div>
+
+                            <!-- Color selection -->
+                            <div class="w-full sm:w-auto">
+                                <label for="eventColor" class="block text-sm font-medium text-gray-700">Color:</label>
+                                <input type="color" id="eventColor" value="#3b82f6" class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer">
+                            </div>
+
+                            <!-- Add Activity Button -->
+                            <button type="submit" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                                Add Activity
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Events for first selected date -->
+                    <div class="mt-6">
+                        <h3 id="eventsTitle" class="text-xl font-semibold text-gray-800 mb-2">Activities for Selected Date</h3>
+                        <ul id="eventsList" class="space-y-2">
+                            <!-- Events will be displayed here -->
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Custom Message Box (in place of alert()) -->
-    <div id="messageBox" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4">
+    <div id="messageBox" class="modal">
         <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full text-center">
             <p id="messageText" class="text-gray-800 mb-4"></p>
             <div id="messageButtons" class="flex justify-center space-x-4">
@@ -235,7 +273,7 @@
             messageText.textContent = text;
             okMessageBtn.classList.remove('hidden');
             cancelMessageBtn.classList.add('hidden');
-            messageBox.style.display = 'flex';
+            messageBox.classList.add('show');
         };
 
         // Function to show a confirmation prompt
@@ -243,7 +281,7 @@
             messageText.textContent = text;
             okMessageBtn.classList.remove('hidden');
             cancelMessageBtn.classList.remove('hidden');
-            messageBox.style.display = 'flex';
+            messageBox.classList.add('show');
 
             const handleConfirm = () => {
                 onConfirmCallback();
@@ -261,7 +299,7 @@
 
         // Function to close the custom message box
         const closeMessage = () => {
-            messageBox.style.display = 'none';
+            messageBox.classList.remove('show');
         };
         okMessageBtn.addEventListener('click', closeMessage);
         cancelMessageBtn.addEventListener('click', closeMessage);
@@ -474,7 +512,7 @@
                 editEventTitle.value = eventToEdit.title;
                 editEventDescription.value = eventToEdit.description;
                 editEventColor.value = eventToEdit.color;
-                editModal.style.display = 'flex';
+                editModal.classList.add('show');
             }
         };
 
@@ -565,7 +603,7 @@
             } else {
                 monthlyEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities for this month.</li>';
             }
-            monthlyOverviewModal.style.display = 'flex';
+            monthlyOverviewModal.classList.add('show');
         };
 
         // Handle form submission for new events
@@ -655,7 +693,7 @@
             if (updated) {
                 saveEventsToLocalStorage();
                 renderCalendar();
-                editModal.style.display = 'none';
+                editModal.classList.remove('show');
                 showMessage('Activity updated successfully!');
             }
         });
@@ -684,12 +722,12 @@
         });
 
         cancelEditBtn.addEventListener('click', () => {
-            editModal.style.display = 'none';
+            editModal.classList.remove('show');
         });
 
         showMonthlyOverviewBtn.addEventListener('click', renderMonthlyOverviewModal);
         closeMonthlyOverviewBtn.addEventListener('click', () => {
-            monthlyOverviewModal.style.display = 'none';
+            monthlyOverviewModal.classList.remove('show');
         });
 
         // Initial setup and data fetching
