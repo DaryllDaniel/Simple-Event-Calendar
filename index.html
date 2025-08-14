@@ -79,18 +79,23 @@
 
         <!-- Main Application Container with reduced opacity background only -->
         <div class="p-6 rounded-xl shadow-lg w-full" style="background-color: rgba(255, 255, 255, 0.7);">
-            <!-- Header with controls and new Monthly Activities button -->
+            <!-- Header with controls and new buttons -->
             <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
-                <div class="flex space-x-2">
-                    <button id="exportBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">Export Data</button>
+                <div class="flex flex-wrap gap-2">
+                    <button id="showManageActivitiesModalBtn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                        Manage Activities
+                    </button>
+                    <button id="exportBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">
+                        Export Data
+                    </button>
                     <label for="importFile" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors cursor-pointer">
                         Import Data
                     </label>
                     <input type="file" id="importFile" accept=".json" class="hidden">
+                    <button id="showMonthlyOverviewBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        Show Monthly Activities
+                    </button>
                 </div>
-                <button id="showMonthlyOverviewBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                    Show Monthly Activities
-                </button>
             </div>
             
             <!-- Calendar and Event Form Container -->
@@ -116,40 +121,6 @@
 
                 <!-- Event Input and Display -->
                 <div class="flex-1 bg-gray-50 p-4 rounded-xl shadow-inner">
-                    <h3 class="text-2xl font-semibold text-gray-800 mb-4">Add a New Activity</h3>
-                    <form id="eventForm" class="space-y-4">
-                        <div>
-                            <label for="eventTitle" class="block text-sm font-medium text-gray-700">Activity:</label>
-                            <input type="text" id="eventTitle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                        </div>
-                        <div>
-                            <label for="eventDescription" class="block text-sm font-medium text-gray-700">Description:</label>
-                            <textarea id="eventDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
-                        </div>
-
-                        <!-- NEW HORIZONTAL CONTAINER FOR DATE, COLOR, AND BUTTON -->
-                        <div class="flex flex-col sm:flex-row items-end sm:items-center gap-4">
-                            <!-- Selected Dates container -->
-                            <div class="flex-1 w-full">
-                                <label class="block text-sm font-medium text-gray-700">Selected Dates:</label>
-                                <div id="selectedDatesContainer" class="mt-1 flex flex-wrap gap-2 p-2 min-h-[40px] rounded-md border-gray-300 shadow-sm bg-white">
-                                    <span class="text-gray-500 text-sm">Click a date on the calendar to select it.</span>
-                                </div>
-                            </div>
-
-                            <!-- Color selection -->
-                            <div class="w-full sm:w-auto">
-                                <label for="eventColor" class="block text-sm font-medium text-gray-700">Color:</label>
-                                <input type="color" id="eventColor" value="#3b82f6" class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer">
-                            </div>
-
-                            <!-- Add Activity Button -->
-                            <button type="submit" class="w-full sm:w-auto bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                                Add Activity
-                            </button>
-                        </div>
-                    </form>
-
                     <!-- Events for first selected date -->
                     <div class="mt-6">
                         <h3 id="eventsTitle" class="text-xl font-semibold text-gray-800 mb-2">Activities for Selected Date</h3>
@@ -169,6 +140,71 @@
             <div id="messageButtons" class="flex justify-center space-x-4">
                 <button id="okMessageBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">OK</button>
                 <button id="cancelMessageBtn" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Activities Modal -->
+    <div id="manageActivitiesModal" class="modal">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-semibold text-gray-800">Manage Activities</h3>
+                <button id="closeManageActivitiesModalBtn" class="text-gray-500 hover:text-gray-700 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Calendar and Date Selection for the new activity -->
+            <div class="mb-6">
+                <h4 class="text-xl font-semibold text-gray-800 mb-2">Select Dates for New Activity</h4>
+                <div class="flex justify-between items-center mb-4">
+                    <button id="modalPrevMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <h2 id="modalCurrentMonthYear" class="text-lg font-semibold text-gray-700"></h2>
+                    <button id="modalNextMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+                <div class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-500 mb-2">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div id="modalCalendarGrid" class="grid grid-cols-7 gap-1">
+                    <!-- Modal calendar days will be generated here -->
+                </div>
+                <div id="modalSelectedDatesContainer" class="mt-4 flex flex-wrap gap-2 p-2 min-h-[40px] rounded-md border-gray-300 shadow-sm bg-gray-50">
+                    <span class="text-gray-500 text-sm">Click a date above to select it.</span>
+                </div>
+            </div>
+
+            <!-- Form to Add New Activity -->
+            <form id="eventForm" class="space-y-4 border-t pt-4">
+                <div>
+                    <label for="eventTitle" class="block text-sm font-medium text-gray-700">Activity:</label>
+                    <input type="text" id="eventTitle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
+                </div>
+                <div>
+                    <label for="eventDescription" class="block text-sm font-medium text-gray-700">Description:</label>
+                    <textarea id="eventDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex-1">
+                        <label for="eventColor" class="block text-sm font-medium text-gray-700">Color:</label>
+                        <input type="color" id="eventColor" value="#3b82f6" class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer">
+                    </div>
+                    <button type="submit" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition-colors self-end">
+                        Add Activity
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Section to Delete Activities -->
+            <div id="modalActivitiesList" class="mt-8 border-t pt-4">
+                <h4 class="text-xl font-semibold text-gray-800 mb-2">Delete Activities</h4>
+                <p class="text-sm text-gray-600 mb-4">Select a date in the calendar above to see and delete activities for that day.</p>
+                <ul id="modalDeleteList" class="space-y-2">
+                    <!-- Activities for selected modal date will be listed here -->
+                </ul>
             </div>
         </div>
     </div>
@@ -226,28 +262,44 @@
         let events = {};
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
-        let selectedDates = []; // Changed to an array for multi-selection
+        let selectedDate = null; // Single date for the main view
+        let modalSelectedDates = []; // Array for multi-selection within the modal form
+
+        // Modal calendar state
+        let modalCurrentMonth = new Date().getMonth();
+        let modalCurrentYear = new Date().getFullYear();
+        let modalSelectedDateForDeletion = null; // Single date for showing events in modal
 
         // --- DOM Element References ---
         const calendarGrid = document.getElementById('calendarGrid');
         const currentMonthYear = document.getElementById('currentMonthYear');
         const prevMonthBtn = document.getElementById('prevMonthBtn');
         const nextMonthBtn = document.getElementById('nextMonthBtn');
-        const eventForm = document.getElementById('eventForm');
-        const eventTitleInput = document.getElementById('eventTitle');
-        const eventDescriptionInput = document.getElementById('eventDescription');
-        const eventColorInput = document.getElementById('eventColor');
         const eventsList = document.getElementById('eventsList');
         const eventsTitle = document.getElementById('eventsTitle');
-        const selectedDatesContainer = document.getElementById('selectedDatesContainer');
         const messageBox = document.getElementById('messageBox');
         const messageText = document.getElementById('messageText');
-        const messageButtons = document.getElementById('messageButtons');
         const okMessageBtn = document.getElementById('okMessageBtn');
         const cancelMessageBtn = document.getElementById('cancelMessageBtn');
         const exportBtn = document.getElementById('exportBtn');
         const importFile = document.getElementById('importFile');
         const showMonthlyOverviewBtn = document.getElementById('showMonthlyOverviewBtn');
+
+        // Manage Activities Modal DOM elements
+        const showManageActivitiesModalBtn = document.getElementById('showManageActivitiesModalBtn');
+        const manageActivitiesModal = document.getElementById('manageActivitiesModal');
+        const closeManageActivitiesModalBtn = document.getElementById('closeManageActivitiesModalBtn');
+        const eventForm = document.getElementById('eventForm');
+        const eventTitleInput = document.getElementById('eventTitle');
+        const eventDescriptionInput = document.getElementById('eventDescription');
+        const eventColorInput = document.getElementById('eventColor');
+        const modalCalendarGrid = document.getElementById('modalCalendarGrid');
+        const modalCurrentMonthYear = document.getElementById('modalCurrentMonthYear');
+        const modalPrevMonthBtn = document.getElementById('modalPrevMonthBtn');
+        const modalNextMonthBtn = document.getElementById('modalNextMonthBtn');
+        const modalSelectedDatesContainer = document.getElementById('modalSelectedDatesContainer');
+        const modalActivitiesList = document.getElementById('modalActivitiesList');
+        const modalDeleteList = document.getElementById('modalDeleteList');
         
         // Edit Modal DOM elements
         const editModal = document.getElementById('editModal');
@@ -288,10 +340,12 @@
                 onConfirmCallback();
                 closeMessage();
                 okMessageBtn.removeEventListener('click', handleConfirm);
+                cancelMessageBtn.removeEventListener('click', handleCancel);
             };
             const handleCancel = () => {
                 closeMessage();
                 cancelMessageBtn.removeEventListener('click', handleCancel);
+                okMessageBtn.removeEventListener('click', handleConfirm);
             };
 
             okMessageBtn.addEventListener('click', handleConfirm);
@@ -302,6 +356,8 @@
         const closeMessage = () => {
             messageBox.classList.remove('show');
         };
+        
+        // Event listeners for the custom message box
         okMessageBtn.addEventListener('click', closeMessage);
         cancelMessageBtn.addEventListener('click', closeMessage);
 
@@ -369,7 +425,7 @@
 
         // --- End of Local Storage & Import/Export Functions ---
 
-        // Render the calendar for a given month and year
+        // Render the main calendar for a given month and year
         const renderCalendar = () => {
             calendarGrid.innerHTML = '';
             const firstDay = new Date(currentYear, currentMonth, 1);
@@ -393,7 +449,6 @@
                 dayCell.tabIndex = 0; // Make the cell focusable
                 const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
-                // Color the day cell if there are events
                 if (events[fullDate] && events[fullDate].length > 0) {
                     dayCell.classList.add('has-events');
                     const eventColors = events[fullDate].map(event => event.color);
@@ -401,7 +456,6 @@
                     if (eventColors.length === 1) {
                         dayCell.style.background = eventColors[0];
                     } else {
-                        // Create a linear gradient for multiple colors
                         let gradientString = 'linear-gradient(to right';
                         const numColors = eventColors.length;
                         eventColors.forEach((color, index) => {
@@ -414,40 +468,84 @@
                     }
                 }
 
-                // Highlight the selected date with a distinct color
-                if (selectedDates.includes(fullDate)) {
+                if (selectedDate === fullDate) {
                     dayCell.classList.add('bg-blue-300', 'hover:bg-blue-400');
-                    dayCell.style.background = 'rgba(191, 219, 254, 0.5)'; // Light blue with transparency
+                    dayCell.style.background = 'rgba(191, 219, 254, 0.5)';
                     dayCell.classList.add('hover:bg-opacity-80');
                 }
 
-                // Handle click to toggle date selection
+                // Handle click to set a single selected date
                 dayCell.addEventListener('click', () => {
-                    const index = selectedDates.indexOf(fullDate);
-                    if (index > -1) {
-                        selectedDates.splice(index, 1); // Deselect date
-                    } else {
-                        selectedDates.push(fullDate); // Select date
-                        selectedDates.sort(); // Keep dates sorted
-                    }
-                    renderCalendar(); // Re-render to highlight new selected dates
+                    selectedDate = fullDate;
+                    renderCalendar();
                     renderEventsForSelectedDate();
-                    renderSelectedDates();
                 });
 
                 calendarGrid.appendChild(dayCell);
             }
         };
 
-        // Render the list of selected dates in the form
-        const renderSelectedDates = () => {
-            selectedDatesContainer.innerHTML = '';
-            if (selectedDates.length === 0) {
-                selectedDatesContainer.innerHTML = '<span class="text-gray-500 text-sm">Click a date on the calendar to select it.</span>';
+        // Render the mini-calendar inside the modal
+        const renderModalCalendar = () => {
+            modalCalendarGrid.innerHTML = '';
+            const firstDay = new Date(modalCurrentYear, modalCurrentMonth, 1);
+            const lastDay = new Date(modalCurrentYear, modalCurrentMonth + 1, 0);
+            const numDays = lastDay.getDate();
+            const startDayOfWeek = firstDay.getDay();
+
+            modalCurrentMonthYear.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${modalCurrentYear}`;
+
+            for (let i = 0; i < startDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                modalCalendarGrid.appendChild(emptyCell);
+            }
+
+            for (let day = 1; day <= numDays; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.classList.add('day-cell', 'p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'hover:bg-gray-100', 'transition-colors');
+                dayCell.textContent = day;
+                const fullDate = `${modalCurrentYear}-${String(modalCurrentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // Highlight dates selected for the new activity
+                if (modalSelectedDates.includes(fullDate)) {
+                    dayCell.classList.add('bg-green-300', 'hover:bg-green-400');
+                }
+                
+                // Highlight the date selected for deletion list
+                if (modalSelectedDateForDeletion === fullDate) {
+                    dayCell.classList.add('bg-red-300', 'hover:bg-red-400');
+                }
+
+                dayCell.addEventListener('click', () => {
+                    // Check if the date is already selected
+                    const dateIndex = modalSelectedDates.indexOf(fullDate);
+                    if (dateIndex > -1) {
+                        modalSelectedDates.splice(dateIndex, 1); // Remove it
+                    } else {
+                        modalSelectedDates.push(fullDate); // Add it
+                    }
+                    modalSelectedDates.sort(); // Keep dates in order
+                    
+                    modalSelectedDateForDeletion = fullDate; // Set the date for the deletion list
+
+                    renderModalCalendar();
+                    renderModalSelectedDates();
+                    renderModalActivities();
+                });
+
+                modalCalendarGrid.appendChild(dayCell);
+            }
+        };
+
+        // Render the list of selected dates in the modal's form
+        const renderModalSelectedDates = () => {
+            modalSelectedDatesContainer.innerHTML = '';
+            if (modalSelectedDates.length === 0) {
+                modalSelectedDatesContainer.innerHTML = '<span class="text-gray-500 text-sm">Click a date above to select it.</span>';
                 return;
             }
 
-            selectedDates.forEach(date => {
+            modalSelectedDates.forEach(date => {
                 const datePill = document.createElement('span');
                 datePill.classList.add('inline-flex', 'items-center', 'px-2.5', 'py-0.5', 'rounded-full', 'text-xs', 'font-medium', 'bg-blue-100', 'text-blue-800');
                 datePill.innerHTML = `
@@ -459,17 +557,50 @@
                         </svg>
                     </button>
                 `;
-                selectedDatesContainer.appendChild(datePill);
+                modalSelectedDatesContainer.appendChild(datePill);
                 
                 // Add event listener to the remove button
                 datePill.querySelector('button').addEventListener('click', (e) => {
                     const dateToRemove = e.currentTarget.dataset.date;
-                    selectedDates = selectedDates.filter(d => d !== dateToRemove);
-                    renderCalendar();
-                    renderSelectedDates();
-                    renderEventsForSelectedDate();
+                    modalSelectedDates = modalSelectedDates.filter(d => d !== dateToRemove);
+                    renderModalCalendar();
+                    renderModalSelectedDates();
                 });
             });
+        };
+
+        // Render events for the currently selected date in the modal
+        const renderModalActivities = () => {
+            modalDeleteList.innerHTML = '';
+            const dailyEvents = events[modalSelectedDateForDeletion] || [];
+            
+            if (dailyEvents.length > 0) {
+                dailyEvents.forEach(event => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('flex', 'items-center', 'justify-between', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200', 'group');
+                    listItem.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">${event.title}</h4>
+                                <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2 opacity-100 transition-opacity">
+                            <button class="delete-event-btn text-red-500 hover:text-red-700 transition-colors" data-doc-id="${event.id}">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                    const deleteButton = listItem.querySelector('.delete-event-btn');
+                    deleteButton.addEventListener('click', () => {
+                        showConfirmation('Are you sure you want to delete this activity?', () => handleDeleteEvent(event.id));
+                    });
+                    modalDeleteList.appendChild(listItem);
+                });
+            } else {
+                modalDeleteList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities on this date to delete.</li>';
+            }
         };
 
         // Handle deleting an event
@@ -480,7 +611,6 @@
                 events[date] = events[date].filter(event => event.id !== docId);
                 if (events[date].length < initialLength) {
                     deleted = true;
-                    // If the list for this date is now empty, remove the key entirely
                     if (events[date].length === 0) {
                         delete events[date];
                     }
@@ -491,14 +621,16 @@
             if (deleted) {
                 saveEventsToLocalStorage();
                 renderCalendar();
+                renderEventsForSelectedDate();
+                renderModalCalendar(); // Refresh modal calendar
+                renderModalActivities(); // Refresh modal deletion list
                 showMessage('Activity successfully deleted!');
             }
         };
-        
+
         // Handle editing an event
         const handleEditEvent = (eventId) => {
             let eventToEdit = null;
-            // Find the event to edit
             for (const date in events) {
                 const foundEvent = events[date].find(event => event.id === eventId);
                 if (foundEvent) {
@@ -517,24 +649,23 @@
             }
         };
 
-        // Render events for the first currently selected date
+        // Render events for the currently selected date in the main view
         const renderEventsForSelectedDate = () => {
             eventsList.innerHTML = '';
-            if (selectedDates.length === 0) {
+            if (!selectedDate) {
                 eventsTitle.textContent = `Activities for Selected Date`;
-                eventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities scheduled. Select a date to see events.</li>';
+                eventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No date selected. Click a date on the calendar to see activities.</li>';
                 return;
             }
             
-            const firstSelectedDate = selectedDates[0];
-            const displayDate = new Date(firstSelectedDate);
+            const displayDate = new Date(selectedDate);
             eventsTitle.textContent = `Activities for ${displayDate.toDateString()}`;
             
-            const dailyEvents = events[firstSelectedDate] || [];
+            const dailyEvents = events[selectedDate] || [];
             if (dailyEvents.length > 0) {
                 dailyEvents.forEach(event => {
                     const listItem = document.createElement('li');
-                    listItem.classList.add('flex', 'items-center', 'justify-between', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200', 'group'); // Add group for hover effect
+                    listItem.classList.add('flex', 'items-center', 'justify-between', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200', 'group');
                     listItem.innerHTML = `
                         <div class="flex items-center">
                             <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
@@ -552,12 +683,10 @@
                             </button>
                         </div>
                     `;
-                    // Add a click listener for the edit button.
                     const editButton = listItem.querySelector('.edit-event-btn');
                     editButton.addEventListener('click', () => {
                         handleEditEvent(event.id);
                     });
-                    // Add a click listener for the delete button.
                     const deleteButton = listItem.querySelector('.delete-event-btn');
                     deleteButton.addEventListener('click', () => {
                         showConfirmation('Are you sure you want to delete this activity?', () => handleDeleteEvent(event.id));
@@ -574,7 +703,6 @@
             monthlyEventsList.innerHTML = '';
             const allMonthlyEvents = [];
 
-            // Iterate through all events and filter for the current month/year
             for (const date in events) {
                 const eventDate = new Date(date);
                 if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
@@ -584,7 +712,6 @@
                 }
             }
 
-            // Sort events chronologically
             allMonthlyEvents.sort((a, b) => a.date - b.date);
 
             if (allMonthlyEvents.length > 0) {
@@ -614,12 +741,12 @@
             const description = eventDescriptionInput.value;
             const color = eventColorInput.value;
 
-            if (selectedDates.length === 0 || !title) {
+            if (modalSelectedDates.length === 0 || !title) {
                 showMessage("Please select at least one date and enter an activity title.");
                 return;
             }
             
-            selectedDates.forEach(date => {
+            modalSelectedDates.forEach(date => {
                 const newEvent = {
                     id: createUniqueId(),
                     date,
@@ -637,11 +764,15 @@
             saveEventsToLocalStorage();
             renderCalendar();
             
-            // Clear form inputs and selected dates
+            // Clear form inputs and selected dates, then close modal
             eventTitleInput.value = '';
             eventDescriptionInput.value = '';
-            selectedDates = [];
-            renderSelectedDates();
+            modalSelectedDates = [];
+            modalSelectedDateForDeletion = null;
+            renderModalSelectedDates();
+            renderModalActivities();
+            renderEventsForSelectedDate();
+            manageActivitiesModal.classList.remove('show');
         });
 
         // Handle form submission for editing events
@@ -653,26 +784,22 @@
             const newDescription = editEventDescription.value;
             const newColor = editEventColor.value;
 
-            // Find the event and update it
             let updated = false;
             for (const date in events) {
-                // If the date has changed, remove the event from the old date
                 if (date !== newDate) {
                     events[date] = events[date].filter(event => {
                         if (event.id === eventId) {
-                            // If the event is found and its date is different, update its properties
                             event.date = newDate;
                             event.title = newTitle;
                             event.description = newDescription;
                             event.color = newColor;
                             
-                            // Add it to the new date's events
                             if (!events[newDate]) {
                                 events[newDate] = [];
                             }
                             events[newDate].push(event);
                             updated = true;
-                            return false; // Filter this event out of the old date's list
+                            return false;
                         }
                         return true;
                     });
@@ -680,7 +807,6 @@
                         delete events[date];
                     }
                 } else {
-                    // If the date is the same, just find and update the event
                     const eventToUpdate = events[date].find(event => event.id === eventId);
                     if (eventToUpdate) {
                         eventToUpdate.title = newTitle;
@@ -694,6 +820,7 @@
             if (updated) {
                 saveEventsToLocalStorage();
                 renderCalendar();
+                renderEventsForSelectedDate();
                 editModal.classList.remove('show');
                 showMessage('Activity updated successfully!');
             }
@@ -707,7 +834,6 @@
                 currentYear--;
             }
             renderCalendar();
-            renderSelectedDates();
             renderEventsForSelectedDate();
         });
 
@@ -718,8 +844,43 @@
                 currentYear++;
             }
             renderCalendar();
-            renderSelectedDates();
             renderEventsForSelectedDate();
+        });
+
+        // Event listeners for modal controls
+        showManageActivitiesModalBtn.addEventListener('click', () => {
+            manageActivitiesModal.classList.add('show');
+            modalCurrentMonth = new Date().getMonth();
+            modalCurrentYear = new Date().getFullYear();
+            modalSelectedDates = [];
+            modalSelectedDateForDeletion = null;
+            renderModalCalendar();
+            renderModalSelectedDates();
+            renderModalActivities();
+        });
+
+        closeManageActivitiesModalBtn.addEventListener('click', () => {
+            manageActivitiesModal.classList.remove('show');
+        });
+
+        modalPrevMonthBtn.addEventListener('click', () => {
+            modalCurrentMonth--;
+            if (modalCurrentMonth < 0) {
+                modalCurrentMonth = 11;
+                modalCurrentYear--;
+            }
+            renderModalCalendar();
+            renderModalActivities();
+        });
+
+        modalNextMonthBtn.addEventListener('click', () => {
+            modalCurrentMonth++;
+            if (modalCurrentMonth > 11) {
+                modalCurrentMonth = 0;
+                modalCurrentYear++;
+            }
+            renderModalCalendar();
+            renderModalActivities();
         });
 
         cancelEditBtn.addEventListener('click', () => {
@@ -731,11 +892,11 @@
             monthlyOverviewModal.classList.remove('show');
         });
 
+
         // Initial setup and data fetching
         window.onload = () => {
             events = loadEventsFromLocalStorage();
             renderCalendar();
-            renderSelectedDates();
             renderEventsForSelectedDate();
         };
     </script>
