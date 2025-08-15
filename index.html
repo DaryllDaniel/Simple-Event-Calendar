@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Activity Calendar Prototype</title>
+    <title>Cloud-Synced Activity Calendar</title>
     <!-- Use Tailwind CSS for responsive styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -284,11 +284,16 @@
     </div>
 
     <script type="module">
-        // Import the necessary Firebase SDKs
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
+        // Import the necessary Firebase SDKs from a CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
+
+        // This environment provides Firebase configuration and a unique app ID automatically.
+        // We will use these variables instead of hard-coding them.
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
         let events = {};
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
@@ -354,28 +359,14 @@
         // This function will be called on window.onload
         const initializeFirebase = async () => {
             try {
-                // The provided global variables for Firebase config and auth token
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : null);
-                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-                if (!firebaseConfig || !firebaseConfig.apiKey) {
-                    console.error('Firebase config is missing or invalid.');
-                    showMessage('App configuration error. Please try again.');
-                    return;
-                }
-
+                // Initialize Firebase with the provided environment config
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // Start authentication process
+                // Sign in anonymously and store the UID for data access
                 loadingIndicator.classList.remove('hidden');
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
 
                 // Listen for auth state changes to get the user ID
                 onAuthStateChanged(auth, (user) => {
@@ -387,8 +378,8 @@
                             showMessage('User ID copied to clipboard!');
                         });
                         
-                        // Set up the Firestore collection path using the user ID
-                        userEventsCol = collection(db, `artifacts/${appId}/users/${userId}/userEvents`);
+                        // Set up the Firestore collection path
+                        userEventsCol = collection(db, `artifacts/${appId}/users/${userId}/events`);
                         
                         // Set up the real-time listener for events
                         setupFirestoreListener();
@@ -405,7 +396,7 @@
 
             } catch (error) {
                 console.error('Firebase initialization or authentication failed:', error);
-                showMessage('Failed to connect to the database. Please try again later.');
+                showMessage('Failed to connect to the database. Please check your Firebase config.');
                 loadingIndicator.classList.add('hidden');
             }
         };
@@ -618,7 +609,7 @@
             }
             try {
                 // Use the eventId as the Firestore document ID
-                const eventDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/userEvents`, eventId);
+                const eventDocRef = doc(db, `artifacts/${appId}/users/${userId}/events`, eventId);
                 await deleteDoc(eventDocRef);
                 showMessage('Activity successfully deleted!');
             } catch (error) {
@@ -656,9 +647,6 @@
                 eventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No date selected. Click a date on the calendar to see activities.</li>';
                 return;
             }
-            
-            const displayDate = new Date(selectedDate + 'T00:00:00'); // Append 'T00:00:00' to avoid timezone issues
-            eventsTitle.textContent = `Activities for ${displayDate.toDateString()}`;
             
             const dailyEvents = events[selectedDate] || [];
             if (dailyEvents.length > 0) {
@@ -798,27 +786,13 @@
             const newColor = editEventColor.value;
 
             try {
-                const oldEvent = events[new Date(editEventDate.value).toISOString().split('T')[0]]?.find(event => event.id === eventId);
-
-                // If the date has changed, delete the old document and add a new one
-                if (oldEvent && oldEvent.date !== newDate) {
-                    await deleteDoc(doc(db, `artifacts/${__app_id}/users/${userId}/userEvents`, eventId));
-                    await addDoc(userEventsCol, {
-                        date: newDate,
-                        title: newTitle,
-                        description: newDescription,
-                        color: newColor
-                    });
-                } else {
-                    // Otherwise, just update the existing document
-                    const eventDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/userEvents`, eventId);
-                    await updateDoc(eventDocRef, {
-                        date: newDate,
-                        title: newTitle,
-                        description: newDescription,
-                        color: newColor
-                    });
-                }
+                const eventDocRef = doc(db, `artifacts/${appId}/users/${userId}/events`, eventId);
+                await updateDoc(eventDocRef, {
+                    date: newDate,
+                    title: newTitle,
+                    description: newDescription,
+                    color: newColor
+                });
                 
                 editModal.classList.remove('show');
                 showMessage('Activity updated successfully!');
