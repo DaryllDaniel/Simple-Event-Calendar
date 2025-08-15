@@ -43,14 +43,14 @@
         /* Custom modal styles with fade-in animation */
         .modal {
             position: fixed;
-            z-index: 1000;
+            z-index: 1000; /* Base z-index for all modals */
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
             overflow: auto;
             background-color: rgba(0,0,0,0.4);
-            display: flex; /* This is the key change to center the content */
+            display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
@@ -59,10 +59,30 @@
             pointer-events: none; /* Prevents clicks on hidden modal */
         }
         
+        /* Message Box needs to be on top of all other modals */
+        #messageBox {
+            z-index: 1001;
+        }
+
         .modal.show {
             opacity: 1;
             transform: scale(1);
             pointer-events: auto;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -70,6 +90,14 @@
 
     <!-- All content is wrapped in a container to prevent it from blurring -->
     <div class="page-content w-full max-w-4xl">
+        <!-- User ID Display and loading indicator -->
+        <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-700">Your User ID:</span>
+                <span id="userIdDisplay" class="font-mono text-xs bg-gray-200 text-gray-700 rounded-full px-2 py-1 select-all cursor-copy" title="Click to copy user ID">Loading...</span>
+            </div>
+            <div id="loadingIndicator" class="loader hidden"></div>
+        </div>
 
         <!-- Container for logo and title, now aligned to the left -->
         <div class="flex items-center justify-start mb-6 space-x-4">
@@ -83,15 +111,8 @@
             <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
                 <div class="flex flex-wrap gap-2">
                     <button id="showManageActivitiesModalBtn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
-                        Manage Activities
+                        Add New Activity
                     </button>
-                    <button id="exportBtn" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">
-                        Export Data
-                    </button>
-                    <label for="importFile" class="bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-md hover:bg-gray-300 transition-colors cursor-pointer">
-                        Import Data
-                    </label>
-                    <input type="file" id="importFile" accept=".json" class="hidden">
                     <button id="showMonthlyOverviewBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
                         Show Monthly Activities
                     </button>
@@ -144,18 +165,18 @@
         </div>
     </div>
 
-    <!-- Manage Activities Modal -->
+    <!-- Add New Activities Modal -->
     <div id="manageActivitiesModal" class="modal">
-        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-5xl">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-3xl">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-2xl font-semibold text-gray-800">Manage Activities</h3>
+                <h3 class="text-2xl font-semibold text-gray-800">Add New Activity</h3>
                 <button id="closeManageActivitiesModalBtn" class="text-gray-500 hover:text-gray-700 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
             <div class="md:flex gap-8 w-full">
-                <!-- Left side: Calendar and Delete Activities -->
+                <!-- Left side: Calendar and Date Selection for the new activity -->
                 <div class="flex-1 mb-6 md:mb-0">
                     <!-- Calendar and Date Selection for the new activity -->
                     <div class="mb-6">
@@ -179,20 +200,11 @@
                             <span class="text-gray-500 text-sm">Click a date above to select it.</span>
                         </div>
                     </div>
-            
-                    <!-- Section to Delete Activities -->
-                    <div id="modalActivitiesList" class="mt-8 border-t pt-4">
-                        <h4 class="text-xl font-semibold text-gray-800 mb-2">Delete Activities</h4>
-                        <p class="text-sm text-gray-600 mb-4">Select a date in the calendar above to see and delete activities for that day.</p>
-                        <ul id="modalDeleteList" class="space-y-2">
-                            <!-- Activities for selected modal date will be listed here -->
-                        </ul>
-                    </div>
                 </div>
 
                 <!-- Right side: Add New Activity Form -->
                 <div class="flex-1">
-                    <h4 class="text-xl font-semibold text-gray-800 mb-4">Add New Activity</h4>
+                    <h4 class="text-xl font-semibold text-gray-800 mb-4">Activity Details</h4>
                     <form id="eventForm" class="space-y-4">
                         <div>
                             <label for="eventTitle" class="block text-sm font-medium text-gray-700">Activity:</label>
@@ -251,7 +263,7 @@
         </div>
     </div>
 
-    <!-- Monthly Overview Modal -->
+    <!-- Monthly Overview & Bulk Delete Modal -->
     <div id="monthlyOverviewModal" class="modal">
         <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg">
             <div class="flex justify-between items-center mb-4">
@@ -263,20 +275,29 @@
             <ul id="monthlyEventsList" class="space-y-2 max-h-96 overflow-y-auto">
                 <!-- Monthly events will be displayed here -->
             </ul>
+            <div id="monthlyDeleteContainer" class="mt-4 hidden">
+                <button id="monthlyDeleteSelectedBtn" class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
+                    Delete Selected Activities
+                </button>
+            </div>
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        // Import the necessary Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
         let events = {};
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
         let selectedDate = null; // Single date for the main view
-        let modalSelectedDates = []; // Array for multi-selection within the modal form
+        let modalSelectedDates = []; // Array for multi-selection in the 'add new activity' form
 
         // Modal calendar state
         let modalCurrentMonth = new Date().getMonth();
         let modalCurrentYear = new Date().getFullYear();
-        let modalSelectedDateForDeletion = null; // Single date for showing events in modal
 
         // --- DOM Element References ---
         const calendarGrid = document.getElementById('calendarGrid');
@@ -289,9 +310,9 @@
         const messageText = document.getElementById('messageText');
         const okMessageBtn = document.getElementById('okMessageBtn');
         const cancelMessageBtn = document.getElementById('cancelMessageBtn');
-        const exportBtn = document.getElementById('exportBtn');
-        const importFile = document.getElementById('importFile');
         const showMonthlyOverviewBtn = document.getElementById('showMonthlyOverviewBtn');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const loadingIndicator = document.getElementById('loadingIndicator');
 
         // Manage Activities Modal DOM elements
         const showManageActivitiesModalBtn = document.getElementById('showManageActivitiesModalBtn');
@@ -306,8 +327,6 @@
         const modalPrevMonthBtn = document.getElementById('modalPrevMonthBtn');
         const modalNextMonthBtn = document.getElementById('modalNextMonthBtn');
         const modalSelectedDatesContainer = document.getElementById('modalSelectedDatesContainer');
-        const modalActivitiesList = document.getElementById('modalActivitiesList');
-        const modalDeleteList = document.getElementById('modalDeleteList');
         
         // Edit Modal DOM elements
         const editModal = document.getElementById('editModal');
@@ -319,15 +338,108 @@
         const editEventColor = document.getElementById('editEventColor');
         const cancelEditBtn = document.getElementById('cancelEditBtn');
 
-        // Monthly Overview Modal DOM elements
+        // Monthly Overview & Bulk Delete Modal DOM elements
         const monthlyOverviewModal = document.getElementById('monthlyOverviewModal');
         const monthlyEventsList = document.getElementById('monthlyEventsList');
         const closeMonthlyOverviewBtn = document.getElementById('closeMonthlyOverviewBtn');
+        const monthlyDeleteContainer = document.getElementById('monthlyDeleteContainer');
+        const monthlyDeleteSelectedBtn = document.getElementById('monthlyDeleteSelectedBtn');
 
-        // A simple function to create a unique ID for each event
-        const createUniqueId = () => {
-            return '_' + Math.random().toString(36).substr(2, 9);
+        // --- Firebase Initialization and Auth ---
+        let db;
+        let auth;
+        let userId;
+        let userEventsCol;
+        
+        // This function will be called on window.onload
+        const initializeFirebase = async () => {
+            try {
+                // The provided global variables for Firebase config and auth token
+                // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyASDckqI8uWvpBcZWG-KwBJxTkVgirDLbQ",
+  authDomain: "kcp-event-calendar-prototype.firebaseapp.com",
+  projectId: "kcp-event-calendar-prototype",
+  storageBucket: "kcp-event-calendar-prototype.firebasestorage.app",
+  messagingSenderId: "107061844189",
+  appId: "1:107061844189:web:5b8b85dae35c1d2fa02334",
+  measurementId: "G-57JEV5XFG4"
+};
+
+                if (!firebaseConfig || !firebaseConfig.apiKey) {
+                    console.error('Firebase config is missing or invalid.');
+                    showMessage('App configuration error. Please try again.');
+                    return;
+                }
+
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Start authentication process
+                loadingIndicator.classList.remove('hidden');
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Listen for auth state changes to get the user ID
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = userId;
+                        userIdDisplay.addEventListener('click', () => {
+                            navigator.clipboard.writeText(userId);
+                            showMessage('User ID copied to clipboard!');
+                        });
+                        
+                        // Set up the Firestore collection path using the user ID
+                        userEventsCol = collection(db, `artifacts/${appId}/users/${userId}/userEvents`);
+                        
+                        // Set up the real-time listener for events
+                        setupFirestoreListener();
+                        loadingIndicator.classList.add('hidden');
+                    } else {
+                        // User is signed out
+                        userIdDisplay.textContent = 'Not signed in';
+                        events = {};
+                        renderCalendar();
+                        renderEventsForSelectedDate();
+                        loadingIndicator.classList.add('hidden');
+                    }
+                });
+
+            } catch (error) {
+                console.error('Firebase initialization or authentication failed:', error);
+                showMessage('Failed to connect to the database. Please try again later.');
+                loadingIndicator.classList.add('hidden');
+            }
         };
+
+        // Function to set up the real-time Firestore listener
+        const setupFirestoreListener = () => {
+            onSnapshot(userEventsCol, (snapshot) => {
+                const newEvents = {};
+                snapshot.docs.forEach(doc => {
+                    const eventData = doc.data();
+                    const date = eventData.date;
+                    // Add the Firestore document ID to the event object
+                    const eventWithId = { ...eventData, id: doc.id };
+
+                    if (!newEvents[date]) {
+                        newEvents[date] = [];
+                    }
+                    newEvents[date].push(eventWithId);
+                });
+                events = newEvents;
+                renderCalendar();
+                renderEventsForSelectedDate();
+                console.log('Events updated from Firestore.');
+            });
+        };
+        
+        // --- End of Firebase Setup ---
 
         // Function to show a simple message with an "OK" button
         const showMessage = (text) => {
@@ -368,70 +480,6 @@
         // Event listeners for the custom message box
         okMessageBtn.addEventListener('click', closeMessage);
         cancelMessageBtn.addEventListener('click', closeMessage);
-
-        // --- Local Storage Functions ---
-
-        // Save events to local storage
-        const saveEventsToLocalStorage = () => {
-            localStorage.setItem('calendarEvents', JSON.stringify(events));
-        };
-
-        // Load events from local storage
-        const loadEventsFromLocalStorage = () => {
-            const storedEvents = localStorage.getItem('calendarEvents');
-            return storedEvents ? JSON.parse(storedEvents) : {};
-        };
-        
-        // --- Data Import/Export Functions ---
-        exportBtn.addEventListener('click', () => {
-            const data = localStorage.getItem('calendarEvents');
-            if (!data || data === '{}') {
-                showMessage('No data to export.');
-                return;
-            }
-            const blob = new Blob([data], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `calendar-data-${new Date().toISOString().slice(0, 10)}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showMessage('Data exported successfully!');
-        });
-
-        importFile.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) {
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const importedData = JSON.parse(event.target.result);
-                    // Basic validation to check if the data structure is a valid object
-                    if (typeof importedData === 'object' && importedData !== null) {
-                        showConfirmation('Importing data will overwrite all existing activities. Are you sure?', () => {
-                            events = importedData;
-                            saveEventsToLocalStorage();
-                            renderCalendar();
-                            showMessage('Data imported successfully!');
-                        });
-                    } else {
-                        showMessage('Invalid file format. Please upload a valid JSON file.');
-                    }
-                } catch (error) {
-                    showMessage('Failed to parse JSON file. Please ensure the file is not corrupted.');
-                }
-            };
-            reader.readAsText(file);
-            // Clear the input so the same file can be imported again if needed
-            e.target.value = '';
-        });
-
-        // --- End of Local Storage & Import/Export Functions ---
 
         // Render the main calendar for a given month and year
         const renderCalendar = () => {
@@ -519,11 +567,6 @@
                     dayCell.classList.add('bg-green-300', 'hover:bg-green-400');
                 }
                 
-                // Highlight the date selected for deletion list
-                if (modalSelectedDateForDeletion === fullDate) {
-                    dayCell.classList.add('bg-red-300', 'hover:bg-red-400');
-                }
-
                 dayCell.addEventListener('click', () => {
                     // Check if the date is already selected
                     const dateIndex = modalSelectedDates.indexOf(fullDate);
@@ -534,11 +577,8 @@
                     }
                     modalSelectedDates.sort(); // Keep dates in order
                     
-                    modalSelectedDateForDeletion = fullDate; // Set the date for the deletion list
-
                     renderModalCalendar();
                     renderModalSelectedDates();
-                    renderModalActivities();
                 });
 
                 modalCalendarGrid.appendChild(dayCell);
@@ -577,65 +617,23 @@
             });
         };
 
-        // Render events for the currently selected date in the modal
-        const renderModalActivities = () => {
-            modalDeleteList.innerHTML = '';
-            const dailyEvents = events[modalSelectedDateForDeletion] || [];
-            
-            if (dailyEvents.length > 0) {
-                dailyEvents.forEach(event => {
-                    const listItem = document.createElement('li');
-                    listItem.classList.add('flex', 'items-center', 'justify-between', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200', 'group');
-                    listItem.innerHTML = `
-                        <div class="flex items-center">
-                            <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
-                            <div>
-                                <h4 class="font-semibold text-gray-800">${event.title}</h4>
-                                <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
-                            </div>
-                        </div>
-                        <div class="flex space-x-2 opacity-100 transition-opacity">
-                            <button class="delete-event-btn text-red-500 hover:text-red-700 transition-colors" data-doc-id="${event.id}">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"></path></svg>
-                            </button>
-                        </div>
-                    `;
-                    const deleteButton = listItem.querySelector('.delete-event-btn');
-                    deleteButton.addEventListener('click', () => {
-                        showConfirmation('Are you sure you want to delete this activity?', () => handleDeleteEvent(event.id));
-                    });
-                    modalDeleteList.appendChild(listItem);
-                });
-            } else {
-                modalDeleteList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities on this date to delete.</li>';
+        // Handle deleting an event from Firestore
+        const handleDeleteEvent = async (eventId) => {
+            if (!db || !userId) {
+                showMessage('Database not ready. Please wait a moment.');
+                return;
             }
-        };
-
-        // Handle deleting an event
-        const handleDeleteEvent = (docId) => {
-            let deleted = false;
-            for (const date in events) {
-                const initialLength = events[date].length;
-                events[date] = events[date].filter(event => event.id !== docId);
-                if (events[date].length < initialLength) {
-                    deleted = true;
-                    if (events[date].length === 0) {
-                        delete events[date];
-                    }
-                    break;
-                }
-            }
-
-            if (deleted) {
-                saveEventsToLocalStorage();
-                renderCalendar();
-                renderEventsForSelectedDate();
-                renderModalCalendar(); // Refresh modal calendar
-                renderModalActivities(); // Refresh modal deletion list
+            try {
+                // Use the eventId as the Firestore document ID
+                const eventDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/userEvents`, eventId);
+                await deleteDoc(eventDocRef);
                 showMessage('Activity successfully deleted!');
+            } catch (error) {
+                console.error('Error deleting document:', error);
+                showMessage('Failed to delete activity. Please try again.');
             }
         };
-
+        
         // Handle editing an event
         const handleEditEvent = (eventId) => {
             let eventToEdit = null;
@@ -666,7 +664,7 @@
                 return;
             }
             
-            const displayDate = new Date(selectedDate);
+            const displayDate = new Date(selectedDate + 'T00:00:00'); // Append 'T00:00:00' to avoid timezone issues
             eventsTitle.textContent = `Activities for ${displayDate.toDateString()}`;
             
             const dailyEvents = events[selectedDate] || [];
@@ -697,7 +695,9 @@
                     });
                     const deleteButton = listItem.querySelector('.delete-event-btn');
                     deleteButton.addEventListener('click', () => {
-                        showConfirmation('Are you sure you want to delete this activity?', () => handleDeleteEvent(event.id));
+                        showConfirmation('Are you sure you want to delete this activity?', () => {
+                            handleDeleteEvent(event.id);
+                        });
                     });
                     eventsList.appendChild(listItem);
                 });
@@ -712,7 +712,7 @@
             const allMonthlyEvents = [];
 
             for (const date in events) {
-                const eventDate = new Date(date);
+                const eventDate = new Date(date + 'T00:00:00');
                 if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
                     events[date].forEach(event => {
                         allMonthlyEvents.push({ ...event, date: eventDate });
@@ -723,28 +723,38 @@
             allMonthlyEvents.sort((a, b) => a.date - b.date);
 
             if (allMonthlyEvents.length > 0) {
+                monthlyDeleteContainer.classList.remove('hidden');
                 allMonthlyEvents.forEach(event => {
                     const listItem = document.createElement('li');
                     listItem.classList.add('flex', 'items-center', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
                     listItem.innerHTML = `
-                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
-                        <div>
-                            <p class="text-xs text-gray-500 mb-1">${event.date.toDateString()}</p>
-                            <h4 class="font-semibold text-gray-800">${event.title}</h4>
-                            <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
+                        <div class="flex items-center w-full">
+                            <input type="checkbox" data-event-id="${event.id}" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded mr-3">
+                            <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">${event.date.toDateString()}</p>
+                                <h4 class="font-semibold text-gray-800">${event.title}</h4>
+                                <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
+                            </div>
                         </div>
                     `;
                     monthlyEventsList.appendChild(listItem);
                 });
             } else {
+                monthlyDeleteContainer.classList.add('hidden');
                 monthlyEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities for this month.</li>';
             }
             monthlyOverviewModal.classList.add('show');
         };
 
-        // Handle form submission for new events
-        eventForm.addEventListener('submit', (e) => {
+        // Handle form submission for new events (add to Firestore)
+        eventForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!db || !userId) {
+                showMessage('Database not ready. Please wait a moment.');
+                return;
+            }
+
             const title = eventTitleInput.value;
             const description = eventDescriptionInput.value;
             const color = eventColorInput.value;
@@ -754,83 +764,74 @@
                 return;
             }
             
-            modalSelectedDates.forEach(date => {
-                const newEvent = {
-                    id: createUniqueId(),
-                    date,
-                    title,
-                    description,
-                    color
-                };
-
-                if (!events[date]) {
-                    events[date] = [];
+            try {
+                // Add an event for each selected date to Firestore
+                for (const date of modalSelectedDates) {
+                    const newEvent = {
+                        date,
+                        title,
+                        description,
+                        color
+                    };
+                    await addDoc(userEventsCol, newEvent);
                 }
-                events[date].push(newEvent);
-            });
-
-            saveEventsToLocalStorage();
-            renderCalendar();
-            
-            // Clear form inputs and selected dates, then close modal
-            eventTitleInput.value = '';
-            eventDescriptionInput.value = '';
-            modalSelectedDates = [];
-            modalSelectedDateForDeletion = null;
-            renderModalSelectedDates();
-            renderModalActivities();
-            renderEventsForSelectedDate();
-            manageActivitiesModal.classList.remove('show');
+                
+                // Clear form inputs and selected dates, then close modal
+                eventTitleInput.value = '';
+                eventDescriptionInput.value = '';
+                modalSelectedDates = [];
+                renderModalCalendar();
+                renderModalSelectedDates();
+                manageActivitiesModal.classList.remove('show');
+                showMessage('Activities added successfully!');
+            } catch (error) {
+                console.error('Error adding document: ', error);
+                showMessage('Failed to add activities. Please try again.');
+            }
         });
 
-        // Handle form submission for editing events
-        editForm.addEventListener('submit', (e) => {
+        // Handle form submission for editing events (update Firestore)
+        editForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!db || !userId) {
+                showMessage('Database not ready. Please wait a moment.');
+                return;
+            }
+
             const eventId = editEventId.value;
             const newDate = editEventDate.value;
             const newTitle = editEventTitle.value;
             const newDescription = editEventDescription.value;
             const newColor = editEventColor.value;
 
-            let updated = false;
-            for (const date in events) {
-                if (date !== newDate) {
-                    events[date] = events[date].filter(event => {
-                        if (event.id === eventId) {
-                            event.date = newDate;
-                            event.title = newTitle;
-                            event.description = newDescription;
-                            event.color = newColor;
-                            
-                            if (!events[newDate]) {
-                                events[newDate] = [];
-                            }
-                            events[newDate].push(event);
-                            updated = true;
-                            return false;
-                        }
-                        return true;
-                    });
-                    if (events[date].length === 0) {
-                        delete events[date];
-                    }
-                } else {
-                    const eventToUpdate = events[date].find(event => event.id === eventId);
-                    if (eventToUpdate) {
-                        eventToUpdate.title = newTitle;
-                        eventToUpdate.description = newDescription;
-                        eventToUpdate.color = newColor;
-                        updated = true;
-                    }
-                }
-            }
+            try {
+                const oldEvent = events[new Date(editEventDate.value).toISOString().split('T')[0]]?.find(event => event.id === eventId);
 
-            if (updated) {
-                saveEventsToLocalStorage();
-                renderCalendar();
-                renderEventsForSelectedDate();
+                // If the date has changed, delete the old document and add a new one
+                if (oldEvent && oldEvent.date !== newDate) {
+                    await deleteDoc(doc(db, `artifacts/${__app_id}/users/${userId}/userEvents`, eventId));
+                    await addDoc(userEventsCol, {
+                        date: newDate,
+                        title: newTitle,
+                        description: newDescription,
+                        color: newColor
+                    });
+                } else {
+                    // Otherwise, just update the existing document
+                    const eventDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/userEvents`, eventId);
+                    await updateDoc(eventDocRef, {
+                        date: newDate,
+                        title: newTitle,
+                        description: newDescription,
+                        color: newColor
+                    });
+                }
+                
                 editModal.classList.remove('show');
                 showMessage('Activity updated successfully!');
+            } catch (error) {
+                console.error('Error updating document:', error);
+                showMessage('Failed to update activity. Please try again.');
             }
         });
 
@@ -861,10 +862,8 @@
             modalCurrentMonth = new Date().getMonth();
             modalCurrentYear = new Date().getFullYear();
             modalSelectedDates = [];
-            modalSelectedDateForDeletion = null;
             renderModalCalendar();
             renderModalSelectedDates();
-            renderModalActivities();
         });
 
         closeManageActivitiesModalBtn.addEventListener('click', () => {
@@ -878,7 +877,6 @@
                 modalCurrentYear--;
             }
             renderModalCalendar();
-            renderModalActivities();
         });
 
         modalNextMonthBtn.addEventListener('click', () => {
@@ -888,24 +886,39 @@
                 modalCurrentYear++;
             }
             renderModalCalendar();
-            renderModalActivities();
         });
 
         cancelEditBtn.addEventListener('click', () => {
             editModal.classList.remove('show');
         });
 
+        // Function to handle bulk deletion from the monthly dashboard
+        const handleMonthlyBulkDelete = () => {
+            const checkboxes = monthlyEventsList.querySelectorAll('input[type="checkbox"]:checked');
+            if (checkboxes.length === 0) {
+                showMessage("Please select at least one activity to delete.");
+                return;
+            }
+            
+            showConfirmation(`Are you sure you want to delete ${checkboxes.length} selected activities?`, () => {
+                const eventIdsToDelete = Array.from(checkboxes).map(cb => cb.dataset.eventId);
+                // Trigger the delete for each selected event
+                eventIdsToDelete.forEach(id => handleDeleteEvent(id));
+                showMessage(`${eventIdsToDelete.length} activities successfully deleted!`);
+                monthlyOverviewModal.classList.remove('show');
+            });
+        };
+
         showMonthlyOverviewBtn.addEventListener('click', renderMonthlyOverviewModal);
         closeMonthlyOverviewBtn.addEventListener('click', () => {
             monthlyOverviewModal.classList.remove('show');
         });
+        monthlyDeleteSelectedBtn.addEventListener('click', handleMonthlyBulkDelete);
 
 
         // Initial setup and data fetching
         window.onload = () => {
-            events = loadEventsFromLocalStorage();
-            renderCalendar();
-            renderEventsForSelectedDate();
+            initializeFirebase();
         };
     </script>
 </body>
