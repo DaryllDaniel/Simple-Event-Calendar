@@ -289,10 +289,17 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
         import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
 
-        // This environment provides Firebase configuration and a unique app ID automatically.
-        // We will use these variables instead of hard-coding them.
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // Firebase configuration for your project (hard-coded for GitHub publishing)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCRT5OxfwUD25pS6igy8v3xYlaGmMXK_0",
+            authDomain: "event-calendar-prototype-b11b6.firebaseapp.com",
+            projectId: "event-calendar-prototype-b11b6",
+            storageBucket: "event-calendar-prototype-b11b6.firebasestorage.app",
+            messagingSenderId: "532386656284",
+            appId: "1:532386656284:web:fd4533fb0f54b198752fd9",
+            measurementId: "G-J10NDCD212"
+        };
+        const appId = "1:532386656284:web:fd4533fb0f54b198752fd9";
 
         let events = {};
         let currentMonth = new Date().getMonth();
