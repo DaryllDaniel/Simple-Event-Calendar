@@ -3,926 +3,434 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Activity Calendar Prototype</title>
-    <!-- Use Tailwind CSS for responsive styling -->
+    <title>Firestore Calendar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Blurred background overlay */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('https://i.ytimg.com/vi/xEp4i60pCxQ/maxresdefault.jpg');
-            background-size: cover;
-            background-position: center;
-            filter: blur(8px);
-            z-index: -1; /* Place the background behind the content */
-        }
-        
-        /* Ensure main content is not blurred */
-        .page-content {
-            z-index: 2;
-            position: relative;
-        }
-
-        .day-cell.has-events {
-            color: #1f2937; /* Default text color for visibility */
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Add text shadow for readability on any color */
-            transition: background-color 0.2s, background 0.2s;
-        }
-
-        /* Custom modal styles with fade-in animation */
-        .modal {
-            position: fixed;
-            z-index: 1000; /* Base z-index for all modals */
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
+            background-color: #f3f4f6;
             display: flex;
-            align-items: center;
             justify-content: center;
-            opacity: 0;
-            transform: scale(0.95);
-            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-            pointer-events: none; /* Prevents clicks on hidden modal */
+            align-items: center;
+            min-height: 100vh;
         }
-        
-        /* Message Box needs to be on top of all other modals */
-        #messageBox {
-            z-index: 1001;
+        .calendar-container {
+            width: 100%;
+            max-width: 800px;
+            padding: 1.5rem;
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            color: #333;
         }
-
-        .modal.show {
-            opacity: 1;
-            transform: scale(1);
-            pointer-events: auto;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
         }
-
-        /* Loading Spinner */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
+        .header h2 {
+            font-size: 1.5rem;
+            font-weight: bold;
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .header button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            background-color: #f3f4f6;
+            transition: background-color 0.2s;
+        }
+        .header button:hover {
+            background-color: #e5e7eb;
+        }
+        .days-of-week {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #6b7280;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+        .day {
+            min-height: 100px;
+            padding: 0.5rem;
+            border-radius: 0.75rem;
+            background-color: #f9fafb;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .day:hover {
+            background-color: #eff6ff;
+        }
+        .day.current-month {
+            color: #333;
+        }
+        .day.other-month {
+            color: #a1a1aa;
+            background-color: #f4f4f5;
+        }
+        .day-number {
+            font-weight: bold;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+        .events-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+        .event-item {
+            font-size: 0.75rem;
+            color: #4b5563;
+            background-color: #d1fae5;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.5rem;
+            margin-top: 0.25rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .event-item:hover {
+            background-color: #a7f3d0;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        .modal-close-btn:hover {
+            color: #1f2937;
+        }
+        #userIdDisplay {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-align: center;
+            margin-top: 1rem;
         }
     </style>
 </head>
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
-
-    <!-- All content is wrapped in a container to prevent it from blurring -->
-    <div class="page-content w-full max-w-4xl">
-        <!-- User ID Display and loading indicator -->
-        <div class="flex justify-between items-center mb-4">
-            <div class="flex items-center space-x-2">
-                <span class="text-sm text-gray-700">Your User ID:</span>
-                <span id="userIdDisplay" class="font-mono text-xs bg-gray-200 text-gray-700 rounded-full px-2 py-1 select-all cursor-copy" title="Click to copy user ID">Loading...</span>
-            </div>
-            <div id="loadingIndicator" class="loader hidden"></div>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="calendar-container">
+        <div class="header">
+            <button id="prevBtn">&lt;</button>
+            <h2 id="monthYear"></h2>
+            <button id="nextBtn">&gt;</button>
         </div>
-
-        <!-- Container for logo and title, now aligned to the left -->
-        <div class="flex items-center justify-start mb-6 space-x-4">
-            <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="KCP Logo" class="h-20 rounded-xl shadow-lg">
-            <h1 class="text-3xl font-bold text-gray-800">Activity Calendar Prototype</h1>
+        <div class="days-of-week">
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
         </div>
+        <div id="calendarGrid" class="calendar-grid"></div>
+        <div id="userIdDisplay" class="text-xs text-gray-500 mt-4 text-center"></div>
+    </div>
 
-        <!-- Main Application Container with reduced opacity background only -->
-        <div class="p-6 rounded-xl shadow-lg w-full" style="background-color: rgba(255, 255, 255, 0.7);">
-            <!-- Header with controls and new buttons -->
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
-                <div class="flex flex-wrap gap-2">
-                    <button id="showManageActivitiesModalBtn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
-                        Add New Activity
-                    </button>
-                    <button id="showMonthlyOverviewBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                        Show Monthly Activities
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Calendar and Event Form Container -->
-            <div class="md:flex gap-8">
-                <!-- Calendar View -->
-                <div class="flex-1 mb-6 md:mb-0">
-                    <div class="flex justify-between items-center mb-4">
-                        <button id="prevMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
-                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                        </button>
-                        <h2 id="currentMonthYear" class="text-xl font-semibold text-gray-700"></h2>
-                        <button id="nextMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
-                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-500 mb-2">
-                        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                    </div>
-                    <div id="calendarGrid" class="grid grid-cols-7 gap-1">
-                        <!-- Calendar days will be generated here -->
-                    </div>
-                </div>
-
-                <!-- Event Input and Display -->
-                <div class="flex-1 bg-gray-50 p-4 rounded-xl shadow-inner">
-                    <!-- Events for first selected date -->
-                    <div class="mt-6">
-                        <h3 id="eventsTitle" class="text-xl font-semibold text-gray-800 mb-2">Activities for Selected Date</h3>
-                        <ul id="eventsList" class="space-y-2">
-                            <!-- Events will be displayed here -->
-                        </ul>
-                    </div>
-                </div>
-            </div>
+    <!-- Modal for adding events -->
+    <div id="eventModal" class="modal-overlay">
+        <div class="modal-content relative p-6 bg-white rounded-2xl shadow-xl">
+            <span class="modal-close-btn absolute top-4 right-6 text-2xl text-gray-400 cursor-pointer hover:text-gray-600">&times;</span>
+            <h3 class="text-xl font-bold mb-4 text-gray-800">Add an Event</h3>
+            <p id="modalDate" class="text-sm text-gray-500 mb-4"></p>
+            <input type="text" id="eventTitle" placeholder="Event title..." class="w-full p-3 mb-4 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button id="saveEventBtn" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition-colors">Save Event</button>
         </div>
     </div>
 
-    <!-- Custom Message Box (in place of alert()) -->
-    <div id="messageBox" class="modal">
-        <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full text-center">
-            <p id="messageText" class="text-gray-800 mb-4"></p>
-            <div id="messageButtons" class="flex justify-center space-x-4">
-                <button id="okMessageBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">OK</button>
-                <button id="cancelMessageBtn" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add New Activities Modal -->
-    <div id="manageActivitiesModal" class="modal">
-        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-3xl">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-2xl font-semibold text-gray-800">Add New Activity</h3>
-                <button id="closeManageActivitiesModalBtn" class="text-gray-500 hover:text-gray-700 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            
-            <div class="md:flex gap-8 w-full">
-                <!-- Left side: Calendar and Date Selection for the new activity -->
-                <div class="flex-1 mb-6 md:mb-0">
-                    <!-- Calendar and Date Selection for the new activity -->
-                    <div class="mb-6">
-                        <h4 class="text-xl font-semibold text-gray-800 mb-2">Select Dates</h4>
-                        <div class="flex justify-between items-center mb-4">
-                            <button id="modalPrevMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
-                                <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                            </button>
-                            <h2 id="modalCurrentMonthYear" class="text-lg font-semibold text-gray-700"></h2>
-                            <button id="modalNextMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
-                                <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            </button>
-                        </div>
-                        <div class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-500 mb-2">
-                            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                        </div>
-                        <div id="modalCalendarGrid" class="grid grid-cols-7 gap-1">
-                            <!-- Modal calendar days will be generated here -->
-                        </div>
-                        <div id="modalSelectedDatesContainer" class="mt-4 flex flex-wrap gap-2 p-2 min-h-[40px] rounded-md border-gray-300 shadow-sm bg-gray-50">
-                            <span class="text-gray-500 text-sm">Click a date above to select it.</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right side: Add New Activity Form -->
-                <div class="flex-1">
-                    <h4 class="text-xl font-semibold text-gray-800 mb-4">Activity Details</h4>
-                    <form id="eventForm" class="space-y-4">
-                        <div>
-                            <label for="eventTitle" class="block text-sm font-medium text-gray-700">Activity:</label>
-                            <input type="text" id="eventTitle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                        </div>
-                        <div>
-                            <label for="eventDescription" class="block text-sm font-medium text-gray-700">Description:</label>
-                            <textarea id="eventDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="flex-1">
-                                <label for="eventColor" class="block text-sm font-medium text-gray-700">Color:</label>
-                                <input type="color" id="eventColor" value="#3b82f6" class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer">
-                            </div>
-                            <button type="submit" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition-colors self-end">
-                                Add Activity
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Event Modal -->
-    <div id="editModal" class="modal">
-        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-            <h3 class="text-2xl font-semibold text-gray-800 mb-4">Edit Activity</h3>
-            <form id="editForm" class="space-y-4">
-                <input type="hidden" id="editEventId">
-                <div>
-                    <label for="editEventDate" class="block text-sm font-medium text-gray-700">Date:</label>
-                    <input type="date" id="editEventDate" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                </div>
-                <div>
-                    <label for="editEventTitle" class="block text-sm font-medium text-gray-700">Activity:</label>
-                    <input type="text" id="editEventTitle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2">
-                </div>
-                <div>
-                    <label for="editEventDescription" class="block text-sm font-medium text-gray-700">Description:</label>
-                    <textarea id="editEventDescription" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"></textarea>
-                </div>
-                <div>
-                    <label for="editEventColor" class="block text-sm font-medium text-gray-700">Color:</label>
-                    <input type="color" id="editEventColor" class="mt-1 block w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 cursor-pointer">
-                </div>
-                <div class="flex justify-between items-center space-x-4">
-                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                        Save Changes
-                    </button>
-                    <button type="button" id="cancelEditBtn" class="w-full bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Monthly Overview & Bulk Delete Modal -->
-    <div id="monthlyOverviewModal" class="modal">
-        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-2xl font-semibold text-gray-800">Monthly Activities Dashboard</h3>
-                <button id="closeMonthlyOverviewBtn" class="text-gray-500 hover:text-gray-700 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <ul id="monthlyEventsList" class="space-y-2 max-h-96 overflow-y-auto">
-                <!-- Monthly events will be displayed here -->
-            </ul>
-            <div id="monthlyDeleteContainer" class="mt-4 hidden">
-                <button id="monthlyDeleteSelectedBtn" class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-md hover:bg-red-700 transition-colors">
-                    Delete Selected Activities
-                </button>
-            </div>
-        </div>
-    </div>
-
+    <!-- Firebase SDK Scripts -->
     <script type="module">
-        // Import the necessary Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        let events = {};
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase configuration from the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // UI elements
+        const calendarGrid = document.getElementById('calendarGrid');
+        const monthYearEl = document.getElementById('monthYear');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const eventModal = document.getElementById('eventModal');
+        const modalDate = document.getElementById('modalDate');
+        const eventTitleInput = document.getElementById('eventTitle');
+        const saveEventBtn = document.getElementById('saveEventBtn');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const modalCloseBtn = eventModal.querySelector('.modal-close-btn');
+
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
-        let selectedDate = null; // Single date for the main view
-        let modalSelectedDates = []; // Array for multi-selection in the 'add new activity' form
+        let selectedDate = null;
+        let events = {};
+        let userId = null;
 
-        // Modal calendar state
-        let modalCurrentMonth = new Date().getMonth();
-        let modalCurrentYear = new Date().getFullYear();
-
-        // --- DOM Element References ---
-        const calendarGrid = document.getElementById('calendarGrid');
-        const currentMonthYear = document.getElementById('currentMonthYear');
-        const prevMonthBtn = document.getElementById('prevMonthBtn');
-        const nextMonthBtn = document.getElementById('nextMonthBtn');
-        const eventsList = document.getElementById('eventsList');
-        const eventsTitle = document.getElementById('eventsTitle');
-        const messageBox = document.getElementById('messageBox');
-        const messageText = document.getElementById('messageText');
-        const okMessageBtn = document.getElementById('okMessageBtn');
-        const cancelMessageBtn = document.getElementById('cancelMessageBtn');
-        const showMonthlyOverviewBtn = document.getElementById('showMonthlyOverviewBtn');
-        const userIdDisplay = document.getElementById('userIdDisplay');
-        const loadingIndicator = document.getElementById('loadingIndicator');
-
-        // Manage Activities Modal DOM elements
-        const showManageActivitiesModalBtn = document.getElementById('showManageActivitiesModalBtn');
-        const manageActivitiesModal = document.getElementById('manageActivitiesModal');
-        const closeManageActivitiesModalBtn = document.getElementById('closeManageActivitiesModalBtn');
-        const eventForm = document.getElementById('eventForm');
-        const eventTitleInput = document.getElementById('eventTitle');
-        const eventDescriptionInput = document.getElementById('eventDescription');
-        const eventColorInput = document.getElementById('eventColor');
-        const modalCalendarGrid = document.getElementById('modalCalendarGrid');
-        const modalCurrentMonthYear = document.getElementById('modalCurrentMonthYear');
-        const modalPrevMonthBtn = document.getElementById('modalPrevMonthBtn');
-        const modalNextMonthBtn = document.getElementById('modalNextMonthBtn');
-        const modalSelectedDatesContainer = document.getElementById('modalSelectedDatesContainer');
-        
-        // Edit Modal DOM elements
-        const editModal = document.getElementById('editModal');
-        const editForm = document.getElementById('editForm');
-        const editEventId = document.getElementById('editEventId');
-        const editEventDate = document.getElementById('editEventDate');
-        const editEventTitle = document.getElementById('editEventTitle');
-        const editEventDescription = document.getElementById('editEventDescription');
-        const editEventColor = document.getElementById('editEventColor');
-        const cancelEditBtn = document.getElementById('cancelEditBtn');
-
-        // Monthly Overview & Bulk Delete Modal DOM elements
-        const monthlyOverviewModal = document.getElementById('monthlyOverviewModal');
-        const monthlyEventsList = document.getElementById('monthlyEventsList');
-        const closeMonthlyOverviewBtn = document.getElementById('closeMonthlyOverviewBtn');
-        const monthlyDeleteContainer = document.getElementById('monthlyDeleteContainer');
-        const monthlyDeleteSelectedBtn = document.getElementById('monthlyDeleteSelectedBtn');
-
-        // --- Firebase Initialization and Auth ---
-        let db;
-        let auth;
-        let userId;
-        let userEventsCol;
-        
-        // This function will be called on window.onload
-        const initializeFirebase = async () => {
-            try {
-                // The provided global variables for Firebase config and auth token
-                const firebaseConfig = {
-                  apiKey: "AIzaSyASDckqI8uWvpBcZWG-KwBJxTkVgirDLbQ",
-                  authDomain: "kcp-event-calendar-prototype.firebaseapp.com",
-                  projectId: "kcp-event-calendar-prototype",
-                  storageBucket: "kcp-event-calendar-prototype.firebasestorage.app",
-                  messagingSenderId: "107061844189",
-                  appId: "1:107061844189:web:5b8b85dae35c1d2fa02334",
-                  measurementId: "G-57JEV5XFG4"
-                };
-
-                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-                if (!firebaseConfig || !firebaseConfig.apiKey) {
-                    console.error('Firebase config is missing or invalid.');
-                    showMessage('App configuration error. Please try again.');
-                    return;
-                }
-
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-
-                // Start authentication process
-                loadingIndicator.classList.remove('hidden');
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-                // Listen for auth state changes to get the user ID
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        userIdDisplay.textContent = userId;
-                        userIdDisplay.addEventListener('click', () => {
-                            navigator.clipboard.writeText(userId);
-                            showMessage('User ID copied to clipboard!');
-                        });
-                        
-                        // Set up the Firestore collection path using the user ID
-                        userEventsCol = collection(db, `artifacts/${appId}/users/${userId}/userEvents`);
-                        
-                        // Set up the real-time listener for events
-                        setupFirestoreListener();
-                        loadingIndicator.classList.add('hidden');
-                    } else {
-                        // User is signed out
-                        userIdDisplay.textContent = 'Not signed in';
-                        events = {};
-                        renderCalendar();
-                        renderEventsForSelectedDate();
-                        loadingIndicator.classList.add('hidden');
-                    }
-                });
-
-            } catch (error) {
-                console.error('Firebase initialization or authentication failed:', error);
-                showMessage('Failed to connect to the database. Please try again later.');
-                loadingIndicator.classList.add('hidden');
+        /**
+         * Converts a Firestore timestamp object to a JavaScript Date object.
+         * @param {object} timestamp - The Firestore timestamp object.
+         * @returns {Date} The converted Date object.
+         */
+        const firebaseTimestampToDate = (timestamp) => {
+            if (timestamp && timestamp.seconds) {
+                return new Date(timestamp.seconds * 1000);
             }
+            return null;
         };
 
-        // Function to set up the real-time Firestore listener
-        const setupFirestoreListener = () => {
-            onSnapshot(userEventsCol, (snapshot) => {
-                const newEvents = {};
-                snapshot.docs.forEach(doc => {
-                    const eventData = doc.data();
-                    const date = eventData.date;
-                    // Add the Firestore document ID to the event object
-                    const eventWithId = { ...eventData, id: doc.id };
-
-                    if (!newEvents[date]) {
-                        newEvents[date] = [];
-                    }
-                    newEvents[date].push(eventWithId);
-                });
-                events = newEvents;
-                renderCalendar();
-                renderEventsForSelectedDate();
-                console.log('Events updated from Firestore.');
-            });
-        };
-        
-        // --- End of Firebase Setup ---
-
-        // Function to show a simple message with an "OK" button
-        const showMessage = (text) => {
-            messageText.textContent = text;
-            okMessageBtn.classList.remove('hidden');
-            cancelMessageBtn.classList.add('hidden');
-            messageBox.classList.add('show');
-        };
-
-        // Function to show a confirmation prompt
-        const showConfirmation = (text, onConfirmCallback) => {
-            messageText.textContent = text;
-            okMessageBtn.classList.remove('hidden');
-            cancelMessageBtn.classList.remove('hidden');
-            messageBox.classList.add('show');
-
-            const handleConfirm = () => {
-                onConfirmCallback();
-                closeMessage();
-                okMessageBtn.removeEventListener('click', handleConfirm);
-                cancelMessageBtn.removeEventListener('click', handleCancel);
-            };
-            const handleCancel = () => {
-                closeMessage();
-                cancelMessageBtn.removeEventListener('click', handleCancel);
-                okMessageBtn.removeEventListener('click', handleConfirm);
-            };
-
-            okMessageBtn.addEventListener('click', handleConfirm);
-            cancelMessageBtn.addEventListener('click', handleCancel);
-        };
-
-        // Function to close the custom message box
-        const closeMessage = () => {
-            messageBox.classList.remove('show');
-        };
-        
-        // Event listeners for the custom message box
-        okMessageBtn.addEventListener('click', closeMessage);
-        cancelMessageBtn.addEventListener('click', closeMessage);
-
-        // Render the main calendar for a given month and year
+        /**
+         * Renders the calendar grid for the current month.
+         */
         const renderCalendar = () => {
             calendarGrid.innerHTML = '';
-            const firstDay = new Date(currentYear, currentMonth, 1);
-            const lastDay = new Date(currentYear, currentMonth + 1, 0);
-            const numDays = lastDay.getDate();
-            const startDayOfWeek = firstDay.getDay();
+            const date = new Date(currentYear, currentMonth);
+            monthYearEl.textContent = `${date.toLocaleString('default', { month: 'long' })} ${currentYear}`;
 
-            currentMonthYear.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+            const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
 
-            // Add empty cells for days before the first of the month
-            for (let i = 0; i < startDayOfWeek; i++) {
-                const emptyCell = document.createElement('div');
-                calendarGrid.appendChild(emptyCell);
+            // Add leading blank days from previous month
+            for (let i = firstDayOfMonth; i > 0; i--) {
+                const dayEl = document.createElement('div');
+                dayEl.classList.add('day', 'other-month');
+                dayEl.innerHTML = `<span class="day-number">${daysInPrevMonth - i + 1}</span>`;
+                calendarGrid.appendChild(dayEl);
             }
 
-            // Add day cells
-            for (let day = 1; day <= numDays; day++) {
-                const dayCell = document.createElement('div');
-                dayCell.classList.add('day-cell', 'p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'hover:bg-gray-100', 'transition-colors', 'relative', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
-                dayCell.textContent = day;
-                dayCell.tabIndex = 0; // Make the cell focusable
-                const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                
-                if (events[fullDate] && events[fullDate].length > 0) {
-                    dayCell.classList.add('has-events');
-                    const eventColors = events[fullDate].map(event => event.color);
-                    
-                    if (eventColors.length === 1) {
-                        dayCell.style.background = eventColors[0];
-                    } else {
-                        let gradientString = 'linear-gradient(to right';
-                        const numColors = eventColors.length;
-                        eventColors.forEach((color, index) => {
-                            const start = (index / numColors) * 100;
-                            const end = ((index + 1) / numColors) * 100;
-                            gradientString += `, ${color} ${start}%, ${color} ${end}%`;
-                        });
-                        gradientString += ')';
-                        dayCell.style.background = gradientString;
-                    }
+            // Add days for the current month
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.classList.add('day', 'current-month');
+                dayEl.innerHTML = `<span class="day-number">${i}</span><ul class="events-list"></ul>`;
+                dayEl.dataset.date = `${currentYear}-${currentMonth + 1}-${i}`;
+
+                // Add events if they exist for this day
+                const dateKey = `${currentYear}-${currentMonth + 1}-${i}`;
+                if (events[dateKey]) {
+                    const eventsList = dayEl.querySelector('.events-list');
+                    // Sort events by title before rendering
+                    const sortedEvents = events[dateKey].sort((a, b) => a.title.localeCompare(b.title));
+                    sortedEvents.forEach(event => {
+                        const eventItem = document.createElement('li');
+                        eventItem.classList.add('event-item');
+                        eventItem.textContent = event.title;
+                        eventsList.appendChild(eventItem);
+                    });
                 }
 
-                if (selectedDate === fullDate) {
-                    dayCell.classList.add('bg-blue-300', 'hover:bg-blue-400');
-                    dayCell.style.background = 'rgba(191, 219, 254, 0.5)';
-                    dayCell.classList.add('hover:bg-opacity-80');
-                }
-
-                // Handle click to set a single selected date
-                dayCell.addEventListener('click', () => {
-                    selectedDate = fullDate;
-                    renderCalendar();
-                    renderEventsForSelectedDate();
+                dayEl.addEventListener('click', () => {
+                    selectedDate = dayEl.dataset.date;
+                    modalDate.textContent = `Adding event for: ${selectedDate}`;
+                    eventTitleInput.value = '';
+                    eventModal.style.display = 'flex';
                 });
 
-                calendarGrid.appendChild(dayCell);
+                calendarGrid.appendChild(dayEl);
+            }
+
+            // Add trailing blank days for the next month
+            const totalDaysDisplayed = firstDayOfMonth + daysInMonth;
+            const remainingDays = 42 - totalDaysDisplayed; // Always display 6 rows (42 days)
+            for (let i = 1; i <= remainingDays; i++) {
+                const dayEl = document.createElement('div');
+                dayEl.classList.add('day', 'other-month');
+                dayEl.innerHTML = `<span class="day-number">${i}</span>`;
+                calendarGrid.appendChild(dayEl);
             }
         };
 
-        // Render the mini-calendar inside the modal
-        const renderModalCalendar = () => {
-            modalCalendarGrid.innerHTML = '';
-            const firstDay = new Date(modalCurrentYear, modalCurrentMonth, 1);
-            const lastDay = new Date(modalCurrentYear, modalCurrentMonth + 1, 0);
-            const numDays = lastDay.getDate();
-            const startDayOfWeek = firstDay.getDay();
-
-            modalCurrentMonthYear.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${modalCurrentYear}`;
-
-            for (let i = 0; i < startDayOfWeek; i++) {
-                const emptyCell = document.createElement('div');
-                modalCalendarGrid.appendChild(emptyCell);
-            }
-
-            for (let day = 1; day <= numDays; day++) {
-                const dayCell = document.createElement('div');
-                dayCell.classList.add('day-cell', 'p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'hover:bg-gray-100', 'transition-colors');
-                dayCell.textContent = day;
-                const fullDate = `${modalCurrentYear}-${String(modalCurrentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                
-                // Highlight dates selected for the new activity
-                if (modalSelectedDates.includes(fullDate)) {
-                    dayCell.classList.add('bg-green-300', 'hover:bg-green-400');
-                }
-                
-                dayCell.addEventListener('click', () => {
-                    // Check if the date is already selected
-                    const dateIndex = modalSelectedDates.indexOf(fullDate);
-                    if (dateIndex > -1) {
-                        modalSelectedDates.splice(dateIndex, 1); // Remove it
-                    } else {
-                        modalSelectedDates.push(fullDate); // Add it
-                    }
-                    modalSelectedDates.sort(); // Keep dates in order
-                    
-                    renderModalCalendar();
-                    renderModalSelectedDates();
-                });
-
-                modalCalendarGrid.appendChild(dayCell);
-            }
-        };
-
-        // Render the list of selected dates in the modal's form
-        const renderModalSelectedDates = () => {
-            modalSelectedDatesContainer.innerHTML = '';
-            if (modalSelectedDates.length === 0) {
-                modalSelectedDatesContainer.innerHTML = '<span class="text-gray-500 text-sm">Click a date above to select it.</span>';
+        /**
+         * Loads events from Firestore and updates the calendar.
+         */
+        const loadEvents = async () => {
+            if (!userId) {
+                console.error("User not authenticated, cannot load events.");
                 return;
             }
 
-            modalSelectedDates.forEach(date => {
-                const datePill = document.createElement('span');
-                datePill.classList.add('inline-flex', 'items-center', 'px-2.5', 'py-0.5', 'rounded-full', 'text-xs', 'font-medium', 'bg-blue-100', 'text-blue-800');
-                datePill.innerHTML = `
-                    ${date}
-                    <button type="button" class="flex-shrink-0 ml-1.5 inline-flex text-blue-400 hover:text-blue-500 focus:outline-none focus:text-blue-500" data-date="${date}">
-                        <span class="sr-only">Remove date</span>
-                        <svg class="h-2 w-2" stroke="currentColor" fill="none" viewBox="0 0 8 8">
-                            <path stroke-linecap="round" stroke-width="1.5" d="M1 1l6 6m0-6L1 7" />
-                        </svg>
-                    </button>
-                `;
-                modalSelectedDatesContainer.appendChild(datePill);
-                
-                // Add event listener to the remove button
-                datePill.querySelector('button').addEventListener('click', (e) => {
-                    const dateToRemove = e.currentTarget.dataset.date;
-                    modalSelectedDates = modalSelectedDates.filter(d => d !== dateToRemove);
-                    renderModalCalendar();
-                    renderModalSelectedDates();
+            // Set up a real-time listener using onSnapshot
+            const userEventsCollection = collection(db, `artifacts/${appId}/users/${userId}/userEvents`);
+            const q = query(userEventsCollection);
+
+            // Using onSnapshot for real-time updates
+            onSnapshot(q, (snapshot) => {
+                const updatedEvents = {};
+                snapshot.forEach((doc) => {
+                    const eventData = doc.data();
+                    const eventDate = firebaseTimestampToDate(eventData.date);
+                    if (eventDate) {
+                        const dateKey = `${eventDate.getFullYear()}-${eventDate.getMonth() + 1}-${eventDate.getDate()}`;
+                        if (!updatedEvents[dateKey]) {
+                            updatedEvents[dateKey] = [];
+                        }
+                        updatedEvents[dateKey].push({
+                            id: doc.id,
+                            title: eventData.title,
+                            date: eventDate
+                        });
+                    }
                 });
+
+                events = updatedEvents;
+                renderCalendar();
+            }, (error) => {
+                console.error("Error listening to events: ", error);
             });
         };
 
-        // Handle deleting an event from Firestore
-        const handleDeleteEvent = async (eventId) => {
-            if (!db || !userId) {
-                showMessage('Database not ready. Please wait a moment.');
+        /**
+         * Saves a new event to Firestore.
+         */
+        const saveEvent = async () => {
+            if (!userId) {
+                console.error("User not authenticated, cannot save event.");
                 return;
             }
+
+            const title = eventTitleInput.value.trim();
+            if (!title || !selectedDate) {
+                // Use a custom modal instead of alert
+                showModalMessage("Please enter an event title.");
+                return;
+            }
+
+            const [year, month, day] = selectedDate.split('-').map(Number);
+            const eventDate = new Date(year, month - 1, day);
+
+            const eventRef = doc(collection(db, `artifacts/${appId}/users/${userId}/userEvents`));
+
             try {
-                // Use the eventId as the Firestore document ID
-                const eventDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/userEvents`, eventId);
-                await deleteDoc(eventDocRef);
-                showMessage('Activity successfully deleted!');
-            } catch (error) {
-                console.error('Error deleting document:', error);
-                showMessage('Failed to delete activity. Please try again.');
-            }
-        };
-        
-        // Handle editing an event
-        const handleEditEvent = (eventId) => {
-            let eventToEdit = null;
-            for (const date in events) {
-                const foundEvent = events[date].find(event => event.id === eventId);
-                if (foundEvent) {
-                    eventToEdit = foundEvent;
-                    break;
-                }
-            }
-
-            if (eventToEdit) {
-                editEventId.value = eventToEdit.id;
-                editEventDate.value = eventToEdit.date;
-                editEventTitle.value = eventToEdit.title;
-                editEventDescription.value = eventToEdit.description;
-                editEventColor.value = eventToEdit.color;
-                editModal.classList.add('show');
-            }
-        };
-
-        // Render events for the currently selected date in the main view
-        const renderEventsForSelectedDate = () => {
-            eventsList.innerHTML = '';
-            if (!selectedDate) {
-                eventsTitle.textContent = `Activities for Selected Date`;
-                eventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No date selected. Click a date on the calendar to see activities.</li>';
-                return;
-            }
-            
-            const displayDate = new Date(selectedDate + 'T00:00:00'); // Append 'T00:00:00' to avoid timezone issues
-            eventsTitle.textContent = `Activities for ${displayDate.toDateString()}`;
-            
-            const dailyEvents = events[selectedDate] || [];
-            if (dailyEvents.length > 0) {
-                dailyEvents.forEach(event => {
-                    const listItem = document.createElement('li');
-                    listItem.classList.add('flex', 'items-center', 'justify-between', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200', 'group');
-                    listItem.innerHTML = `
-                        <div class="flex items-center">
-                            <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
-                            <div>
-                                <h4 class="font-semibold text-gray-800">${event.title}</h4>
-                                <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
-                            </div>
-                        </div>
-                        <div class="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button class="edit-event-btn text-gray-500 hover:text-blue-600 transition-colors" data-event-id="${event.id}">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path></svg>
-                            </button>
-                            <button class="delete-event-btn text-red-500 hover:text-red-700 transition-colors" data-doc-id="${event.id}">
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"></path></svg>
-                            </button>
-                        </div>
-                    `;
-                    const editButton = listItem.querySelector('.edit-event-btn');
-                    editButton.addEventListener('click', () => {
-                        handleEditEvent(event.id);
-                    });
-                    const deleteButton = listItem.querySelector('.delete-event-btn');
-                    deleteButton.addEventListener('click', () => {
-                        showConfirmation('Are you sure you want to delete this activity?', () => {
-                            handleDeleteEvent(event.id);
-                        });
-                    });
-                    eventsList.appendChild(listItem);
+                // Use setDoc to create or overwrite a document
+                await setDoc(eventRef, {
+                    title: title,
+                    date: eventDate,
+                    createdAt: new Date()
                 });
-            } else {
-                eventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities scheduled for this date.</li>';
+                console.log("Event saved successfully!");
+                eventModal.style.display = 'none';
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showModalMessage("Failed to save the event. Please try again.");
             }
         };
 
-        // Render a list of all events for the current month inside a modal
-        const renderMonthlyOverviewModal = () => {
-            monthlyEventsList.innerHTML = '';
-            const allMonthlyEvents = [];
-
-            for (const date in events) {
-                const eventDate = new Date(date + 'T00:00:00');
-                if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
-                    events[date].forEach(event => {
-                        allMonthlyEvents.push({ ...event, date: eventDate });
-                    });
-                }
-            }
-
-            allMonthlyEvents.sort((a, b) => a.date - b.date);
-
-            if (allMonthlyEvents.length > 0) {
-                monthlyDeleteContainer.classList.remove('hidden');
-                allMonthlyEvents.forEach(event => {
-                    const listItem = document.createElement('li');
-                    listItem.classList.add('flex', 'items-center', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
-                    listItem.innerHTML = `
-                        <div class="flex items-center w-full">
-                            <input type="checkbox" data-event-id="${event.id}" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded mr-3">
-                            <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">${event.date.toDateString()}</p>
-                                <h4 class="font-semibold text-gray-800">${event.title}</h4>
-                                <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
-                            </div>
-                        </div>
-                    `;
-                    monthlyEventsList.appendChild(listItem);
-                });
-            } else {
-                monthlyDeleteContainer.classList.add('hidden');
-                monthlyEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities for this month.</li>';
-            }
-            monthlyOverviewModal.classList.add('show');
-        };
-
-        // Handle form submission for new events (add to Firestore)
-        eventForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!db || !userId) {
-                showMessage('Database not ready. Please wait a moment.');
-                return;
-            }
-
-            const title = eventTitleInput.value;
-            const description = eventDescriptionInput.value;
-            const color = eventColorInput.value;
-
-            if (modalSelectedDates.length === 0 || !title) {
-                showMessage("Please select at least one date and enter an activity title.");
-                return;
-            }
-            
-            try {
-                // Add an event for each selected date to Firestore
-                for (const date of modalSelectedDates) {
-                    const newEvent = {
-                        date,
-                        title,
-                        description,
-                        color
-                    };
-                    await addDoc(userEventsCol, newEvent);
-                }
-                
-                // Clear form inputs and selected dates, then close modal
-                eventTitleInput.value = '';
-                eventDescriptionInput.value = '';
-                modalSelectedDates = [];
-                renderModalCalendar();
-                renderModalSelectedDates();
-                manageActivitiesModal.classList.remove('show');
-                showMessage('Activities added successfully!');
-            } catch (error) {
-                console.error('Error adding document: ', error);
-                showMessage('Failed to add activities. Please try again.');
-            }
-        });
-
-        // Handle form submission for editing events (update Firestore)
-        editForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!db || !userId) {
-                showMessage('Database not ready. Please wait a moment.');
-                return;
-            }
-
-            const eventId = editEventId.value;
-            const newDate = editEventDate.value;
-            const newTitle = editEventTitle.value;
-            const newDescription = editEventDescription.value;
-            const newColor = editEventColor.value;
-
-            try {
-                const oldEvent = events[new Date(editEventDate.value).toISOString().split('T')[0]]?.find(event => event.id === eventId);
-
-                // If the date has changed, delete the old document and add a new one
-                if (oldEvent && oldEvent.date !== newDate) {
-                    await deleteDoc(doc(db, `artifacts/${__app_id}/users/${userId}/userEvents`, eventId));
-                    await addDoc(userEventsCol, {
-                        date: newDate,
-                        title: newTitle,
-                        description: newDescription,
-                        color: newColor
-                    });
-                } else {
-                    // Otherwise, just update the existing document
-                    const eventDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/userEvents`, eventId);
-                    await updateDoc(eventDocRef, {
-                        date: newDate,
-                        title: newTitle,
-                        description: newDescription,
-                        color: newColor
-                    });
-                }
-                
-                editModal.classList.remove('show');
-                showMessage('Activity updated successfully!');
-            } catch (error) {
-                console.error('Error updating document:', error);
-                showMessage('Failed to update activity. Please try again.');
-            }
-        });
-
-        // Handle navigation buttons
-        prevMonthBtn.addEventListener('click', () => {
-            currentMonth--;
-            if (currentMonth < 0) {
+        // UI Event Listeners
+        prevBtn.addEventListener('click', () => {
+            if (currentMonth === 0) {
                 currentMonth = 11;
                 currentYear--;
+            } else {
+                currentMonth--;
             }
             renderCalendar();
-            renderEventsForSelectedDate();
         });
 
-        nextMonthBtn.addEventListener('click', () => {
-            currentMonth++;
-            if (currentMonth > 11) {
+        nextBtn.addEventListener('click', () => {
+            if (currentMonth === 11) {
                 currentMonth = 0;
                 currentYear++;
+            } else {
+                currentMonth++;
             }
             renderCalendar();
-            renderEventsForSelectedDate();
         });
 
-        // Event listeners for modal controls
-        showManageActivitiesModalBtn.addEventListener('click', () => {
-            manageActivitiesModal.classList.add('show');
-            modalCurrentMonth = new Date().getMonth();
-            modalCurrentYear = new Date().getFullYear();
-            modalSelectedDates = [];
-            renderModalCalendar();
-            renderModalSelectedDates();
+        saveEventBtn.addEventListener('click', saveEvent);
+
+        modalCloseBtn.addEventListener('click', () => {
+            eventModal.style.display = 'none';
         });
 
-        closeManageActivitiesModalBtn.addEventListener('click', () => {
-            manageActivitiesModal.classList.remove('show');
-        });
-
-        modalPrevMonthBtn.addEventListener('click', () => {
-            modalCurrentMonth--;
-            if (modalCurrentMonth < 0) {
-                modalCurrentMonth = 11;
-                modalCurrentYear--;
+        // Initialize Firebase Authentication
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                userIdDisplay.textContent = `User ID: ${userId}`;
+                console.log("Authenticated with user ID:", userId);
+                await loadEvents();
+            } else {
+                try {
+                    console.log("No user signed in. Signing in...");
+                    // Sign in with custom token if available, otherwise anonymously
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Signed in with custom token.");
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log("Signed in anonymously.");
+                    }
+                } catch (error) {
+                    console.error("Error during authentication:", error);
+                }
             }
-            renderModalCalendar();
         });
 
-        modalNextMonthBtn.addEventListener('click', () => {
-            modalCurrentMonth++;
-            if (modalCurrentMonth > 11) {
-                modalCurrentMonth = 0;
-                modalCurrentYear++;
-            }
-            renderModalCalendar();
-        });
-
-        cancelEditBtn.addEventListener('click', () => {
-            editModal.classList.remove('show');
-        });
-
-        // Function to handle bulk deletion from the monthly dashboard
-        const handleMonthlyBulkDelete = () => {
-            const checkboxes = monthlyEventsList.querySelectorAll('input[type="checkbox"]:checked');
-            if (checkboxes.length === 0) {
-                showMessage("Please select at least one activity to delete.");
-                return;
-            }
-            
-            showConfirmation(`Are you sure you want to delete ${checkboxes.length} selected activities?`, () => {
-                const eventIdsToDelete = Array.from(checkboxes).map(cb => cb.dataset.eventId);
-                // Trigger the delete for each selected event
-                eventIdsToDelete.forEach(id => handleDeleteEvent(id));
-                showMessage(`${eventIdsToDelete.length} activities successfully deleted!`);
-                monthlyOverviewModal.classList.remove('show');
+        // Custom modal for messages
+        const showModalMessage = (message) => {
+            const messageModal = document.createElement('div');
+            messageModal.className = 'modal-overlay';
+            messageModal.innerHTML = `
+                <div class="modal-content relative p-6 bg-white rounded-2xl shadow-xl">
+                    <span class="modal-close-btn absolute top-4 right-6 text-2xl text-gray-400 cursor-pointer hover:text-gray-600">&times;</span>
+                    <p class="text-gray-800 text-lg">${message}</p>
+                </div>
+            `;
+            document.body.appendChild(messageModal);
+            messageModal.style.display = 'flex';
+            messageModal.querySelector('.modal-close-btn').addEventListener('click', () => {
+                document.body.removeChild(messageModal);
             });
-        };
-
-        showMonthlyOverviewBtn.addEventListener('click', renderMonthlyOverviewModal);
-        closeMonthlyOverviewBtn.addEventListener('click', () => {
-            monthlyOverviewModal.classList.remove('show');
-        });
-        monthlyDeleteSelectedBtn.addEventListener('click', handleMonthlyBulkDelete);
-
-
-        // Initial setup and data fetching
-        window.onload = () => {
-            initializeFirebase();
         };
     </script>
 </body>
 </html>
-
