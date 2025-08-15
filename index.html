@@ -187,10 +187,16 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, query, where, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase configuration from the Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        // Your specific Firebase configuration, now correctly integrated!
+        const firebaseConfig = {
+          apiKey: "AIzaSyDCRT5OxfwUD25pS6igy8v3xYlaGmMXK_0",
+          authDomain: "event-calendar-prototype-b11b6.firebaseapp.com",
+          projectId: "event-calendar-prototype-b11b6",
+          storageBucket: "event-calendar-prototype-b11b6.firebasestorage.app",
+          messagingSenderId: "532386656284",
+          appId: "1:532386656284:web:fd4533fb0f54b198752fd9",
+          measurementId: "G-J10NDCD212"
+        };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -298,8 +304,18 @@
                 return;
             }
 
-            // Set up a real-time listener using onSnapshot
-            const userEventsCollection = collection(db, `artifacts/${appId}/users/${userId}/userEvents`);
+            // --- IMPORTANT: Firestore Path Consideration ---
+            // The original path `artifacts/${appId}/users/${userId}/userEvents`
+            // is often specific to Codelab environments.
+            // For a production app, a simpler path like `users/${userId}/events` is more common.
+            // I'm keeping the original path for now, but be aware this is a place to optimize
+            // your Firestore data structure if you intend to build beyond this example.
+            // You might want to define `appId` using `firebaseConfig.appId` if you still need it here.
+            const userEventsCollection = collection(db, `artifacts/${firebaseConfig.appId}/users/${userId}/userEvents`);
+            // Or, for a more typical structure:
+            // const userEventsCollection = collection(db, `users/${userId}/events`);
+
+
             const q = query(userEventsCollection);
 
             // Using onSnapshot for real-time updates
@@ -347,7 +363,10 @@
             const [year, month, day] = selectedDate.split('-').map(Number);
             const eventDate = new Date(year, month - 1, day);
 
-            const eventRef = doc(collection(db, `artifacts/${appId}/users/${userId}/userEvents`));
+            // --- IMPORTANT: Firestore Path Consideration (same as above) ---
+            const eventRef = doc(collection(db, `artifacts/${firebaseConfig.appId}/users/${userId}/userEvents`));
+            // Or, for a more typical structure:
+            // const eventRef = doc(collection(db, `users/${userId}/events`));
 
             try {
                 // Use setDoc to create or overwrite a document
@@ -400,15 +419,15 @@
                 await loadEvents();
             } else {
                 try {
-                    console.log("No user signed in. Signing in...");
-                    // Sign in with custom token if available, otherwise anonymously
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                        console.log("Signed in with custom token.");
-                    } else {
-                        await signInAnonymously(auth);
-                        console.log("Signed in anonymously.");
-                    }
+                    console.log("No user signed in. Signing in anonymously...");
+                    // --- IMPORTANT: Codelab-specific authentication ---
+                    // `signInWithCustomToken` and `initialAuthToken` are typically used
+                    // in specific Codelab setups where a token is provided by the environment.
+                    // For a standalone app, if you want anonymous users, simply call:
+                    await signInAnonymously(auth);
+                    console.log("Signed in anonymously.");
+                    // Remove the `if (initialAuthToken)` block unless you are specifically
+                    // implementing a custom token authentication flow for your app.
                 } catch (error) {
                     console.error("Error during authentication:", error);
                 }
