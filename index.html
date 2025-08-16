@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud-Synced Activity Calendar</title>
+    <title>Public Cloud Calendar</title>
     <!-- Use Tailwind CSS for responsive styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -27,7 +27,7 @@
             filter: blur(8px);
             z-index: -1; /* Place the background behind the content */
         }
-        
+
         /* Ensure main content is not blurred */
         .page-content {
             z-index: 2;
@@ -90,23 +90,26 @@
 
     <!-- All content is wrapped in a container to prevent it from blurring -->
     <div class="page-content w-full max-w-4xl">
-        <!-- User ID Display and loading indicator -->
-        <div class="flex justify-between items-center mb-4">
-            <div class="flex items-center space-x-2">
-                <span class="text-sm text-gray-700">Your User ID:</span>
-                <span id="userIdDisplay" class="font-mono text-xs bg-gray-200 text-gray-700 rounded-full px-2 py-1 select-all cursor-copy" title="Click to copy user ID">Loading...</span>
+        <!-- Main Application Container - Visible after login -->
+        <div id="appContainer" class="p-6 rounded-xl shadow-lg w-full" style="background-color: rgba(255, 255, 255, 0.7);">
+            <!-- User ID Display and loading indicator -->
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-700">Your User ID:</span>
+                    <span id="userIdDisplay" class="font-mono text-xs bg-gray-200 text-gray-700 rounded-full px-2 py-1 select-all cursor-copy" title="Click to copy user ID">Public User</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div id="loadingIndicator" class="loader hidden"></div>
+                    <!-- Sign-out button is removed because there is no user session to end -->
+                </div>
             </div>
-            <div id="loadingIndicator" class="loader hidden"></div>
-        </div>
 
-        <!-- Container for logo and title, now aligned to the left -->
-        <div class="flex items-center justify-start mb-6 space-x-4">
-            <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="KCP Logo" class="h-20 rounded-xl shadow-lg">
-            <h1 class="text-3xl font-bold text-gray-800">Activity Calendar Prototype</h1>
-        </div>
+            <!-- Container for logo and title, now aligned to the left -->
+            <div class="flex items-center justify-start mb-6 space-x-4">
+                <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="KCP Logo" class="h-20 rounded-xl shadow-lg">
+                <h1 class="text-3xl font-bold text-gray-800">Activity Calendar Prototype</h1>
+            </div>
 
-        <!-- Main Application Container with reduced opacity background only -->
-        <div class="p-6 rounded-xl shadow-lg w-full" style="background-color: rgba(255, 255, 255, 0.7);">
             <!-- Header with controls and new buttons -->
             <div class="flex flex-col sm:flex-row justify-between items-center mb-6 space-y-4 sm:space-y-0">
                 <div class="flex flex-wrap gap-2">
@@ -118,7 +121,7 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Calendar and Event Form Container -->
             <div class="md:flex gap-8">
                 <!-- Calendar View -->
@@ -174,7 +177,7 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            
+
             <div class="md:flex gap-8 w-full">
                 <!-- Left side: Calendar and Date Selection for the new activity -->
                 <div class="flex-1 mb-6 md:mb-0">
@@ -232,7 +235,7 @@
     <!-- Edit Event Modal -->
     <div id="editModal" class="modal">
         <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-            <h3 class="text-2xl font-semibold text-gray-800 mb-4">Edit Activity</h3>
+            <h3 class="text-2xl font-semibold text-gray-800">Edit Activity</h3>
             <form id="editForm" class="space-y-4">
                 <input type="hidden" id="editEventId">
                 <div>
@@ -284,28 +287,24 @@
     </div>
 
     <script type="module">
-        // Import the necessary Firebase SDKs from a CDN
+        // Import the necessary Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
         import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
 
-        // Firebase configuration for your project (hard-coded for GitHub publishing)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDCRT5OxfwUD25pS6igy8v3xYlaGmMXK_0",
-            authDomain: "event-calendar-prototype-b11b6.firebaseapp.com",
-            projectId: "event-calendar-prototype-b11b6",
-            storageBucket: "event-calendar-prototype-b11b6.firebasestorage.app",
-            messagingSenderId: "532386656284",
-            appId: "1:532386656284:web:fd4533fb0f54b198752fd9",
-            measurementId: "G-J10NDCD212"
-        };
-        const appId = "1:532386656284:web:fd4533fb0f54b198752fd9";
+        // Global variables provided by the Canvas environment
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
+        // The public collection path.
+        const publicCollectionPath = `artifacts/${appId}/public/data/events`;
+        
         let events = {};
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
-        let selectedDate = null; // Single date for the main view
-        let modalSelectedDates = []; // Array for multi-selection in the 'add new activity' form
+        let selectedDate = null;
+        let modalSelectedDates = [];
 
         // Modal calendar state
         let modalCurrentMonth = new Date().getMonth();
@@ -339,7 +338,7 @@
         const modalPrevMonthBtn = document.getElementById('modalPrevMonthBtn');
         const modalNextMonthBtn = document.getElementById('modalNextMonthBtn');
         const modalSelectedDatesContainer = document.getElementById('modalSelectedDatesContainer');
-        
+
         // Edit Modal DOM elements
         const editModal = document.getElementById('editModal');
         const editForm = document.getElementById('editForm');
@@ -359,63 +358,60 @@
 
         // --- Firebase Initialization and Auth ---
         let db;
-        let auth;
-        let userId;
-        let userEventsCol;
-        
-        // This function will be called on window.onload
+        let eventsCol;
+        let unsubscribeFromEvents = null;
+        let isAuthReady = false;
+
         const initializeFirebase = async () => {
+            if (!firebaseConfig) {
+                showMessage("Firebase config not available. Cannot initialize the app.");
+                loadingIndicator.classList.add('hidden');
+                return;
+            }
+
             try {
-                // Initialize Firebase with the provided environment config
                 const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
+                const auth = getAuth(app);
                 db = getFirestore(app);
 
-                // Sign in anonymously and store the UID for data access
-                loadingIndicator.classList.remove('hidden');
-                await signInAnonymously(auth);
+                // Sign in the user with the custom token or anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
 
-                // Listen for auth state changes to get the user ID
+                // Wait for auth state to be confirmed before proceeding
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
-                        userId = user.uid;
-                        userIdDisplay.textContent = userId;
-                        userIdDisplay.addEventListener('click', () => {
-                            navigator.clipboard.writeText(userId);
-                            showMessage('User ID copied to clipboard!');
-                        });
-                        
-                        // Set up the Firestore collection path
-                        userEventsCol = collection(db, `artifacts/${appId}/users/${userId}/events`);
-                        
-                        // Set up the real-time listener for events
+                        userIdDisplay.textContent = user.uid;
+                        isAuthReady = true;
+                        loadingIndicator.classList.add('hidden');
                         setupFirestoreListener();
-                        loadingIndicator.classList.add('hidden');
                     } else {
-                        // User is signed out
-                        userIdDisplay.textContent = 'Not signed in';
-                        events = {};
-                        renderCalendar();
-                        renderEventsForSelectedDate();
+                        // User is not authenticated, which should not happen in this environment
+                        isAuthReady = false;
                         loadingIndicator.classList.add('hidden');
+                        showMessage("Authentication failed. Cannot connect to the database.");
                     }
                 });
-
             } catch (error) {
-                console.error('Firebase initialization or authentication failed:', error);
-                showMessage('Failed to connect to the database. Please check your Firebase config.');
+                console.error('Firebase initialization failed:', error);
+                showMessage('Failed to connect to the database.');
                 loadingIndicator.classList.add('hidden');
             }
         };
 
-        // Function to set up the real-time Firestore listener
         const setupFirestoreListener = () => {
-            onSnapshot(userEventsCol, (snapshot) => {
+            if (!isAuthReady || !db) return;
+            eventsCol = collection(db, publicCollectionPath);
+            
+            // Set up the real-time listener to the public collection
+            unsubscribeFromEvents = onSnapshot(eventsCol, (snapshot) => {
                 const newEvents = {};
                 snapshot.docs.forEach(doc => {
                     const eventData = doc.data();
                     const date = eventData.date;
-                    // Add the Firestore document ID to the event object
                     const eventWithId = { ...eventData, id: doc.id };
 
                     if (!newEvents[date]) {
@@ -429,7 +425,7 @@
                 console.log('Events updated from Firestore.');
             });
         };
-        
+
         // --- End of Firebase Setup ---
 
         // Function to show a simple message with an "OK" button
@@ -467,7 +463,7 @@
         const closeMessage = () => {
             messageBox.classList.remove('show');
         };
-        
+
         // Event listeners for the custom message box
         okMessageBtn.addEventListener('click', closeMessage);
         cancelMessageBtn.addEventListener('click', closeMessage);
@@ -495,11 +491,11 @@
                 dayCell.textContent = day;
                 dayCell.tabIndex = 0; // Make the cell focusable
                 const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                
+
                 if (events[fullDate] && events[fullDate].length > 0) {
                     dayCell.classList.add('has-events');
                     const eventColors = events[fullDate].map(event => event.color);
-                    
+
                     if (eventColors.length === 1) {
                         dayCell.style.background = eventColors[0];
                     } else {
@@ -552,12 +548,12 @@
                 dayCell.classList.add('day-cell', 'p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'hover:bg-gray-100', 'transition-colors');
                 dayCell.textContent = day;
                 const fullDate = `${modalCurrentYear}-${String(modalCurrentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                
+
                 // Highlight dates selected for the new activity
                 if (modalSelectedDates.includes(fullDate)) {
                     dayCell.classList.add('bg-green-300', 'hover:bg-green-400');
                 }
-                
+
                 dayCell.addEventListener('click', () => {
                     // Check if the date is already selected
                     const dateIndex = modalSelectedDates.indexOf(fullDate);
@@ -567,7 +563,7 @@
                         modalSelectedDates.push(fullDate); // Add it
                     }
                     modalSelectedDates.sort(); // Keep dates in order
-                    
+
                     renderModalCalendar();
                     renderModalSelectedDates();
                 });
@@ -597,7 +593,7 @@
                     </button>
                 `;
                 modalSelectedDatesContainer.appendChild(datePill);
-                
+
                 // Add event listener to the remove button
                 datePill.querySelector('button').addEventListener('click', (e) => {
                     const dateToRemove = e.currentTarget.dataset.date;
@@ -610,13 +606,12 @@
 
         // Handle deleting an event from Firestore
         const handleDeleteEvent = async (eventId) => {
-            if (!db || !userId) {
+            if (!db) {
                 showMessage('Database not ready. Please wait a moment.');
                 return;
             }
             try {
-                // Use the eventId as the Firestore document ID
-                const eventDocRef = doc(db, `artifacts/${appId}/users/${userId}/events`, eventId);
+                const eventDocRef = doc(db, publicCollectionPath, eventId);
                 await deleteDoc(eventDocRef);
                 showMessage('Activity successfully deleted!');
             } catch (error) {
@@ -624,7 +619,7 @@
                 showMessage('Failed to delete activity. Please try again.');
             }
         };
-        
+
         // Handle editing an event
         const handleEditEvent = (eventId) => {
             let eventToEdit = null;
@@ -654,7 +649,7 @@
                 eventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No date selected. Click a date on the calendar to see activities.</li>';
                 return;
             }
-            
+
             const dailyEvents = events[selectedDate] || [];
             if (dailyEvents.length > 0) {
                 dailyEvents.forEach(event => {
@@ -738,7 +733,7 @@
         // Handle form submission for new events (add to Firestore)
         eventForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!db || !userId) {
+            if (!db) {
                 showMessage('Database not ready. Please wait a moment.');
                 return;
             }
@@ -751,9 +746,8 @@
                 showMessage("Please select at least one date and enter an activity title.");
                 return;
             }
-            
+
             try {
-                // Add an event for each selected date to Firestore
                 for (const date of modalSelectedDates) {
                     const newEvent = {
                         date,
@@ -761,10 +755,9 @@
                         description,
                         color
                     };
-                    await addDoc(userEventsCol, newEvent);
+                    await addDoc(eventsCol, newEvent);
                 }
-                
-                // Clear form inputs and selected dates, then close modal
+
                 eventTitleInput.value = '';
                 eventDescriptionInput.value = '';
                 modalSelectedDates = [];
@@ -778,38 +771,87 @@
             }
         });
 
-        // Handle form submission for editing events (update Firestore)
+        // Handle form submission for editing an event
         editForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!db || !userId) {
+            if (!db) {
                 showMessage('Database not ready. Please wait a moment.');
                 return;
             }
 
             const eventId = editEventId.value;
-            const newDate = editEventDate.value;
-            const newTitle = editEventTitle.value;
-            const newDescription = editEventDescription.value;
-            const newColor = editEventColor.value;
+            const updatedDate = editEventDate.value;
+            const updatedTitle = editEventTitle.value;
+            const updatedDescription = editEventDescription.value;
+            const updatedColor = editEventColor.value;
 
             try {
-                const eventDocRef = doc(db, `artifacts/${appId}/users/${userId}/events`, eventId);
+                const eventDocRef = doc(db, publicCollectionPath, eventId);
                 await updateDoc(eventDocRef, {
-                    date: newDate,
-                    title: newTitle,
-                    description: newDescription,
-                    color: newColor
+                    date: updatedDate,
+                    title: updatedTitle,
+                    description: updatedDescription,
+                    color: updatedColor
                 });
-                
                 editModal.classList.remove('show');
                 showMessage('Activity updated successfully!');
             } catch (error) {
-                console.error('Error updating document:', error);
+                console.error('Error updating document: ', error);
                 showMessage('Failed to update activity. Please try again.');
             }
         });
 
-        // Handle navigation buttons
+        // Event listener to close the edit modal
+        cancelEditBtn.addEventListener('click', () => {
+            editModal.classList.remove('show');
+        });
+
+        // Show "Add New Activity" modal
+        showManageActivitiesModalBtn.addEventListener('click', () => {
+            modalSelectedDates = [];
+            renderModalCalendar();
+            renderModalSelectedDates();
+            manageActivitiesModal.classList.add('show');
+        });
+
+        // Close "Add New Activity" modal
+        closeManageActivitiesModalBtn.addEventListener('click', () => {
+            manageActivitiesModal.classList.remove('show');
+        });
+
+        // Show Monthly Overview modal
+        showMonthlyOverviewBtn.addEventListener('click', renderMonthlyOverviewModal);
+
+        // Close Monthly Overview modal
+        closeMonthlyOverviewBtn.addEventListener('click', () => {
+            monthlyOverviewModal.classList.remove('show');
+        });
+
+        // Handle bulk deletion from monthly overview
+        monthlyDeleteSelectedBtn.addEventListener('click', () => {
+            const selectedCheckboxes = monthlyEventsList.querySelectorAll('input[type="checkbox"]:checked');
+            if (selectedCheckboxes.length === 0) {
+                showMessage('No activities selected for deletion.');
+                return;
+            }
+
+            showConfirmation(`Are you sure you want to delete ${selectedCheckboxes.length} activities?`, async () => {
+                loadingIndicator.classList.remove('hidden');
+                for (const checkbox of selectedCheckboxes) {
+                    const eventId = checkbox.dataset.eventId;
+                    try {
+                        await deleteDoc(doc(db, publicCollectionPath, eventId));
+                    } catch (error) {
+                        console.error(`Failed to delete event ${eventId}:`, error);
+                    }
+                }
+                monthlyOverviewModal.classList.remove('show');
+                loadingIndicator.classList.add('hidden');
+                showMessage(`${selectedCheckboxes.length} activities deleted successfully!`);
+            });
+        });
+
+        // Event listeners for calendar navigation
         prevMonthBtn.addEventListener('click', () => {
             currentMonth--;
             if (currentMonth < 0) {
@@ -817,7 +859,6 @@
                 currentYear--;
             }
             renderCalendar();
-            renderEventsForSelectedDate();
         });
 
         nextMonthBtn.addEventListener('click', () => {
@@ -827,23 +868,9 @@
                 currentYear++;
             }
             renderCalendar();
-            renderEventsForSelectedDate();
         });
 
-        // Event listeners for modal controls
-        showManageActivitiesModalBtn.addEventListener('click', () => {
-            manageActivitiesModal.classList.add('show');
-            modalCurrentMonth = new Date().getMonth();
-            modalCurrentYear = new Date().getFullYear();
-            modalSelectedDates = [];
-            renderModalCalendar();
-            renderModalSelectedDates();
-        });
-
-        closeManageActivitiesModalBtn.addEventListener('click', () => {
-            manageActivitiesModal.classList.remove('show');
-        });
-
+        // Event listeners for modal calendar navigation
         modalPrevMonthBtn.addEventListener('click', () => {
             modalCurrentMonth--;
             if (modalCurrentMonth < 0) {
@@ -862,38 +889,8 @@
             renderModalCalendar();
         });
 
-        cancelEditBtn.addEventListener('click', () => {
-            editModal.classList.remove('show');
-        });
-
-        // Function to handle bulk deletion from the monthly dashboard
-        const handleMonthlyBulkDelete = () => {
-            const checkboxes = monthlyEventsList.querySelectorAll('input[type="checkbox"]:checked');
-            if (checkboxes.length === 0) {
-                showMessage("Please select at least one activity to delete.");
-                return;
-            }
-            
-            showConfirmation(`Are you sure you want to delete ${checkboxes.length} selected activities?`, () => {
-                const eventIdsToDelete = Array.from(checkboxes).map(cb => cb.dataset.eventId);
-                // Trigger the delete for each selected event
-                eventIdsToDelete.forEach(id => handleDeleteEvent(id));
-                showMessage(`${eventIdsToDelete.length} activities successfully deleted!`);
-                monthlyOverviewModal.classList.remove('show');
-            });
-        };
-
-        showMonthlyOverviewBtn.addEventListener('click', renderMonthlyOverviewModal);
-        closeMonthlyOverviewBtn.addEventListener('click', () => {
-            monthlyOverviewModal.classList.remove('show');
-        });
-        monthlyDeleteSelectedBtn.addEventListener('click', handleMonthlyBulkDelete);
-
-
-        // Initial setup and data fetching
-        window.onload = () => {
-            initializeFirebase();
-        };
+        // Start the application
+        window.onload = initializeFirebase;
     </script>
 </body>
 </html>
