@@ -289,14 +289,24 @@
     <script type="module">
         // Import the necessary Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
         import { getFirestore, doc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
-
-        // Global variables provided by the Canvas environment
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
+        
+        // Use the Firebase configuration provided by the user.
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCRT5OxfwUD25pS6igy8v3xYlaGmMXK_0",
+            authDomain: "event-calendar-prototype-b11b6.firebaseapp.com",
+            projectId: "event-calendar-prototype-b11b6",
+            storageBucket: "event-calendar-prototype-b11b6.firebasestorage.app",
+            messagingSenderId: "532386656284",
+            appId: "1:532386656284:web:fd4533fb0f54b198752fd9",
+            measurementId: "G-J10NDCD212"
+        };
+        
+        // This is a placeholder for the app ID to be used in the Firestore collection path
+        // It is a public app, so a hardcoded ID is appropriate.
+        const appId = "default-app-id";
+        
         // The public collection path.
         const publicCollectionPath = `artifacts/${appId}/public/data/events`;
         
@@ -374,15 +384,12 @@
                 const auth = getAuth(app);
                 db = getFirestore(app);
 
-                // Sign in the user with the custom token or anonymously
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                // For a public deployment, we sign in anonymously.
+                // The custom token is not available outside the canvas environment.
+                await signInAnonymously(auth);
 
                 // Wait for auth state to be confirmed before proceeding
-                onAuthStateChanged(auth, (user) => {
+                const unsubscribeAuth = auth.onAuthStateChanged((user) => {
                     if (user) {
                         userIdDisplay.textContent = user.uid;
                         isAuthReady = true;
@@ -394,7 +401,9 @@
                         loadingIndicator.classList.add('hidden');
                         showMessage("Authentication failed. Cannot connect to the database.");
                     }
+                    unsubscribeAuth(); // Unsubscribe after the first state change.
                 });
+
             } catch (error) {
                 console.error('Firebase initialization failed:', error);
                 showMessage('Failed to connect to the database.');
