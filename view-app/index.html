@@ -109,7 +109,7 @@
                 <h1 class="text-3xl font-bold text-gray-800">Activity Calendar Viewer</h1>
             </div>
 
-            <!-- Calendar and Event Form Container -->
+            <!-- Calendar and Monthly Overview Container -->
             <div class="md:flex gap-8">
                 <!-- Calendar View -->
                 <div class="flex-1 mb-6 md:mb-0">
@@ -130,16 +130,21 @@
                     </div>
                 </div>
 
-                <!-- Event Input and Display -->
-                <div class="flex-1 bg-gray-50 p-4 rounded-xl shadow-inner">
-                    <!-- Events for first selected date -->
-                    <div class="mt-6">
-                        <h3 id="eventsTitle" class="text-xl font-semibold text-gray-800 mb-2">Activities for Selected Date</h3>
-                        <ul id="eventsList" class="space-y-2">
-                            <!-- Events will be displayed here -->
-                        </ul>
-                    </div>
+                <!-- Monthly Activities Overview -->
+                <div class="flex-1 bg-gray-50 p-4 rounded-xl shadow-inner max-h-96 overflow-y-auto">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Monthly Activities Overview</h3>
+                    <ul id="monthlyEventsList" class="space-y-2">
+                        <!-- Monthly events will be displayed here -->
+                    </ul>
                 </div>
+            </div>
+
+            <!-- Events for Selected Date - Now placed below -->
+            <div class="mt-8 bg-gray-50 p-4 rounded-xl shadow-inner w-full">
+                <h3 id="eventsTitle" class="text-xl font-semibold text-gray-800 mb-2">Activities for Selected Date</h3>
+                <ul id="eventsList" class="space-y-2">
+                    <!-- Events will be displayed here -->
+                </ul>
             </div>
         </div>
     </div>
@@ -173,7 +178,6 @@
         };
         
         // This is a placeholder for the app ID to be used in the Firestore collection path
-        // It is a public app, so a hardcoded ID is appropriate.
         const appId = "default-app-id";
         
         // The public collection path.
@@ -196,9 +200,9 @@
         const messageBox = document.getElementById('messageBox');
         const messageText = document.getElementById('messageText');
         const okMessageBtn = document.getElementById('okMessageBtn');
-        const cancelMessageBtn = document.getElementById('cancelMessageBtn');
         const userIdDisplay = document.getElementById('userIdDisplay');
         const loadingIndicator = document.getElementById('loadingIndicator');
+        const monthlyEventsList = document.getElementById('monthlyEventsList');
 
         // --- Firebase Initialization and Auth ---
         let db;
@@ -217,10 +221,8 @@
                 db = getFirestore(app);
 
                 // For a public deployment, we sign in anonymously.
-                // The custom token is not available outside the canvas environment.
                 await signInAnonymously(auth);
 
-                // Wait for auth state to be confirmed before proceeding
                 const unsubscribeAuth = auth.onAuthStateChanged((user) => {
                     if (user) {
                         userIdDisplay.textContent = user.uid;
@@ -228,12 +230,11 @@
                         loadingIndicator.classList.add('hidden');
                         setupFirestoreListener();
                     } else {
-                        // User is not authenticated, which should not happen in this environment
                         isAuthReady = false;
                         loadingIndicator.classList.add('hidden');
                         showMessage("Authentication failed. Cannot connect to the database.");
                     }
-                    unsubscribeAuth(); // Unsubscribe after the first state change.
+                    unsubscribeAuth();
                 });
 
             } catch (error) {
@@ -262,6 +263,7 @@
                 });
                 events = newEvents;
                 renderCalendar();
+                renderMonthlyOverview(); // New call to render the monthly list
                 renderEventsForSelectedDate();
                 console.log('Events updated from Firestore.');
             });
@@ -273,7 +275,6 @@
         const showMessage = (text) => {
             messageText.textContent = text;
             okMessageBtn.classList.remove('hidden');
-            cancelMessageBtn.classList.add('hidden');
             messageBox.classList.add('show');
         };
 
@@ -295,18 +296,16 @@
 
             currentMonthYear.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
 
-            // Add empty cells for days before the first of the month
             for (let i = 0; i < startDayOfWeek; i++) {
                 const emptyCell = document.createElement('div');
                 calendarGrid.appendChild(emptyCell);
             }
 
-            // Add day cells
             for (let day = 1; day <= numDays; day++) {
                 const dayCell = document.createElement('div');
                 dayCell.classList.add('day-cell', 'p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'hover:bg-gray-100', 'transition-colors', 'relative', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
                 dayCell.textContent = day;
-                dayCell.tabIndex = 0; // Make the cell focusable
+                dayCell.tabIndex = 0;
                 const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
                 if (events[fullDate] && events[fullDate].length > 0) {
@@ -334,7 +333,6 @@
                     dayCell.classList.add('hover:bg-opacity-80');
                 }
 
-                // Handle click to set a single selected date
                 dayCell.addEventListener('click', () => {
                     selectedDate = fullDate;
                     renderCalendar();
@@ -342,6 +340,43 @@
                 });
 
                 calendarGrid.appendChild(dayCell);
+            }
+        };
+
+        // New function to render the monthly overview
+        const renderMonthlyOverview = () => {
+            monthlyEventsList.innerHTML = '';
+            const allMonthlyEvents = [];
+
+            // Iterate through all events and collect those for the current month
+            for (const date in events) {
+                const eventDate = new Date(date + 'T00:00:00');
+                if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
+                    events[date].forEach(event => {
+                        allMonthlyEvents.push({ ...event, date: eventDate });
+                    });
+                }
+            }
+
+            // Sort events by date
+            allMonthlyEvents.sort((a, b) => a.date - b.date);
+
+            if (allMonthlyEvents.length > 0) {
+                allMonthlyEvents.forEach(event => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('flex', 'items-start', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
+                    listItem.innerHTML = `
+                        <div class="w-4 h-4 rounded-full mr-3 mt-1 flex-shrink-0" style="background-color: ${event.color};"></div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800">${event.title}</h4>
+                            <p class="text-xs text-gray-500 mb-1">${event.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
+                        </div>
+                    `;
+                    monthlyEventsList.appendChild(listItem);
+                });
+            } else {
+                monthlyEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities for this month.</li>';
             }
         };
 
@@ -383,6 +418,8 @@
                 currentYear--;
             }
             renderCalendar();
+            renderMonthlyOverview(); // Re-render monthly overview on navigation
+            renderEventsForSelectedDate();
         });
 
         nextMonthBtn.addEventListener('click', () => {
@@ -392,6 +429,8 @@
                 currentYear++;
             }
             renderCalendar();
+            renderMonthlyOverview(); // Re-render monthly overview on navigation
+            renderEventsForSelectedDate();
         });
 
         // Start the application
