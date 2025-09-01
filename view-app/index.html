@@ -21,7 +21,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('https://i.ytimg.com/vi/xEp4i60pCxQ/maxresdefault.jpg');
+            background-image: url('https://fastly.4sqi.net/img/general/600x600/390240903_YczNrD1Qc50M1y551y5idVeA1QAe2OhCXQ-4avE4XrA.jpg');
             background-size: cover;
             background-position: center;
             filter: blur(8px);
@@ -34,16 +34,21 @@
             position: relative;
         }
 
-        .day-cell.has-events {
-            color: #1f2937; /* Default text color for visibility */
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2); /* Add text shadow for readability on any color */
+        .day-cell {
+            color: #1f2937;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
             transition: background-color 0.2s, background 0.2s;
+        }
+
+        .day-cell:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
         }
 
         /* Custom modal styles with fade-in animation */
         .modal {
             position: fixed;
-            z-index: 1000; /* Base z-index for all modals */
+            z-index: 1000;
             left: 0;
             top: 0;
             width: 100%;
@@ -56,7 +61,7 @@
             opacity: 0;
             transform: scale(0.95);
             transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-            pointer-events: none; /* Prevents clicks on hidden modal */
+            pointer-events: none;
         }
         
         /* Message Box needs to be on top of all other modals */
@@ -131,12 +136,9 @@
                 </div>
 
                 <!-- Monthly Activities Overview -->
-                <div class="flex-1 bg-gray-50 p-4 rounded-xl shadow-inner max-h-96 overflow-y-auto">
+                <div class="flex-1 p-4 rounded-xl shadow-inner max-h-96 overflow-y-auto" style="background-color: rgba(255, 255, 255, 0.7);">
                     <h3 class="text-xl font-semibold text-gray-800 mb-2">Monthly Activities Overview</h3>
-                    <div class="relative mb-4">
-                        <input type="text" id="searchInput" placeholder="Search activities..." class="w-full pl-10 pr-4 py-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </div>
+                    <input type="text" id="monthlySearchInput" placeholder="Search activities..." class="w-full p-2 mb-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <ul id="monthlyEventsList" class="space-y-2">
                         <!-- Monthly events will be displayed here -->
                     </ul>
@@ -151,21 +153,20 @@
             <p id="messageText" class="text-gray-800 mb-4"></p>
             <div id="messageButtons" class="flex justify-center space-x-4">
                 <button id="okMessageBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">OK</button>
-                <button id="cancelMessageBtn" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-md hover:bg-gray-300 transition-colors">Cancel</button>
             </div>
         </div>
     </div>
     
-    <!-- New Modal for displaying daily activities -->
-    <div id="activityModal" class="modal">
-        <div class="bg-white p-6 rounded-xl shadow-xl max-w-xl w-full">
+    <!-- Daily Events Modal -->
+    <div id="dailyEventsModal" class="modal">
+        <div class="bg-white p-6 rounded-xl shadow-xl max-w-md w-full">
             <div class="flex justify-between items-center mb-4">
-                <h3 id="modalTitle" class="text-xl font-semibold text-gray-800">Activities for Selected Date</h3>
-                <button id="closeModalBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
-                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <h3 id="dailyEventsTitle" class="text-2xl font-bold text-gray-800">Activities for Selected Date</h3>
+                <button id="closeDailyEventsModal" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <ul id="modalEventsList" class="space-y-2">
+            <ul id="dailyEventsList" class="space-y-2 max-h-96 overflow-y-auto pr-2">
                 <!-- Daily events will be displayed here -->
             </ul>
         </div>
@@ -206,17 +207,17 @@
         const currentMonthYear = document.getElementById('currentMonthYear');
         const prevMonthBtn = document.getElementById('prevMonthBtn');
         const nextMonthBtn = document.getElementById('nextMonthBtn');
+        const monthlyEventsList = document.getElementById('monthlyEventsList');
+        const monthlySearchInput = document.getElementById('monthlySearchInput');
+        const dailyEventsModal = document.getElementById('dailyEventsModal');
+        const dailyEventsList = document.getElementById('dailyEventsList');
+        const dailyEventsTitle = document.getElementById('dailyEventsTitle');
+        const closeDailyEventsModal = document.getElementById('closeDailyEventsModal');
         const messageBox = document.getElementById('messageBox');
         const messageText = document.getElementById('messageText');
         const okMessageBtn = document.getElementById('okMessageBtn');
         const userIdDisplay = document.getElementById('userIdDisplay');
         const loadingIndicator = document.getElementById('loadingIndicator');
-        const monthlyEventsList = document.getElementById('monthlyEventsList');
-        const activityModal = document.getElementById('activityModal');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        const modalEventsList = document.getElementById('modalEventsList');
-        const modalTitle = document.getElementById('modalTitle');
-        const searchInput = document.getElementById('searchInput');
 
         // --- Firebase Initialization and Auth ---
         let db;
@@ -277,7 +278,10 @@
                 });
                 events = newEvents;
                 renderCalendar();
-                renderMonthlyOverview();
+                renderMonthlyOverview(); // New call to render the monthly list
+            }, (error) => {
+                 console.error('Error fetching events:', error);
+                 showMessage('Error fetching events. Please check your Firestore rules.');
             });
         };
 
@@ -295,25 +299,8 @@
             messageBox.classList.remove('show');
         };
 
-        const showActivityModal = () => {
-            if (!selectedDate) {
-                return;
-            }
-            const dateObj = new Date(selectedDate + 'T00:00:00');
-            modalTitle.textContent = `Activities for ${dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
-            activityModal.classList.add('show');
-        };
-
-        const closeActivityModal = () => {
-            activityModal.classList.remove('show');
-        };
-
-        // Event listeners for the custom message box and activity modal
+        // Event listeners for the custom message box
         okMessageBtn.addEventListener('click', closeMessage);
-        closeModalBtn.addEventListener('click', closeActivityModal);
-        
-        // Event listener for the search bar
-        searchInput.addEventListener('input', renderMonthlyOverview);
 
         // Render the main calendar for a given month and year
         const renderCalendar = () => {
@@ -356,69 +343,48 @@
                     }
                 }
 
+                if (selectedDate === fullDate) {
+                    dayCell.classList.add('bg-blue-300', 'hover:bg-blue-400');
+                    dayCell.style.background = 'rgba(191, 219, 254, 0.5)';
+                    dayCell.classList.add('hover:bg-opacity-80');
+                }
+
                 dayCell.addEventListener('click', () => {
                     selectedDate = fullDate;
-                    renderDailyEventsInModal();
+                    renderCalendar();
+                    showDailyEventsModal(fullDate);
                 });
 
                 calendarGrid.appendChild(dayCell);
             }
         };
 
-        // Function to render events for the selected date inside the modal
-        const renderDailyEventsInModal = () => {
-            modalEventsList.innerHTML = '';
-            if (!selectedDate) {
-                modalEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No date selected.</li>';
-                return;
-            }
-            
-            const dailyEvents = events[selectedDate] || [];
-            if (dailyEvents.length > 0) {
-                dailyEvents.forEach(event => {
-                    const listItem = document.createElement('li');
-                    listItem.classList.add('flex', 'items-center', 'justify-between', 'bg-gray-50', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
-                    listItem.innerHTML = `
-                        <div class="flex items-center">
-                            <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${event.color};"></div>
-                            <div>
-                                <h4 class="font-semibold text-gray-800">${event.title}</h4>
-                                <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
-                            </div>
-                        </div>
-                    `;
-                    modalEventsList.appendChild(listItem);
-                });
-            } else {
-                modalEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities scheduled for this date.</li>';
-            }
-            showActivityModal();
-        };
-
-        // Function to render the monthly overview
+        // New function to render the monthly overview
         const renderMonthlyOverview = () => {
+            const query = monthlySearchInput.value.toLowerCase().trim();
             monthlyEventsList.innerHTML = '';
             const allMonthlyEvents = [];
-            const searchQuery = searchInput.value.toLowerCase();
 
-            // Iterate through all events and collect those for the current month
             for (const date in events) {
                 const eventDate = new Date(date + 'T00:00:00');
                 if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
                     events[date].forEach(event => {
-                        const eventText = `${event.title.toLowerCase()} ${event.description.toLowerCase()}`;
-                        if (eventText.includes(searchQuery)) {
-                            allMonthlyEvents.push({ ...event, date: eventDate });
-                        }
+                        allMonthlyEvents.push({ ...event, date: eventDate });
                     });
                 }
             }
 
-            // Sort events by date
-            allMonthlyEvents.sort((a, b) => a.date - b.date);
+            const filteredEvents = allMonthlyEvents.filter(event => {
+                const titleMatch = event.title.toLowerCase().includes(query);
+                const descriptionMatch = (event.description || '').toLowerCase().includes(query);
+                return titleMatch || descriptionMatch;
+            });
 
-            if (allMonthlyEvents.length > 0) {
-                allMonthlyEvents.forEach(event => {
+            // Sort events by date
+            filteredEvents.sort((a, b) => a.date - b.date);
+
+            if (filteredEvents.length > 0) {
+                filteredEvents.forEach(event => {
                     const listItem = document.createElement('li');
                     listItem.classList.add('flex', 'items-start', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
                     listItem.innerHTML = `
@@ -432,9 +398,53 @@
                     monthlyEventsList.appendChild(listItem);
                 });
             } else {
-                monthlyEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities match your search.</li>';
+                monthlyEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities found.</li>';
             }
         };
+
+        // Event listener for monthly search input
+        monthlySearchInput.addEventListener('input', () => {
+            renderMonthlyOverview();
+        });
+
+        // Function to show the daily events modal
+        const showDailyEventsModal = (date) => {
+            dailyEventsList.innerHTML = '';
+            const dailyEvents = events[date] || [];
+            dailyEventsTitle.textContent = `Activities for ${new Date(date).toDateString()}`;
+
+            if (dailyEvents.length > 0) {
+                dailyEvents.forEach(event => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('flex', 'items-start', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
+                    listItem.innerHTML = `
+                        <div class="w-4 h-4 rounded-full mr-3 mt-1 flex-shrink-0" style="background-color: ${event.color};"></div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-gray-800">${event.title}</h4>
+                            <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
+                        </div>
+                    `;
+                    dailyEventsList.appendChild(listItem);
+                });
+            } else {
+                dailyEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities scheduled for this date.</li>';
+            }
+            dailyEventsModal.classList.add('show');
+        };
+
+        // Function to close the daily events modal
+        const closeDailyEventsModalFunc = () => {
+            dailyEventsModal.classList.remove('show');
+        };
+
+        // Event listener for the modal close button
+        closeDailyEventsModal.addEventListener('click', closeDailyEventsModalFunc);
+        // Event listener to close modal on outside click
+        dailyEventsModal.addEventListener('click', (e) => {
+            if (e.target === dailyEventsModal) {
+                closeDailyEventsModalFunc();
+            }
+        });
 
         // Event listeners for calendar navigation
         prevMonthBtn.addEventListener('click', () => {
