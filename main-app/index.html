@@ -478,64 +478,46 @@
         cancelMessageBtn.addEventListener('click', closeMessage);
 
         // Render the main calendar for a given month and year
-        const renderCalendar = () => {
-            calendarGrid.innerHTML = '';
-            const firstDay = new Date(currentYear, currentMonth, 1);
-            const lastDay = new Date(currentYear, currentMonth + 1, 0);
-            const numDays = lastDay.getDate();
-            const startDayOfWeek = firstDay.getDay();
+       const renderCalendar = () => {
+    calendarGrid.innerHTML = '';
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const numDays = lastDay.getDate();
+    const startDayOfWeek = firstDay.getDay();
 
-            currentMonthYear.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+    currentMonthYear.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
 
-            // Add empty cells for days before the first of the month
-            for (let i = 0; i < startDayOfWeek; i++) {
-                const emptyCell = document.createElement('div');
-                calendarGrid.appendChild(emptyCell);
-            }
+    for (let i = 0; i < startDayOfWeek; i++) {
+        calendarGrid.appendChild(document.createElement('div'));
+    }
 
-            // Add day cells
-            for (let day = 1; day <= numDays; day++) {
-                const dayCell = document.createElement('div');
-                dayCell.classList.add('day-cell', 'p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'hover:bg-gray-100', 'transition-colors', 'relative', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
-                dayCell.textContent = day;
-                dayCell.tabIndex = 0; // Make the cell focusable
-                const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    for (let day = 1; day <= numDays; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.classList.add('day-cell', 'p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'hover:bg-gray-100', 'transition-colors', 'relative', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
+        dayCell.textContent = day;
+        dayCell.tabIndex = 0;
+        const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-                if (events[fullDate] && events[fullDate].length > 0) {
-                    dayCell.classList.add('has-events');
-                    const eventColors = events[fullDate].map(event => event.color);
+        // Just check if events exist, don't apply colors
+        if (events[fullDate] && events[fullDate].length > 0) {
+            dayCell.classList.add('has-events', 'font-bold', 'border-b-4', 'border-blue-500');
+            // Alternatively, just a light gray background to show "something is here"
+            dayCell.style.backgroundColor = 'rgba(229, 231, 235, 1)'; 
+        }
 
-                    if (eventColors.length === 1) {
-                        dayCell.style.background = eventColors[0];
-                    } else {
-                        let gradientString = 'linear-gradient(to right';
-                        const numColors = eventColors.length;
-                        eventColors.forEach((color, index) => {
-                            const start = (index / numColors) * 100;
-                            const end = ((index + 1) / numColors) * 100;
-                            gradientString += `, ${color} ${start}%, ${color} ${end}%`;
-                        });
-                        gradientString += ')';
-                        dayCell.style.background = gradientString;
-                    }
-                }
+        if (selectedDate === fullDate) {
+            dayCell.classList.add('ring-2', 'ring-blue-600', 'bg-blue-100');
+        }
 
-                if (selectedDate === fullDate) {
-                    dayCell.classList.add('bg-blue-300', 'hover:bg-blue-400');
-                    dayCell.style.background = 'rgba(191, 219, 254, 0.5)';
-                    dayCell.classList.add('hover:bg-opacity-80');
-                }
+        dayCell.addEventListener('click', () => {
+            selectedDate = fullDate;
+            renderCalendar();
+            renderEventsForSelectedDate();
+        });
 
-                // Handle click to set a single selected date
-                dayCell.addEventListener('click', () => {
-                    selectedDate = fullDate;
-                    renderCalendar();
-                    renderEventsForSelectedDate();
-                });
-
-                calendarGrid.appendChild(dayCell);
-            }
-        };
+        calendarGrid.appendChild(dayCell);
+    }
+};
 
         // Render the mini-calendar inside the modal
         const renderModalCalendar = () => {
