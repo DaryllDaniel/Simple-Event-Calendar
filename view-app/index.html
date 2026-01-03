@@ -85,17 +85,35 @@
             100% { transform: rotate(360deg); }
         }
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
+        /* Updated App Container Styling */
+#appContainer {
+    width: 100%;
+    max-width: 1000px; /* Limits how wide it can get on large screens */
+    min-height: 800px; /* Ensures the height stays consistent even if lists are empty */
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    overflow: hidden; /* Prevents internal content from leaking out */
+}
+
+/* Ensure the layout inside stays fixed */
+.lg\:flex {
+    height: 500px; /* Fixed height for the Calendar + Monthly List area */
+}
+
+/* Make internal lists scrollable so they don't push the container height */
+#monthlyEventsList {
+    flex-grow: 1;
+    overflow-y: auto;
+}
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
 
-    <div class="page-content w-full max-w-5xl">
-        <div id="appContainer" class="p-6 rounded-xl shadow-lg w-full glass-card">
+    <div class="page-content w-full flex justify-center items-center">
+    <div id="appContainer" class="p-6 rounded-xl shadow-lg glass-card">
             
             <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
                 <div class="flex items-center space-x-4">
