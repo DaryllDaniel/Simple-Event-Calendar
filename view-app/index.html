@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Public Calendar Viewer</title>
-    <!-- Use Tailwind CSS for responsive styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -13,7 +12,6 @@
             z-index: 1;
         }
 
-        /* Blurred background overlay */
         body::before {
             content: '';
             position: fixed;
@@ -25,10 +23,9 @@
             background-size: cover;
             background-position: center;
             filter: blur(8px);
-            z-index: -1; /* Place the background behind the content */
+            z-index: -1;
         }
 
-        /* Ensure main content is not blurred */
         .page-content {
             z-index: 2;
             position: relative;
@@ -36,8 +33,7 @@
 
         .day-cell {
             color: #1f2937;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-            transition: background-color 0.2s, background 0.2s;
+            transition: all 0.2s;
         }
 
         .day-cell:hover {
@@ -45,7 +41,13 @@
             transform: translateY(-2px);
         }
 
-        /* Custom modal styles with fade-in animation */
+        /* Neutral Activity Indicator for Calendar */
+        .has-events-indicator {
+            background-color: rgba(59, 130, 246, 0.1);
+            border-bottom: 3px solid #3b82f6;
+            font-weight: bold;
+        }
+
         .modal {
             position: fixed;
             z-index: 1000;
@@ -53,7 +55,6 @@
             top: 0;
             width: 100%;
             height: 100%;
-            overflow: auto;
             background-color: rgba(0,0,0,0.4);
             display: flex;
             align-items: center;
@@ -63,11 +64,6 @@
             transition: opacity 0.3s ease-out, transform 0.3s ease-out;
             pointer-events: none;
         }
-        
-        /* Message Box needs to be on top of all other modals */
-        #messageBox {
-            z-index: 1001;
-        }
 
         .modal.show {
             opacity: 1;
@@ -75,7 +71,6 @@
             pointer-events: auto;
         }
 
-        /* Loading Spinner */
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #3b82f6;
@@ -89,385 +84,285 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
 
-    <!-- All content is wrapped in a container to prevent it from blurring -->
-    <div class="page-content w-full max-w-4xl">
-        <!-- Main Application Container - Visible after login -->
-        <div id="appContainer" class="p-6 rounded-xl shadow-lg w-full" style="background-color: rgba(255, 255, 255, 0.7);">
-            <!-- User ID Display and loading indicator -->
-            <div class="flex justify-between items-center mb-4">
-                <div class="flex items-center space-x-2">
-                    <span class="text-sm text-gray-700">Your User ID:</span>
-                    <span id="userIdDisplay" class="font-mono text-xs bg-gray-200 text-gray-700 rounded-full px-2 py-1 select-all cursor-copy" title="Click to copy user ID">Public User</span>
+    <div class="page-content w-full max-w-5xl">
+        <div id="appContainer" class="p-6 rounded-xl shadow-lg w-full glass-card">
+            
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                <div class="flex items-center space-x-4">
+                    <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="KCP Logo" class="h-16 rounded-lg shadow-md">
+                    <h1 class="text-2xl font-bold text-gray-800 leading-tight">Activity Calendar<span class="block text-sm font-normal text-gray-500">Public Viewer</span></h1>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <div id="loadingIndicator" class="loader hidden"></div>
+                <div class="flex items-center space-x-2 bg-white bg-opacity-50 p-2 rounded-lg">
+                    <span class="text-xs text-gray-600">User ID:</span>
+                    <span id="userIdDisplay" class="font-mono text-xs text-blue-700 font-bold">Connecting...</span>
+                    <div id="loadingIndicator" class="loader ml-2"></div>
                 </div>
             </div>
 
-            <!-- Container for logo and title, now aligned to the left -->
-            <div class="flex items-center justify-start mb-6 space-x-4">
-                <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="KCP Logo" class="h-20 rounded-xl shadow-lg">
-                <h1 class="text-3xl font-bold text-gray-800">Activity Calendar Viewer</h1>
+            <div id="dashboardContainer" class="mb-8 p-6 rounded-xl shadow-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
+                <h3 class="text-xl font-bold mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Upcoming Activities
+                </h3>
+                <div id="upcomingEventsList" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <p class="text-blue-100 italic">Syncing with system clock...</p>
+                </div>
             </div>
 
-            <!-- Calendar and Monthly Overview Container -->
-            <div class="md:flex gap-8">
-                <!-- Calendar View -->
-                <div class="flex-1 mb-6 md:mb-0">
+            <div class="lg:flex gap-8">
+                <div class="flex-1 mb-6 lg:mb-0">
                     <div class="flex justify-between items-center mb-4">
                         <button id="prevMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
-                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
-                        <h2 id="currentMonthYear" class="text-xl font-semibold text-gray-700"></h2>
+                        <h2 id="currentMonthYear" class="text-xl font-bold text-gray-700"></h2>
                         <button id="nextMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
-                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                         </button>
                     </div>
-                    <div class="grid grid-cols-7 gap-1 text-center text-sm font-medium text-gray-500 mb-2">
+                    <div class="grid grid-cols-7 gap-1 text-center text-xs font-bold text-gray-400 uppercase mb-2">
                         <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
                     </div>
-                    <div id="calendarGrid" class="grid grid-cols-7 gap-1">
-                        <!-- Calendar days will be generated here -->
-                    </div>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
                 </div>
 
-                <!-- Monthly Activities Overview -->
-                <div class="flex-1 p-4 rounded-xl shadow-inner max-h-96 overflow-y-auto" style="background-color: rgba(255, 255, 255, 0.7);">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Monthly Activities Overview</h3>
-                    <input type="text" id="monthlySearchInput" placeholder="Search activities..." class="w-full p-2 mb-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <ul id="monthlyEventsList" class="space-y-2">
-                        <!-- Monthly events will be displayed here -->
-                    </ul>
+                <div class="flex-1 p-4 rounded-xl bg-white bg-opacity-40 shadow-inner max-h-[500px] flex flex-col">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">Monthly List</h3>
+                    <input type="text" id="monthlySearchInput" placeholder="Filter by name..." class="w-full p-2 mb-4 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    <ul id="monthlyEventsList" class="space-y-2 overflow-y-auto pr-1"></ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Custom Message Box (in place of alert()) -->
     <div id="messageBox" class="modal">
         <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full text-center">
             <p id="messageText" class="text-gray-800 mb-4"></p>
-            <div id="messageButtons" class="flex justify-center space-x-4">
-                <button id="okMessageBtn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">OK</button>
-            </div>
+            <button id="okMessageBtn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-700">OK</button>
         </div>
     </div>
     
-    <!-- Daily Events Modal -->
     <div id="dailyEventsModal" class="modal">
         <div class="bg-white p-6 rounded-xl shadow-xl max-w-md w-full">
             <div class="flex justify-between items-center mb-4">
-                <h3 id="dailyEventsTitle" class="text-2xl font-bold text-gray-800">Activities for Selected Date</h3>
-                <button id="closeDailyEventsModal" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <h3 id="dailyEventsTitle" class="text-xl font-bold text-gray-800">Activities</h3>
+                <button id="closeDailyEventsModal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <ul id="dailyEventsList" class="space-y-2 max-h-96 overflow-y-auto pr-2">
-                <!-- Daily events will be displayed here -->
-            </ul>
+            <ul id="dailyEventsList" class="space-y-3 max-h-96 overflow-y-auto"></ul>
         </div>
     </div>
 
     <script type="module">
-        // Import the necessary Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
         
-        // Use the Firebase configuration provided by the user.
         const firebaseConfig = {
             apiKey: "AIzaSyDCRT5OxfwUD25pS6igy8v3xYlaGmMXK_0",
             authDomain: "event-calendar-prototype-b11b6.firebaseapp.com",
             projectId: "event-calendar-prototype-b11b6",
             storageBucket: "event-calendar-prototype-b11b6.firebasestorage.app",
             messagingSenderId: "532386656284",
-            appId: "1:532386656284:web:fd4533fb0f54b198752fd9",
-            measurementId: "G-J10NDCD212"
+            appId: "1:532386656284:web:fd4533fb0f54b198752fd9"
         };
         
-        // This is a placeholder for the app ID to be used in the Firestore collection path
         const appId = "default-app-id";
-        
-        // The public collection path.
         const publicCollectionPath = `artifacts/${appId}/public/data/events`;
         
         let events = {};
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
         let selectedDate = null;
-        let unsubscribeFromEvents = null;
-        let isAuthReady = false;
+        let db, eventsCol;
 
-        // --- DOM Element References ---
+        // Elements
         const calendarGrid = document.getElementById('calendarGrid');
         const currentMonthYear = document.getElementById('currentMonthYear');
-        const prevMonthBtn = document.getElementById('prevMonthBtn');
-        const nextMonthBtn = document.getElementById('nextMonthBtn');
+        const upcomingEventsList = document.getElementById('upcomingEventsList');
         const monthlyEventsList = document.getElementById('monthlyEventsList');
-        const monthlySearchInput = document.getElementById('monthlySearchInput');
-        const dailyEventsModal = document.getElementById('dailyEventsModal');
         const dailyEventsList = document.getElementById('dailyEventsList');
-        const dailyEventsTitle = document.getElementById('dailyEventsTitle');
-        const closeDailyEventsModal = document.getElementById('closeDailyEventsModal');
-        const messageBox = document.getElementById('messageBox');
-        const messageText = document.getElementById('messageText');
-        const okMessageBtn = document.getElementById('okMessageBtn');
-        const userIdDisplay = document.getElementById('userIdDisplay');
         const loadingIndicator = document.getElementById('loadingIndicator');
 
-        // --- Firebase Initialization and Auth ---
-        let db;
-        let eventsCol;
-
         const initializeFirebase = async () => {
-            if (!firebaseConfig) {
-                showMessage("Firebase config not available. Cannot initialize the app.");
-                loadingIndicator.classList.add('hidden');
-                return;
-            }
-
             try {
                 const app = initializeApp(firebaseConfig);
                 const auth = getAuth(app);
                 db = getFirestore(app);
-
-                // For a public deployment, we sign in anonymously.
                 await signInAnonymously(auth);
-
-                const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+                auth.onAuthStateChanged((user) => {
                     if (user) {
-                        userIdDisplay.textContent = user.uid;
-                        isAuthReady = true;
+                        document.getElementById('userIdDisplay').textContent = user.uid.substring(0,8) + '...';
                         loadingIndicator.classList.add('hidden');
                         setupFirestoreListener();
-                    } else {
-                        isAuthReady = false;
-                        loadingIndicator.classList.add('hidden');
-                        showMessage("Authentication failed. Cannot connect to the database.");
                     }
-                    unsubscribeAuth();
                 });
-
             } catch (error) {
-                console.error('Firebase initialization failed:', error);
-                showMessage('Failed to connect to the database.');
-                loadingIndicator.classList.add('hidden');
+                console.error(error);
+                document.getElementById('messageText').textContent = "Connection Error";
             }
         };
 
         const setupFirestoreListener = () => {
-            if (!isAuthReady || !db) return;
             eventsCol = collection(db, publicCollectionPath);
-            
-            // Set up the real-time listener to the public collection
-            unsubscribeFromEvents = onSnapshot(eventsCol, (snapshot) => {
+            onSnapshot(eventsCol, (snapshot) => {
                 const newEvents = {};
                 snapshot.docs.forEach(doc => {
-                    const eventData = doc.data();
-                    const date = eventData.date;
-                    const eventWithId = { ...eventData, id: doc.id };
-
-                    if (!newEvents[date]) {
-                        newEvents[date] = [];
-                    }
-                    newEvents[date].push(eventWithId);
+                    const data = doc.data();
+                    if (!newEvents[data.date]) newEvents[data.date] = [];
+                    newEvents[data.date].push({ ...data, id: doc.id });
                 });
                 events = newEvents;
                 renderCalendar();
-                renderMonthlyOverview(); // New call to render the monthly list
-            }, (error) => {
-                 console.error('Error fetching events:', error);
-                 showMessage('Error fetching events. Please check your Firestore rules.');
+                renderMonthlyOverview();
+                renderUpcomingDashboard();
             });
         };
 
-        // --- End of Firebase Setup ---
-
-        // Function to show a simple message with an "OK" button
-        const showMessage = (text) => {
-            messageText.textContent = text;
-            okMessageBtn.classList.remove('hidden');
-            messageBox.classList.add('show');
-        };
-
-        // Function to close the custom message box
-        const closeMessage = () => {
-            messageBox.classList.remove('show');
-        };
-
-        // Event listeners for the custom message box
-        okMessageBtn.addEventListener('click', closeMessage);
-
-        // Render the main calendar for a given month and year
         const renderCalendar = () => {
             calendarGrid.innerHTML = '';
-            const firstDay = new Date(currentYear, currentMonth, 1);
-            const lastDay = new Date(currentYear, currentMonth + 1, 0);
-            const numDays = lastDay.getDate();
-            const startDayOfWeek = firstDay.getDay();
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-            currentMonthYear.textContent = `${firstDay.toLocaleString('default', { month: 'long' })} ${currentYear}`;
+            currentMonthYear.textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
 
-            for (let i = 0; i < startDayOfWeek; i++) {
-                const emptyCell = document.createElement('div');
-                calendarGrid.appendChild(emptyCell);
-            }
+            for (let i = 0; i < firstDay; i++) calendarGrid.appendChild(document.createElement('div'));
 
-            for (let day = 1; day <= numDays; day++) {
-                const dayCell = document.createElement('div');
-                dayCell.classList.add('day-cell', 'p-2', 'rounded-md', 'text-center', 'cursor-pointer', 'hover:bg-gray-100', 'transition-colors', 'relative', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
-                dayCell.textContent = day;
-                dayCell.tabIndex = 0;
-                const fullDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const cell = document.createElement('div');
+                cell.className = 'day-cell p-3 rounded-lg text-center cursor-pointer bg-white bg-opacity-50 text-sm';
+                cell.textContent = day;
 
-                if (events[fullDate] && events[fullDate].length > 0) {
-                    dayCell.classList.add('has-events');
-                    const eventColors = events[fullDate].map(event => event.color);
+                if (events[dateStr]) cell.classList.add('has-events-indicator');
+                if (selectedDate === dateStr) cell.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
 
-                    if (eventColors.length === 1) {
-                        dayCell.style.background = eventColors[0];
-                    } else {
-                        let gradientString = 'linear-gradient(to right';
-                        const numColors = eventColors.length;
-                        eventColors.forEach((color, index) => {
-                            const start = (index / numColors) * 100;
-                            const end = ((index + 1) / numColors) * 100;
-                            gradientString += `, ${color} ${start}%, ${color} ${end}%`;
-                        });
-                        gradientString += ')';
-                        dayCell.style.background = gradientString;
-                    }
-                }
-
-                if (selectedDate === fullDate) {
-                    dayCell.classList.add('bg-blue-300', 'hover:bg-blue-400');
-                    dayCell.style.background = 'rgba(191, 219, 254, 0.5)';
-                    dayCell.classList.add('hover:bg-opacity-80');
-                }
-
-                dayCell.addEventListener('click', () => {
-                    selectedDate = fullDate;
+                cell.onclick = () => {
+                    selectedDate = dateStr;
                     renderCalendar();
-                    showDailyEventsModal(fullDate);
-                });
-
-                calendarGrid.appendChild(dayCell);
+                    showDailyEventsModal(dateStr);
+                };
+                calendarGrid.appendChild(cell);
             }
         };
 
-        // New function to render the monthly overview
-        const renderMonthlyOverview = () => {
-            const query = monthlySearchInput.value.toLowerCase().trim();
-            monthlyEventsList.innerHTML = '';
-            const allMonthlyEvents = [];
-
-            for (const date in events) {
-                const eventDate = new Date(date + 'T00:00:00');
-                if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
-                    events[date].forEach(event => {
-                        allMonthlyEvents.push({ ...event, date: eventDate });
-                    });
+        const renderUpcomingDashboard = () => {
+            upcomingEventsList.innerHTML = '';
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            
+            let allUpcoming = [];
+            Object.keys(events).forEach(date => {
+                if (date >= todayStr) {
+                    events[date].forEach(ev => allUpcoming.push(ev));
                 }
-            }
-
-            const filteredEvents = allMonthlyEvents.filter(event => {
-                const titleMatch = event.title.toLowerCase().includes(query);
-                const descriptionMatch = (event.description || '').toLowerCase().includes(query);
-                return titleMatch || descriptionMatch;
             });
 
-            // Sort events by date
-            filteredEvents.sort((a, b) => a.date - b.date);
+            allUpcoming.sort((a, b) => a.date.localeCompare(b.date));
+            const nextThree = allUpcoming.slice(0, 3);
 
-            if (filteredEvents.length > 0) {
-                filteredEvents.forEach(event => {
-                    const listItem = document.createElement('li');
-                    listItem.classList.add('flex', 'items-start', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
-                    listItem.innerHTML = `
-                        <div class="w-4 h-4 rounded-full mr-3 mt-1 flex-shrink-0" style="background-color: ${event.color};"></div>
-                        <div class="flex-1">
-                            <h4 class="font-semibold text-gray-800">${event.title}</h4>
-                            <p class="text-xs text-gray-500 mb-1">${event.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                            <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
-                        </div>
-                    `;
-                    monthlyEventsList.appendChild(listItem);
-                });
-            } else {
-                monthlyEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities found.</li>';
+            if (nextThree.length === 0) {
+                upcomingEventsList.innerHTML = '<p class="text-blue-100 italic col-span-3">No upcoming activities found.</p>';
+                return;
             }
+
+            nextThree.forEach(ev => {
+                const isToday = ev.date === todayStr;
+                const card = document.createElement('div');
+                card.className = 'bg-white bg-opacity-20 backdrop-blur-md p-4 rounded-xl border border-white border-opacity-30 flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${isToday ? 'bg-yellow-400 text-blue-900' : 'bg-blue-900 text-white'}">
+                                ${isToday ? 'Today' : 'Upcoming'}
+                            </span>
+                            <div class="w-3 h-3 rounded-full" style="background-color:${ev.color}"></div>
+                        </div>
+                        <h4 class="font-bold text-white leading-tight mb-1 truncate">${ev.title}</h4>
+                        <p class="text-[11px] text-blue-100 mb-2">${new Date(ev.date + 'T00:00:00').toDateString()}</p>
+                    </div>
+                `;
+                upcomingEventsList.appendChild(card);
+            });
         };
 
-        // Event listener for monthly search input
-        monthlySearchInput.addEventListener('input', () => {
-            renderMonthlyOverview();
-        });
-
-        // Function to show the daily events modal
         const showDailyEventsModal = (date) => {
             dailyEventsList.innerHTML = '';
-            const dailyEvents = events[date] || [];
-            dailyEventsTitle.textContent = `Activities for ${new Date(date).toDateString()}`;
+            const dayEvents = events[date] || [];
+            document.getElementById('dailyEventsTitle').textContent = new Date(date + 'T00:00:00').toDateString();
 
-            if (dailyEvents.length > 0) {
-                dailyEvents.forEach(event => {
-                    const listItem = document.createElement('li');
-                    listItem.classList.add('flex', 'items-start', 'bg-white', 'p-3', 'rounded-md', 'shadow-sm', 'border', 'border-gray-200');
-                    listItem.innerHTML = `
-                        <div class="w-4 h-4 rounded-full mr-3 mt-1 flex-shrink-0" style="background-color: ${event.color};"></div>
-                        <div class="flex-1">
-                            <h4 class="font-semibold text-gray-800">${event.title}</h4>
-                            <p class="text-sm text-gray-600">${event.description || 'No description'}</p>
+            // Grouping logic for Daily View
+            const grouped = dayEvents.reduce((acc, ev) => {
+                if (!acc[ev.title]) acc[ev.title] = { ...ev, count: 1 };
+                else acc[ev.title].count++;
+                return acc;
+            }, {});
+
+            if (dayEvents.length > 0) {
+                Object.values(grouped).forEach(ev => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-start p-3 bg-gray-50 rounded-lg border-l-4';
+                    li.style.borderLeftColor = ev.color;
+                    li.innerHTML = `
+                        <div>
+                            <h4 class="font-bold text-gray-800">${ev.title} ${ev.count > 1 ? `<span class="text-blue-600 text-xs ml-1">(x${ev.count})</span>` : ''}</h4>
+                            <p class="text-sm text-gray-600">${ev.description || 'No description'}</p>
                         </div>
                     `;
-                    dailyEventsList.appendChild(listItem);
+                    dailyEventsList.appendChild(li);
                 });
             } else {
-                dailyEventsList.innerHTML = '<li class="text-gray-500 text-center p-4">No activities scheduled for this date.</li>';
+                dailyEventsList.innerHTML = '<li class="text-gray-400 text-center py-4 italic">No activities for this date.</li>';
             }
-            dailyEventsModal.classList.add('show');
+            document.getElementById('dailyEventsModal').classList.add('show');
         };
 
-        // Function to close the daily events modal
-        const closeDailyEventsModalFunc = () => {
-            dailyEventsModal.classList.remove('show');
+        const renderMonthlyOverview = () => {
+            const query = document.getElementById('monthlySearchInput').value.toLowerCase();
+            monthlyEventsList.innerHTML = '';
+            
+            let monthlyArray = [];
+            Object.keys(events).forEach(date => {
+                const d = new Date(date + 'T00:00:00');
+                if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+                    events[date].forEach(ev => monthlyArray.push(ev));
+                }
+            });
+
+            const filtered = monthlyArray.filter(ev => ev.title.toLowerCase().includes(query)).sort((a,b) => a.date.localeCompare(b.date));
+
+            filtered.forEach(ev => {
+                const li = document.createElement('li');
+                li.className = 'p-3 bg-white rounded-lg shadow-sm border border-gray-100 flex items-center gap-3';
+                li.innerHTML = `
+                    <div class="w-2 h-10 rounded-full" style="background-color:${ev.color}"></div>
+                    <div>
+                        <p class="text-[10px] font-bold text-blue-500 uppercase">${new Date(ev.date + 'T00:00:00').toLocaleDateString(undefined, {day:'numeric', month:'short'})}</p>
+                        <h4 class="text-sm font-bold text-gray-800 truncate w-40">${ev.title}</h4>
+                    </div>
+                `;
+                monthlyEventsList.appendChild(li);
+            });
         };
 
-        // Event listener for the modal close button
-        closeDailyEventsModal.addEventListener('click', closeDailyEventsModalFunc);
-        // Event listener to close modal on outside click
-        dailyEventsModal.addEventListener('click', (e) => {
-            if (e.target === dailyEventsModal) {
-                closeDailyEventsModalFunc();
-            }
-        });
+        // Navigation
+        document.getElementById('prevMonthBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} renderCalendar(); renderMonthlyOverview(); };
+        document.getElementById('nextMonthBtn').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} renderCalendar(); renderMonthlyOverview(); };
+        document.getElementById('monthlySearchInput').oninput = renderMonthlyOverview;
+        document.getElementById('closeDailyEventsModal').onclick = () => document.getElementById('dailyEventsModal').classList.remove('show');
+        document.getElementById('okMessageBtn').onclick = () => document.getElementById('messageBox').classList.remove('show');
 
-        // Event listeners for calendar navigation
-        prevMonthBtn.addEventListener('click', () => {
-            currentMonth--;
-            if (currentMonth < 0) {
-                currentMonth = 11;
-                currentYear--;
-            }
-            renderCalendar();
-            renderMonthlyOverview();
-        });
-
-        nextMonthBtn.addEventListener('click', () => {
-            currentMonth++;
-            if (currentMonth > 11) {
-                currentMonth = 0;
-                currentYear++;
-            }
-            renderCalendar();
-            renderMonthlyOverview();
-        });
-
-        // Start the application
         window.onload = initializeFirebase;
     </script>
 </body>
