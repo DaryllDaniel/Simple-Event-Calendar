@@ -85,28 +85,33 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Updated App Container Styling */
+       /* Lock the main container size */
 #appContainer {
     width: 100%;
-    max-width: 1000px; /* Limits how wide it can get on large screens */
-    min-height: 800px; /* Ensures the height stays consistent even if lists are empty */
+    max-width: 1000px;
+    height: 850px; /* Fixed total height */
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    overflow: hidden; /* Prevents internal content from leaking out */
 }
 
+/* Fix the middle section height so it doesn't jump */
+.main-layout-area {
+    height: 480px; 
+    display: flex;
+    gap: 2rem;
+}
+
+/* Custom Scrollbar for the list */
+#monthlyEventsList::-webkit-scrollbar {
+    width: 4px;
+}
+#monthlyEventsList::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.5);
+    border-radius: 10px;
+}
 /* Ensure the layout inside stays fixed */
 .lg\:flex {
     height: 500px; /* Fixed height for the Calendar + Monthly List area */
-}
-
-/* Make internal lists scrollable so they don't push the container height */
-#monthlyEventsList {
-    flex-grow: 1;
-    overflow-y: auto;
 }
     </style>
 </head>
@@ -346,33 +351,89 @@
             document.getElementById('dailyEventsModal').classList.add('show');
         };
 
-        const renderMonthlyOverview = () => {
-            const query = document.getElementById('monthlySearchInput').value.toLowerCase();
-            monthlyEventsList.innerHTML = '';
-            
-            let monthlyArray = [];
-            Object.keys(events).forEach(date => {
-                const d = new Date(date + 'T00:00:00');
-                if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-                    events[date].forEach(ev => monthlyArray.push(ev));
-                }
-            });
+const renderMonthlyOverview = () => {
+    const query = document.getElementById('monthlySearchInput').value.toLowerCase();
+    monthlyEventsList.innerHTML = '';
+    
+    // 1. Filter events for the currently viewed month
+    let monthlyArray = [];
+    Object.keys(events).forEach(date => {
+        const d = new Date(date + 'T00:00:00');
+        if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+            events[date].forEach(ev => monthlyArray.push({ ...ev, dateObj: d }));
+        }
+    });
 
-            const filtered = monthlyArray.filter(ev => ev.title.toLowerCase().includes(query)).sort((a,b) => a.date.localeCompare(b.date));
+    // 2. Group events by Title
+    const groupedByTitle = monthlyArray.reduce((acc, ev) => {
+        if (!acc[ev.title]) {
+            acc[ev.title] = {
+                title: ev.title,
+                color: ev.color,
+                dates: []
+            };
+        }
+        acc[ev.title].dates.push(ev.dateObj);
+        return acc;
+    }, {});
 
-            filtered.forEach(ev => {
-                const li = document.createElement('li');
-                li.className = 'p-3 bg-white rounded-lg shadow-sm border border-gray-100 flex items-center gap-3';
-                li.innerHTML = `
-                    <div class="w-2 h-10 rounded-full" style="background-color:${ev.color}"></div>
-                    <div>
-                        <p class="text-[10px] font-bold text-blue-500 uppercase">${new Date(ev.date + 'T00:00:00').toLocaleDateString(undefined, {day:'numeric', month:'short'})}</p>
-                        <h4 class="text-sm font-bold text-gray-800 truncate w-40">${ev.title}</h4>
-                    </div>
-                `;
-                monthlyEventsList.appendChild(li);
-            });
-        };
+    // 3. Process each group to find ranges and format them
+    const processedGroups = Object.values(groupedByTitle).map(group => {
+        // Sort dates chronologically
+        group.dates.sort((a, b) => a - b);
+        
+        const first = group.dates[0];
+        const last = group.dates[group.dates.length - 1];
+        
+        let dateLabel = "";
+        const optionsMonth = { month: 'short' };
+        const optionsDay = { day: 'numeric' };
+
+        if (group.dates.length > 1 && first.getTime() !== last.getTime()) {
+            // Check if same month for "Dec 10-12" style
+            if (first.getMonth() === last.getMonth()) {
+                dateLabel = `${first.toLocaleDateString(undefined, optionsMonth)} ${first.getDate()}-${last.getDate()}`;
+            } else {
+                dateLabel = `${first.toLocaleDateString(undefined, optionsMonth)} ${first.getDate()} - ${last.toLocaleDateString(undefined, optionsMonth)} ${last.getDate()}`;
+            }
+        } else {
+            // Single day event
+            dateLabel = `${first.toLocaleDateString(undefined, optionsMonth)} ${first.getDate()}`;
+        }
+
+        return { ...group, dateLabel, firstDate: first };
+    });
+
+    // 4. Sort grouped events by their start date and filter by search
+    const filtered = processedGroups
+        .filter(g => g.title.toLowerCase().includes(query))
+        .sort((a, b) => a.firstDate - b.firstDate);
+
+    // 5. Render to UI
+    if (filtered.length === 0) {
+        monthlyEventsList.innerHTML = '<li class="text-gray-400 text-center py-4 italic">No activities found.</li>';
+        return;
+    }
+
+    filtered.forEach(group => {
+        const li = document.createElement('li');
+        li.className = 'p-3 bg-white bg-opacity-60 rounded-lg shadow-sm border border-gray-100 flex items-center gap-4 transition-all hover:bg-opacity-100';
+        li.innerHTML = `
+            <div class="flex-shrink-0 w-12 text-center border-r border-gray-200 pr-2">
+                <p class="text-[10px] font-black text-blue-600 uppercase leading-none">${group.dateLabel.split(' ')[0]}</p>
+                <p class="text-sm font-bold text-gray-800">${group.dateLabel.split(' ')[1] || ''}</p>
+            </div>
+            <div class="flex-grow">
+                <h4 class="text-sm font-bold text-gray-800">${group.title}</h4>
+                <div class="flex items-center gap-1 mt-1">
+                    <div class="w-2 h-2 rounded-full" style="background-color:${group.color}"></div>
+                    <span class="text-[10px] text-gray-500 uppercase tracking-widest">Monthly Schedule</span>
+                </div>
+            </div>
+        `;
+        monthlyEventsList.appendChild(li);
+    });
+};
 
         // Navigation
         document.getElementById('prevMonthBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} renderCalendar(); renderMonthlyOverview(); };
