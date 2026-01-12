@@ -30,7 +30,7 @@
         #appContainer {
             width: 1100px;
             height: 800px;
-            background: rgba(255, 255, 255, 0.75);
+            background: rgb(0,0,104);
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.4);
             display: flex;
@@ -54,13 +54,46 @@
         }
 
         /* Right Side - Sidebar (Dashboard + List) */
-        .sidebar-section {
-            flex: 0 0 32%;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            overflow: hidden;
-        }
+.sidebar-section {
+    flex: 0 0 32%;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%; /* Important: Match parent height */
+    overflow: hidden; /* Prevent the sidebar itself from growing */
+}
+
+/* Dashboard stays at its content height */
+.dashboard-fixed {
+    flex-shrink: 0; 
+}
+
+/* Monthly List takes up all REMAINING space */
+.monthly-agenda-container {
+    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Crucial: Clips the list inside */
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 1.5rem;
+    padding: 1.25rem;
+    shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* The actual list becomes the only scrollable part */
+#monthlyEventsList {
+    flex: 1;
+    overflow-y: auto; 
+    padding-right: 0.5rem;
+}
+
+/* Prevents text from pushing the container wide */
+.agenda-item-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px; /* Adjust based on sidebar width */
+}
 
         .day-cell {
             aspect-ratio: 1 / 1;
@@ -141,26 +174,27 @@
             </div>
 
             <div class="sidebar-section">
-                
-                <div class="bg-blue-600 rounded-2xl p-5 text-white shadow-lg">
-                    <h3 class="text-sm font-bold flex items-center gap-2 mb-4">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        NEXT ACTIVITIES
-                    </h3>
-                    <div id="upcomingEventsList" class="space-y-3">
-                        </div>
-                </div>
-
-                <div class="flex-1 bg-white bg-opacity-40 rounded-2xl p-5 shadow-inner flex flex-col overflow-hidden">
-                    <div class="mb-4">
-                        <h3 class="text-sm font-black text-gray-800 uppercase tracking-widest">Monthly Agenda</h3>
-                        <input type="text" id="monthlySearchInput" placeholder="Quick search..." class="w-full mt-2 p-2 bg-white rounded-lg text-xs border-none focus:ring-2 focus:ring-blue-400 outline-none">
-                    </div>
-                    <ul id="monthlyEventsList" class="flex-1 overflow-y-auto custom-scroll space-y-2 pr-1">
-                        </ul>
-                </div>
-
+    
+    <div class="dashboard-fixed bg-blue-600 rounded-2xl p-5 text-white shadow-lg">
+        <h3 class="text-sm font-bold flex items-center gap-2 mb-3">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            UPCOMING
+        </h3>
+        <div id="upcomingEventsList" class="space-y-2">
             </div>
+    </div>
+
+    <div class="monthly-agenda-container">
+        <div class="mb-4">
+            <h3 class="text-xs font-black text-gray-800 uppercase tracking-widest">Monthly Agenda</h3>
+            <input type="text" id="monthlySearchInput" placeholder="Search..." class="w-full mt-2 p-2 bg-white rounded-lg text-xs border border-gray-200 outline-none focus:ring-2 focus:ring-blue-400">
+        </div>
+        
+        <ul id="monthlyEventsList" class="custom-scroll space-y-2">
+            </ul>
+    </div>
+
+</div>
         </div>
     </div>
 
