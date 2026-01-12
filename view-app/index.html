@@ -140,15 +140,19 @@ input#monthlySearchInput::placeholder { color: rgba(255, 255, 255, 0.5); }
 
     <div id="appContainer" class="rounded-3xl shadow-2xl">
         
-        <div class="px-8 py-4 border-b border-white border-opacity-10 flex justify-between items-center bg-black bg-opacity-20">
-    <div class="flex items-center gap-4">
-        <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-10 brightness-0 invert"> 
-        <h1 class="text-xl font-black text-white tracking-tight uppercase">Activity Center</h1>
-    </div>
-    <div class="text-right">
-        <p id="userIdDisplay" class="text-xs font-mono text-sky-400">ID: ...</p>
-    </div>
-</div>
+                <div class="px-8 py-4 border-b border-white border-opacity-30 flex justify-between items-center bg-black bg-opacity-20">
+            <div class="flex items-center gap-4">
+                <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-10">
+                <h1 class="text-xl font-black text-white tracking-tight uppercase">Activity Center</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <p class="text-[10px] text-white font-bold uppercase tracking-widest">Public Access</p>
+                    <p id="userIdDisplay" class="text-xs font-mono text-blue-600">ID: ...</p>
+                </div>
+                <div id="loadingIndicator" class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+            </div>
+        </div>
 
         <div class="main-content-split">
             
