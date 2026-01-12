@@ -7,13 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            position: relative;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #000033; /* Fallback */
+}
 
         body::before {
             content: '';
@@ -26,96 +26,98 @@
             z-index: -1;
         }
 
-        /* FIXED CONTAINER SIZE */
-        #appContainer {
-            width: 1100px;
-            height: 800px;
-            background: rgb(0,0,104);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
+/* FIXED CONTAINER SIZE WITH NAVY BACKGROUND */
+#appContainer {
+    width: 1100px;
+    height: 800px;
+    background-color: rgb(0, 0, 104); /* Your requested color */
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
 
-        .main-content-split {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            gap: 1.5rem;
-            padding: 1.5rem;
-        }
+.main-content-split {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
 
-        /* Left Side - Calendar */
-        .calendar-section {
-            flex: 0 0 65%;
-            display: flex;
-            flex-direction: column;
-        }
+/* LEFT SIDE - CALENDAR */
+.calendar-section {
+    flex: 0 0 65%;
+    display: flex;
+    flex-direction: column;
+}
 
-        /* Right Side - Sidebar (Dashboard + List) */
+/* RIGHT SIDE - SIDEBAR */
 .sidebar-section {
     flex: 0 0 32%;
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    height: 100%; /* Important: Match parent height */
-    overflow: hidden; /* Prevent the sidebar itself from growing */
+    height: 100%;
+    overflow: hidden;
 }
 
-/* Dashboard stays at its content height */
-.dashboard-fixed {
-    flex-shrink: 0; 
+/* CALENDAR CELLS - HIGH CONTRAST */
+.day-cell {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.05); /* Subtle dark glass */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s;
+    color: #e0e0e0;
+    font-weight: 500;
 }
 
-/* Monthly List takes up all REMAINING space */
+.day-cell:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    transform: scale(1.05);
+}
+
+.has-events-indicator {
+    border-bottom: 4px solid #38bdf8; /* Bright Sky Blue */
+    color: #38bdf8;
+    font-weight: 900;
+    background: rgba(56, 189, 248, 0.1);
+}
+
+/* SIDEBAR CONTAINERS */
 .monthly-agenda-container {
-    flex: 1; 
+    flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Crucial: Clips the list inside */
-    background: rgba(255, 255, 255, 0.4);
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 1.5rem;
     padding: 1.25rem;
-    shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* The actual list becomes the only scrollable part */
 #monthlyEventsList {
     flex: 1;
-    overflow-y: auto; 
-    padding-right: 0.5rem;
+    overflow-y: auto;
 }
 
-/* Prevents text from pushing the container wide */
-.agenda-item-title {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 150px; /* Adjust based on sidebar width */
+/* SCROLLBAR */
+#monthlyEventsList::-webkit-scrollbar { width: 4px; }
+#monthlyEventsList::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 10px; }
+
+/* INPUTS */
+input#monthlySearchInput {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
-
-        .day-cell {
-            aspect-ratio: 1 / 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0.75rem;
-            background: rgba(255, 255, 255, 0.4);
-            transition: all 0.2s;
-            font-weight: 500;
-        }
-
-        .day-cell:hover {
-            background: rgba(255, 255, 255, 0.8);
-            transform: scale(1.02);
-        }
-
-        .has-events-indicator {
-            border-bottom: 4px solid #3b82f6;
-            color: #1d4ed8;
-            font-weight: 800;
-        }
+input#monthlySearchInput::placeholder { color: rgba(255, 255, 255, 0.5); }
 
         /* Modal Styles */
         .modal {
@@ -138,19 +140,15 @@
 
     <div id="appContainer" class="rounded-3xl shadow-2xl">
         
-        <div class="px-8 py-4 border-b border-white border-opacity-30 flex justify-between items-center bg-white bg-opacity-20">
-            <div class="flex items-center gap-4">
-                <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-10">
-                <h1 class="text-xl font-black text-gray-800 tracking-tight uppercase">Activity Center</h1>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="text-right">
-                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Public Access</p>
-                    <p id="userIdDisplay" class="text-xs font-mono text-blue-600">ID: ...</p>
-                </div>
-                <div id="loadingIndicator" class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
-            </div>
-        </div>
+        <div class="px-8 py-4 border-b border-white border-opacity-10 flex justify-between items-center bg-black bg-opacity-20">
+    <div class="flex items-center gap-4">
+        <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-10 brightness-0 invert"> 
+        <h1 class="text-xl font-black text-white tracking-tight uppercase">Activity Center</h1>
+    </div>
+    <div class="text-right">
+        <p id="userIdDisplay" class="text-xs font-mono text-sky-400">ID: ...</p>
+    </div>
+</div>
 
         <div class="main-content-split">
             
@@ -290,12 +288,13 @@
             const today = new Date().toISOString().split('T')[0];
             const all = [];
             Object.keys(events).forEach(d => { if(d >= today) events[d].forEach(e => all.push(e)); });
-            all.sort((a,b) => a.date.localeCompare(b.date)).slice(0, 2).forEach(e => {
-                const div = document.createElement('div');
-                div.className = 'bg-white bg-opacity-10 p-3 rounded-xl border border-white border-opacity-20';
-                div.innerHTML = `<p class="text-[10px] font-bold opacity-70">${new Date(e.date + 'T00:00:00').toDateString()}</p>
-                                 <p class="font-bold text-sm truncate">${e.title}</p>`;
-                upcomingEventsList.appendChild(div);
+           all.sort((a,b) => a.date.localeCompare(b.date)).slice(0, 2).forEach(e => {
+        const div = document.createElement('div');
+        // High Contrast for the Blue Box
+        div.className = 'bg-white bg-opacity-10 p-3 rounded-xl border border-white border-opacity-20';
+        div.innerHTML = `<p class="text-[10px] font-bold text-sky-300 uppercase tracking-tighter">${new Date(e.date + 'T00:00:00').toDateString()}</p>
+                         <p class="font-bold text-sm text-white truncate">${e.title}</p>`;
+        upcomingEventsList.appendChild(div);
             });
         };
 
@@ -323,12 +322,15 @@
                 const dateLabel = start.getTime() === end.getTime() ? 
                                  `${start.getDate()}` : `${start.getDate()}-${end.getDate()}`;
                 
-                const li = document.createElement('li');
-                li.className = 'flex items-center gap-3 p-3 bg-white bg-opacity-50 rounded-xl border border-white';
-                li.innerHTML = `<div class="w-10 text-center font-black text-blue-600 text-xs">${dateLabel}</div>
-                                <div class="flex-1"><p class="text-xs font-bold text-gray-800 truncate">${g.title}</p></div>
-                                <div class="w-2 h-2 rounded-full" style="background:${g.color}"></div>`;
-                monthlyEventsList.appendChild(li);
+               const li = document.createElement('li');
+        li.className = 'flex items-center gap-3 p-3 bg-white bg-opacity-10 rounded-xl border border-white border-opacity-10 hover:bg-opacity-20 transition-all';
+        li.innerHTML = `
+            <div class="w-10 text-center font-black text-sky-400 text-xs">${dateLabel}</div>
+            <div class="flex-1">
+                <p class="text-xs font-bold text-white truncate agenda-item-title">${g.title}</p>
+            </div>
+            <div class="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]" style="background:${g.color}"></div>`;
+        monthlyEventsList.appendChild(li);
             });
         };
 
