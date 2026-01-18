@@ -51,6 +51,7 @@
             overflow: hidden;
         }
 
+        /* Calendar Styles */
         .day-cell {
             aspect-ratio: 1 / 1;
             display: flex;
@@ -65,7 +66,6 @@
             cursor: pointer;
             overflow: hidden;
             position: relative;
-            min-height: 80px; /* Ensures cells appear even if empty */
         }
 
         .day-cell.selected-day { 
@@ -92,12 +92,12 @@
             border-radius: 1px;
         }
 
-        /* Modal Draggable */
+        /* Modal Base */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(2px);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
             display: none;
             z-index: 100;
         }
@@ -126,6 +126,7 @@
             align-items: center;
         }
 
+        /* FAB */
         .fab {
             position: fixed;
             bottom: 2rem;
@@ -140,7 +141,9 @@
             box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4);
             cursor: pointer;
             z-index: 50;
+            transition: transform 0.2s;
         }
+        .fab:hover { transform: scale(1.1); }
 
         .custom-scroll::-webkit-scrollbar { width: 5px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
@@ -163,7 +166,7 @@
         <div class="admin-grid">
             <div class="flex flex-col">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 id="currentMonthYear" class="text-2xl font-black">Loading Calendar...</h2>
+                    <h2 id="currentMonthYear" class="text-2xl font-black"></h2>
                     <div class="flex gap-2">
                         <button id="prevBtn" class="p-2 bg-gray-800 rounded-lg hover:bg-gray-700">Prev</button>
                         <button id="nextBtn" class="p-2 bg-gray-800 rounded-lg hover:bg-gray-700">Next</button>
@@ -186,8 +189,17 @@
         </div>
     </div>
 
-    <div id="openAddModal" class="fab">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+    <div id="dayDetailOverlay" class="modal-overlay">
+        <div id="dayDetailModal" class="modal-content !max-w-md">
+            <div class="modal-header">
+                <h2 id="dayDetailTitle" class="text-sm font-black uppercase tracking-widest text-sky-400">Events</h2>
+                <button id="closeDayDetail" class="text-gray-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <div id="dayEventsList" class="p-6 space-y-3 max-h-[400px] overflow-y-auto custom-scroll"></div>
+            <div class="p-4 border-t border-white border-opacity-5">
+                <button id="startAddFromDay" class="w-full py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold uppercase">Add New Event for this Day</button>
+            </div>
+        </div>
     </div>
 
     <div id="eventModalOverlay" class="modal-overlay">
@@ -199,25 +211,27 @@
             <div class="p-6 space-y-4">
                 <input type="hidden" id="editGroupId">
                 <div class="bg-black bg-opacity-40 p-3 rounded-xl border border-blue-500 border-opacity-20">
-                    <div id="dateDisplay" class="text-xs font-mono text-blue-300">Click dates on calendar</div>
+                    <div id="dateDisplay" class="text-xs font-mono text-blue-300">No dates selected</div>
                 </div>
-                <div>
-                    <select id="eventOrg" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none">
-                        <option value="Loquitur">Loquitur</option><option value="CTELA">CTELA</option>
-                        <option value="CCJE">CCJE</option><option value="CABM">CABM</option>
-                        <option value="CIT">CIT</option><option value="COT">COT</option>
-                        <option value="Sports">Sports</option><option value="Scouts">Scouts</option>
-                        <option value="SSC">SSC</option><option value="GABAY">GABAY</option>
-                    </select>
-                </div>
+                <select id="eventOrg" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none">
+                    <option value="Loquitur">Loquitur</option><option value="CTELA">CTELA</option>
+                    <option value="CCJE">CCJE</option><option value="CABM">CABM</option>
+                    <option value="CIT">CIT</option><option value="COT">COT</option>
+                    <option value="Sports">Sports</option><option value="Scouts">Scouts</option>
+                    <option value="SSC">SSC</option><option value="GABAY">GABAY</option>
+                </select>
                 <input type="text" id="eventTitle" placeholder="Event Title" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none">
-                <textarea id="eventDesc" rows="2" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none" placeholder="Details..."></textarea>
+                <textarea id="eventDesc" rows="2" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none" placeholder="Description..."></textarea>
                 <div class="flex gap-2">
                     <button id="deleteBtn" class="hidden flex-1 py-3 bg-red-900 bg-opacity-30 text-red-400 border border-red-900 rounded-xl font-bold text-[10px] uppercase">Delete</button>
                     <button id="saveEventBtn" class="flex-[2] py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl text-xs">Save Event</button>
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="openAddModal" class="fab">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
     </div>
 
     <script type="module">
@@ -236,75 +250,67 @@
 
         const orgColors = { "Loquitur": "#FBFFC5", "CTELA": "#5E58FF", "CCJE": "#00AF17", "CABM": "#FFDE33", "CIT": "#78778B", "COT": "#E325FF", "Sports": "#F54D4D", "Scouts": "#94FF98", "SSC": "#660202", "GABAY": "#C32929" };
         const path = `artifacts/default-app-id/public/data/events`;
-        let db, allEvents = [], currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear(), selection = [], feedTab = 'upcoming';
+        let db, allEvents = [], currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear(), selection = [], activeDay = "";
 
         const init = async () => {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             await signInAnonymously(getAuth(app));
-            
-            // Listen to data
             onSnapshot(collection(db, path), (snap) => {
                 allEvents = snap.docs.map(d => ({ ...d.data(), id: d.id }));
                 renderCalendar();
                 renderFeed();
             });
-            
-            // Initial render call to ensure calendar shows immediately
             renderCalendar();
         };
 
         const renderCalendar = () => {
             const grid = document.getElementById('calendarGrid');
-            if (!grid) return;
             grid.innerHTML = '';
+            const dObj = new Date(currentYear, currentMonth);
+            document.getElementById('currentMonthYear').textContent = dObj.toLocaleString('default', { month: 'long', year: 'numeric' });
             
-            const dateObj = new Date(currentYear, currentMonth);
-            document.getElementById('currentMonthYear').textContent = dateObj.toLocaleString('default', { month: 'long', year: 'numeric' });
-
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-            // Fill empty slots
-            for (let i = 0; i < firstDay; i++) {
-                grid.appendChild(document.createElement('div'));
-            }
+            for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
 
-            // Fill days
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const dayEvents = allEvents.filter(e => e.date === dateStr);
-                
                 const cell = document.createElement('div');
                 cell.className = 'day-cell';
-                
-                // Highlights
                 if (selection.includes(dateStr)) cell.classList.add('selected-day');
                 if (selection.length === 2 && dateStr > selection[0] && dateStr < selection[1]) cell.classList.add('in-range');
 
                 cell.innerHTML = `<span>${d}</span><div class="strip-container"></div>`;
-                const container = cell.querySelector('.strip-container');
                 dayEvents.forEach(ev => {
                     const s = document.createElement('div');
                     s.className = 'event-strip';
                     s.style.backgroundColor = ev.color || '#38bdf8';
-                    container.appendChild(s);
+                    cell.querySelector('.strip-container').appendChild(s);
                 });
 
-                cell.onclick = () => {
-                    if (selection.length >= 2 || selection.includes(dateStr)) selection = [dateStr];
-                    else { selection.push(dateStr); selection.sort(); }
-                    updateDateDisplay();
-                    renderCalendar();
-                };
+                cell.onclick = () => showDayDetails(dateStr, dayEvents);
                 grid.appendChild(cell);
             }
         };
 
-        const updateDateDisplay = () => {
-            const d = document.getElementById('dateDisplay');
-            if (selection.length === 0) d.textContent = "Pick days on calendar";
-            else d.textContent = selection.length === 1 ? selection[0] : `${selection[0]} to ${selection[1]}`;
+        const showDayDetails = (dateStr, events) => {
+            activeDay = dateStr;
+            document.getElementById('dayDetailTitle').textContent = `Events on ${dateStr}`;
+            const list = document.getElementById('dayEventsList');
+            list.innerHTML = events.length ? '' : '<div class="text-gray-500 text-center py-4 italic text-xs">No events.</div>';
+            
+            events.forEach(ev => {
+                const item = document.createElement('div');
+                item.className = "p-3 bg-white bg-opacity-5 rounded-lg border-l-4 hover:bg-opacity-10 cursor-pointer";
+                item.style.borderColor = ev.color;
+                item.innerHTML = `<div class="text-xs font-bold text-white">${ev.title}</div><div class="text-[10px] text-gray-400 uppercase mt-1">${ev.org}</div>`;
+                item.onclick = () => { document.getElementById('dayDetailOverlay').classList.remove('active'); loadEdit(ev); };
+                list.appendChild(item);
+            });
+            document.getElementById('dayDetailOverlay').classList.add('active');
         };
 
         const renderFeed = () => {
@@ -315,54 +321,52 @@
 
             const groups = {};
             allEvents.forEach(ev => {
-                const gid = ev.groupId || ev.id;
-                if (!groups[gid]) groups[gid] = { ...ev, dates: [] };
-                groups[gid].dates.push(ev.date);
+                const key = ev.groupId || ev.title;
+                if (!groups[key]) groups[key] = { ...ev, dates: [] };
+                groups[key].dates.push(ev.date);
             });
 
-            let filtered = Object.values(groups).map(g => {
+            Object.values(groups).map(g => {
                 g.dates.sort();
                 g.startDate = g.dates[0];
                 g.endDate = g.dates[g.dates.length - 1];
                 return g;
             }).filter(g => {
                 const match = g.title.toLowerCase().includes(search) || g.org.toLowerCase().includes(search);
-                return match && (feedTab === 'all' || g.endDate >= today);
-            });
-
-            filtered.sort((a,b) => a.startDate.localeCompare(b.startDate)).forEach(g => {
+                return match && (g.endDate >= today);
+            }).sort((a,b) => a.startDate.localeCompare(b.startDate)).forEach(g => {
                 const card = document.createElement('div');
                 card.className = "p-3 bg-white bg-opacity-5 rounded-xl border-l-4 cursor-pointer hover:bg-opacity-10 transition-all";
                 card.style.borderColor = g.color;
-                card.innerHTML = `<div class="flex justify-between items-center"><span class="text-xs font-bold text-sky-400">${g.title}</span><span class="text-[9px] text-gray-500 font-mono">${g.startDate}</span></div><div class="text-[9px] text-gray-400 mt-1 uppercase">${g.org}</div>`;
+                const range = g.startDate === g.endDate ? g.startDate : `${g.startDate} to ${g.endDate}`;
+                card.innerHTML = `<div class="flex justify-between items-center"><span class="text-xs font-bold text-sky-400">${g.title}</span><span class="text-[9px] text-gray-500 font-mono">${range}</span></div><div class="text-[9px] text-gray-400 mt-1 uppercase">${g.org}</div>`;
                 card.onclick = () => loadEdit(g);
                 list.appendChild(card);
             });
         };
-
-        const overlay = document.getElementById('eventModalOverlay');
-        const modal = document.getElementById('eventModal');
-        const openModal = () => overlay.classList.add('active');
-        const closeModal = () => { overlay.classList.remove('active'); resetForm(); };
 
         const loadEdit = (g) => {
             document.getElementById('editGroupId').value = g.groupId || g.id;
             document.getElementById('eventTitle').value = g.title;
             document.getElementById('eventOrg').value = g.org;
             document.getElementById('eventDesc').value = g.description || '';
-            selection = g.startDate === g.endDate ? [g.startDate] : [g.startDate, g.endDate];
+            selection = g.startDate ? [g.startDate, g.endDate] : [g.date];
             document.getElementById('modalTitle').textContent = "Edit Event Group";
-            document.getElementById('saveEventBtn').textContent = "Update Group";
             document.getElementById('deleteBtn').classList.remove('hidden');
-            updateDateDisplay(); renderCalendar(); openModal();
+            updateDateDisplay(); renderCalendar(); document.getElementById('eventModalOverlay').classList.add('active');
+        };
+
+        const updateDateDisplay = () => {
+            const d = document.getElementById('dateDisplay');
+            if (selection.length === 0) d.textContent = "Click dates on calendar";
+            else d.textContent = selection.length === 1 ? selection[0] : `${selection[0]} to ${selection[selection.length-1]}`;
         };
 
         const resetForm = () => {
             selection = []; document.getElementById('editGroupId').value = '';
             document.getElementById('eventTitle').value = ''; document.getElementById('eventDesc').value = '';
-            document.getElementById('modalTitle').textContent = "Add New Event";
-            document.getElementById('saveEventBtn').textContent = "Save Event";
             document.getElementById('deleteBtn').classList.add('hidden');
+            document.getElementById('modalTitle').textContent = "Manage Event";
             updateDateDisplay(); renderCalendar();
         };
 
@@ -370,8 +374,7 @@
             const title = document.getElementById('eventTitle').value;
             const org = document.getElementById('eventOrg').value;
             const gid = document.getElementById('editGroupId').value;
-            if (!title || !selection.length) return alert("Select dates and title!");
-
+            if (!title || !selection.length) return alert("Select dates!");
             const batch = writeBatch(db);
             if (gid) {
                 const q = query(collection(db, path), where("groupId", "==", gid));
@@ -379,7 +382,6 @@
                 snap.forEach(d => batch.delete(d.ref));
                 batch.delete(doc(db, path, gid));
             }
-
             const newGid = `group_${Date.now()}`;
             let curr = new Date(selection[0]), last = new Date(selection[selection.length-1]);
             while (curr <= last) {
@@ -387,28 +389,22 @@
                 batch.set(doc(collection(db, path)), { title, org, date: dStr, color: orgColors[org], groupId: newGid, description: document.getElementById('eventDesc').value });
                 curr.setDate(curr.getDate() + 1);
             }
-            await batch.commit(); closeModal();
+            await batch.commit(); document.getElementById('eventModalOverlay').classList.remove('active'); resetForm();
         };
 
         // Draggable Logic
         let isDragging = false, offset = [0,0];
-        document.getElementById('modalHeader').addEventListener('mousedown', (e) => {
-            isDragging = true;
-            offset = [modal.offsetLeft - e.clientX, modal.offsetTop - e.clientY];
-        });
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            modal.style.left = (e.clientX + offset[0]) + 'px';
-            modal.style.top = (e.clientY + offset[1]) + 'px';
-            modal.style.transform = 'none';
-        });
-        document.addEventListener('mouseup', () => isDragging = false);
+        const modal = document.getElementById('eventModal');
+        document.getElementById('modalHeader').onmousedown = (e) => { isDragging = true; offset = [modal.offsetLeft - e.clientX, modal.offsetTop - e.clientY]; };
+        document.onmousemove = (e) => { if (!isDragging) return; modal.style.left = (e.clientX + offset[0]) + 'px'; modal.style.top = (e.clientY + offset[1]) + 'px'; modal.style.transform = 'none'; };
+        document.onmouseup = () => isDragging = false;
 
-        // Listeners
-        document.getElementById('openAddModal').onclick = openModal;
-        document.getElementById('closeModal').onclick = closeModal;
+        // UI Listeners
+        document.getElementById('openAddModal').onclick = () => document.getElementById('eventModalOverlay').classList.add('active');
+        document.getElementById('closeModal').onclick = () => { document.getElementById('eventModalOverlay').classList.remove('active'); resetForm(); };
+        document.getElementById('closeDayDetail').onclick = () => document.getElementById('dayDetailOverlay').classList.remove('active');
+        document.getElementById('startAddFromDay').onclick = () => { document.getElementById('dayDetailOverlay').classList.remove('active'); selection = [activeDay]; updateDateDisplay(); renderCalendar(); document.getElementById('eventModalOverlay').classList.add('active'); };
         document.getElementById('saveEventBtn').onclick = saveEvent;
-        document.getElementById('feedSearch').oninput = renderFeed;
         document.getElementById('prevBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} renderCalendar(); };
         document.getElementById('nextBtn').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} renderCalendar(); };
         document.getElementById('deleteBtn').onclick = async () => {
@@ -419,7 +415,7 @@
                 const batch = writeBatch(db);
                 snap.forEach(d => batch.delete(d.ref));
                 batch.delete(doc(db, path, gid));
-                await batch.commit(); closeModal();
+                await batch.commit(); document.getElementById('eventModalOverlay').classList.remove('active'); resetForm();
             }
         };
 
