@@ -76,120 +76,117 @@
     </style>
 </head>
 <body>
-
-    <div id="appContainer" class="rounded-xl shadow-2xl">
-        <div class="px-6 py-4 border-b-2 border-slate-800 flex justify-between items-center bg-slate-900">
+    <div id="appContainer" class="rounded-3xl">
+        <div class="px-8 py-4 border-b border-white border-opacity-10 flex justify-between items-center bg-black bg-opacity-40">
             <div class="flex items-center gap-4">
-                <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-10 brightness-0 invert">
-                <h1 class="text-2xl font-black tracking-tight text-white">EVENT COMMAND CENTER</h1>
+                <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-8 brightness-0 invert">
+                <h1 class="text-xl font-black tracking-tighter text-blue-400">ADMIN CONTROL PANEL</h1>
             </div>
-            <div class="flex gap-4 items-center">
-                <div id="connectionStatus" class="px-3 py-1 bg-black border border-green-500 text-green-500 text-xs font-bold rounded-full flex items-center gap-2">
-                    <span class="w-2 h-2 bg-green-500 rounded-full"></span> SYSTEM ONLINE
-                </div>
+            <div id="statusIndicator" class="flex items-center gap-3 text-xs font-mono">
+                <span id="loadingDot" class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
+                <span id="userStatus">Connecting...</span>
             </div>
         </div>
 
         <div class="admin-grid">
-            <div id="formSection" class="bg-slate-900 p-6 border-r border-slate-800 overflow-y-auto custom-scroll">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 id="formTitle" class="text-xl font-bold text-sky-400 uppercase">New Activity</h2>
-                    <button id="cancelEditBtn" class="hidden bg-red-600 hover:bg-red-700 px-3 py-1 text-xs font-black rounded">EXIT EDIT</button>
+            <div id="formContainer" class="bg-white bg-opacity-5 p-6 rounded-2xl border border-white border-opacity-10 flex flex-col gap-4 overflow-y-auto custom-scroll transition-all">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 id="formTitle" class="text-lg font-bold text-sky-400">Create New Event</h2>
+                    <button id="cancelEditBtn" class="hidden text-[10px] bg-red-500 px-2 py-1 rounded font-bold uppercase">Cancel Edit</button>
                 </div>
-
-                <div class="space-y-5">
+                
+                <div class="space-y-4">
                     <input type="hidden" id="editDocId">
-                    
-                    <div>
-                        <label class="block text-xs font-black text-slate-400 uppercase mb-2">Organizer</label>
-                        <select id="eventOrg" class="w-full bg-black border-2 border-slate-700 rounded-lg p-3 text-white font-bold focus:border-sky-500 outline-none">
-                            <option value="Loquitur">Loquitur (#FBFFC5)</option>
-                            <option value="CTELA">CTELA (#5E58FF)</option>
-                            <option value="CCJE">CCJE (#00AF17)</option>
-                            <option value="CABM">CABM (#FFDE33)</option>
-                            <option value="CIT">CIT (#78778B)</option>
-                            <option value="COT">COT (#E325FF)</option>
-                            <option value="Sports">Sports (#F54D4D)</option>
-                            <option value="Scouts">Scouts (#94FF98)</option>
-                            <option value="SSC">SSC (#660202)</option>
-                            <option value="GABAY">GABAY (#C32929)</option>
+                    <input type="hidden" id="editGroupId"> <div>
+                        <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Organization</label>
+                        <select id="eventOrg" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="Loquitur">Loquitur</option>
+                            <option value="CTELA">CTELA</option>
+                            <option value="CCJE">CCJE</option>
+                            <option value="CABM">CABM</option>
+                            <option value="CIT">CIT</option>
+                            <option value="COT">COT</option>
+                            <option value="Sports">Sports</option>
+                            <option value="Scouts">Scouts</option>
+                            <option value="SSC">SSC</option>
+                            <option value="GABAY">GABAY</option>
                         </select>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-black text-slate-400 uppercase mb-2">Event Title</label>
-                        <input type="text" id="eventTitle" class="w-full bg-black border-2 border-slate-700 rounded-lg p-3 text-lg font-bold outline-none focus:border-sky-500">
+                        <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Event Title</label>
+                        <input type="text" id="eventTitle" placeholder="e.g. Foundation Day" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
+                    <div id="dateRangeContainer" class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-xs font-black text-slate-400 uppercase mb-2">Start Date</label>
-                            <input type="date" id="startDate" class="w-full bg-black border-2 border-slate-700 rounded-lg p-3 font-bold invert">
+                            <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Date / Start</label>
+                            <input type="date" id="startDate" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs outline-none">
                         </div>
-                        <div id="endDateWrapper">
-                            <label class="block text-xs font-black text-slate-400 uppercase mb-2">End Date</label>
-                            <input type="date" id="endDate" class="w-full bg-black border-2 border-slate-700 rounded-lg p-3 font-bold invert">
+                        <div id="endDateDiv">
+                            <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">End Date (Optional)</label>
+                            <input type="date" id="endDate" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs outline-none">
                         </div>
                     </div>
 
-                    <div id="editModeOptions" class="hidden p-4 bg-amber-950 border border-amber-500 rounded-lg">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" id="bulkEditToggle" class="w-5 h-5">
-                            <span class="text-xs font-bold text-amber-200">Update ALL instances with this title?</span>
-                        </label>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Description</label>
+                        <textarea id="eventDesc" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none" placeholder="Brief details..."></textarea>
                     </div>
 
-                    <button id="saveBtn" class="w-full py-4 bg-sky-600 hover:bg-sky-500 text-white font-black text-lg rounded-xl shadow-lg transition-transform active:scale-95">SAVE TO DATABASE</button>
+                    <div id="editScopeContainer" class="hidden bg-blue-900 bg-opacity-20 p-3 rounded-lg border border-blue-500 border-opacity-30">
+                        <label class="block text-[10px] font-bold text-blue-300 mb-2">UPDATE SCOPE:</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center text-xs gap-2 cursor-pointer">
+                                <input type="radio" name="editScope" value="single" checked> This day only
+                            </label>
+                            <label class="flex items-center text-xs gap-2 cursor-pointer">
+                                <input type="radio" name="editScope" value="group"> All days in range
+                            </label>
+                        </div>
+                    </div>
+
+                    <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition-all shadow-lg">Push to Calendar</button>
                 </div>
             </div>
 
-            <div class="p-4 flex flex-col">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 id="calMonth" class="text-3xl font-black tracking-tighter"></h2>
-                    <div class="flex gap-4">
-                        <button id="prev" class="px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded font-black border border-slate-600">PREV</button>
-                        <button id="next" class="px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded font-black border border-slate-600">NEXT</button>
+            <div class="flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="currentMonthYear" class="text-2xl font-black text-white"></h2>
+                    <div class="flex gap-2">
+                        <button id="prevBtn" class="p-2 bg-gray-800 rounded-lg hover:bg-gray-700">Prev</button>
+                        <button id="nextBtn" class="p-2 bg-gray-800 rounded-lg hover:bg-gray-700">Next</button>
                     </div>
                 </div>
-                <div class="grid grid-cols-7 gap-1 mb-1">
-                    <div class="text-center font-black text-sky-500 text-xs py-2">SUN</div>
-                    <div class="text-center font-black text-sky-500 text-xs py-2">MON</div>
-                    <div class="text-center font-black text-sky-500 text-xs py-2">TUE</div>
-                    <div class="text-center font-black text-sky-500 text-xs py-2">WED</div>
-                    <div class="text-center font-black text-sky-500 text-xs py-2">THU</div>
-                    <div class="text-center font-black text-sky-500 text-xs py-2">FRI</div>
-                    <div class="text-center font-black text-sky-500 text-xs py-2">SAT</div>
+                <div class="grid grid-cols-7 gap-2 mb-2 text-center text-[10px] font-bold text-gray-500">
+                    <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
                 </div>
-                <div id="calendarGrid" class="grid grid-cols-7 gap-1 flex-1"></div>
+                <div id="calendarGrid" class="grid grid-cols-7 gap-2 flex-1"></div>
             </div>
 
-            <div class="bg-slate-900 border-l border-slate-800 flex flex-col overflow-hidden p-4">
-                <div class="mb-6">
-                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Global Search</label>
-                    <input type="text" id="feedSearch" placeholder="Search title or org..." class="w-full bg-black border border-slate-700 rounded-lg p-3 text-sm font-bold mt-1 outline-none focus:border-sky-500">
+            <div class="bg-black bg-opacity-30 p-4 rounded-2xl border border-white border-opacity-5 flex flex-col overflow-hidden">
+                <div class="mb-4">
+                    <input type="text" id="feedSearch" placeholder="Search events..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs outline-none focus:border-sky-500">
+                </div>
+                
+                <div class="flex border-b border-white border-opacity-10 mb-3">
+                    <button id="tabUpcoming" class="flex-1 py-2 text-[10px] font-bold uppercase border-b-2 border-sky-500">Upcoming</button>
+                    <button id="tabAll" class="flex-1 py-2 text-[10px] font-bold uppercase text-gray-500">All History</button>
                 </div>
 
-                <div class="flex-1 overflow-y-auto custom-scroll space-y-6">
-                    <div>
-                        <h3 class="text-xs font-black text-red-500 mb-3 flex items-center gap-2">
-                            <span class="w-2 h-2 bg-red-500 rounded-full animate-ping"></span> LIVE NOW
-                        </h3>
-                        <div id="liveList" class="space-y-2"></div>
-                    </div>
-                    <div>
-                        <h3 class="text-xs font-black text-sky-500 mb-3 uppercase tracking-widest">Upcoming</h3>
-                        <div id="upcomingList" class="space-y-2"></div>
-                    </div>
-                </div>
+                <div id="fullEventList" class="flex-1 overflow-y-auto custom-scroll space-y-2 pr-2"></div>
             </div>
         </div>
     </div>
 
     <div id="dailyModal" class="modal">
-        <div class="bg-slate-900 border-2 border-slate-700 p-8 rounded-2xl w-full max-w-lg mx-4">
-            <h3 id="modalDate" class="text-2xl font-black mb-6 text-sky-400"></h3>
-            <div id="modalEventList" class="space-y-4 mb-8 max-h-[400px] overflow-y-auto pr-2 custom-scroll"></div>
-            <button id="closeModal" class="w-full py-4 bg-slate-800 hover:bg-slate-700 font-black rounded-xl border border-slate-600">CLOSE WINDOW</button>
+        <div class="bg-gray-900 border border-white border-opacity-10 p-8 rounded-3xl shadow-2xl max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modalDate" class="text-xl font-black"></h3>
+                <span class="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-400">Daily Events</span>
+            </div>
+            <div id="modalEventList" class="space-y-3 mb-6 max-h-96 overflow-y-auto custom-scroll pr-2"></div>
+            <button id="closeModal" class="w-full py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-bold transition-all">Close</button>
         </div>
     </div>
 
@@ -214,61 +211,28 @@
         };
 
         const path = `artifacts/default-app-id/public/data/events`;
-        let db, events = {}, currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear();
-        let isEditing = false;
+        let db, rawEvents = [], currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear();
+        let isEditing = false, feedTab = 'upcoming';
 
         const initialize = async () => {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             await signInAnonymously(getAuth(app));
+            document.getElementById('loadingDot').className = "w-2 h-2 bg-green-500 rounded-full";
+            document.getElementById('userStatus').textContent = "Admin Authenticated";
             setupListener();
         };
 
         const setupListener = () => {
             onSnapshot(collection(db, path), (snap) => {
-                const data = {};
-                const all = [];
-                snap.docs.forEach(d => {
-                    const ev = { ...d.data(), id: d.id };
-                    if(!data[ev.date]) data[ev.date] = [];
-                    data[ev.date].push(ev);
-                    all.push(ev);
-                });
-                events = data;
-                renderCalendar();
-                renderFeed(all);
+                rawEvents = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+                renderAll();
             });
         };
 
-        const renderFeed = (all) => {
-            const searchTerm = document.getElementById('feedSearch').value.toLowerCase();
-            const liveEl = document.getElementById('liveList');
-            const upEl = document.getElementById('upcomingList');
-            const today = new Date().toISOString().split('T')[0];
-
-            liveEl.innerHTML = ''; upEl.innerHTML = '';
-
-            const filtered = all.filter(ev => 
-                ev.title.toLowerCase().includes(searchTerm) || 
-                ev.org.toLowerCase().includes(searchTerm)
-            ).sort((a,b) => a.date.localeCompare(b.date));
-
-            filtered.forEach(ev => {
-                const card = document.createElement('div');
-                card.className = "p-3 bg-black border border-slate-800 rounded-lg cursor-pointer hover:border-sky-500 transition-colors group";
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">${ev.date}</span>
-                        ${ev.date === today ? '<span class="status-live">LIVE</span>' : ''}
-                    </div>
-                    <div class="font-bold text-sm text-white group-hover:text-sky-400">${ev.title}</div>
-                    <div class="text-[10px] font-bold" style="color:${ev.color}">${ev.org}</div>
-                `;
-                card.onclick = () => loadEdit(ev);
-                
-                if(ev.date === today) liveEl.appendChild(card);
-                else if(ev.date > today) upEl.appendChild(card);
-            });
+        const renderAll = () => {
+            renderCalendar();
+            renderFeed();
         };
 
         const renderCalendar = () => {
@@ -276,103 +240,176 @@
             grid.innerHTML = '';
             const first = new Date(currentYear, currentMonth, 1).getDay();
             const days = new Date(currentYear, currentMonth + 1, 0).getDate();
-            document.getElementById('calMonth').textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'LONG', year: 'numeric' }).toUpperCase();
+            document.getElementById('currentMonthYear').textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
 
             for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
+
+            const eventsByDate = rawEvents.reduce((acc, ev) => {
+                if(!acc[ev.date]) acc[ev.date] = [];
+                acc[ev.date].push(ev);
+                return acc;
+            }, {});
 
             for (let d = 1; d <= days; d++) {
                 const ds = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const cell = document.createElement('div');
-                cell.className = `day-cell ${events[ds] ? 'has-event' : ''}`;
-                if(events[ds]) cell.style.boxShadow = `inset 0 -8px 0 ${events[ds][0].color}`;
-                cell.innerHTML = `<span class="text-lg">${d}</span>`;
-                cell.onclick = () => showDaily(ds);
+                cell.className = `day-cell ${eventsByDate[ds] ? 'has-event' : ''}`;
+                if(eventsByDate[ds]) cell.style.backgroundColor = eventsByDate[ds][0].color + '33';
+                cell.textContent = d;
+                cell.onclick = () => showDaily(ds, eventsByDate[ds] || []);
                 grid.appendChild(cell);
             }
         };
 
-        const loadEdit = (ev) => {
+        const renderFeed = () => {
+            const listEl = document.getElementById('fullEventList');
+            const search = document.getElementById('feedSearch').value.toLowerCase();
+            listEl.innerHTML = '';
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            let filtered = rawEvents.filter(ev => {
+                const matchesSearch = ev.title.toLowerCase().includes(search) || ev.org.toLowerCase().includes(search);
+                const isUpcoming = ev.date >= today;
+                return matchesSearch && (feedTab === 'all' || isUpcoming);
+            });
+
+            // Sort: Upcoming (Ascending), All (Descending)
+            filtered.sort((a, b) => feedTab === 'upcoming' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
+
+            filtered.forEach(ev => {
+                const card = document.createElement('div');
+                card.className = "p-3 bg-white bg-opacity-5 rounded-xl border-l-4 text-[11px] cursor-pointer hover:bg-opacity-10 transition-all";
+                card.style.borderColor = ev.color;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="font-bold text-sky-400">${ev.title}</div>
+                        <div class="text-[9px] text-gray-500 font-mono">${ev.date}</div>
+                    </div>
+                    <div class="text-gray-400 mt-1">${ev.org}</div>
+                `;
+                card.onclick = () => {
+                    // Jump to month and edit
+                    const evDate = new Date(ev.date);
+                    currentMonth = evDate.getMonth();
+                    currentYear = evDate.getFullYear();
+                    renderCalendar();
+                    loadEventForEdit(ev);
+                };
+                listEl.appendChild(card);
+            });
+        };
+
+        const loadEventForEdit = (ev) => {
             isEditing = true;
             document.getElementById('editDocId').value = ev.id;
+            document.getElementById('editGroupId').value = ev.groupId || '';
             document.getElementById('eventTitle').value = ev.title;
             document.getElementById('eventOrg').value = ev.org;
             document.getElementById('startDate').value = ev.date;
-            document.getElementById('formTitle').textContent = "Editing Activity";
-            document.getElementById('editModeOptions').classList.remove('hidden');
+            document.getElementById('eventDesc').value = ev.description || '';
+            
+            document.getElementById('formTitle').textContent = "Edit Event Mode";
+            document.getElementById('formContainer').classList.add('edit-mode-active');
+            document.getElementById('saveEventBtn').textContent = "Confirm Update";
+            document.getElementById('saveEventBtn').className = "w-full py-3 bg-yellow-600 hover:bg-yellow-500 font-bold rounded-xl transition-all";
             document.getElementById('cancelEditBtn').classList.remove('hidden');
-            document.getElementById('saveBtn').className = "w-full py-4 bg-amber-600 hover:bg-amber-500 text-white font-black text-lg rounded-xl shadow-lg";
-            document.getElementById('saveBtn').textContent = "UPDATE ACTIVITY";
-            document.getElementById('endDateWrapper').classList.add('opacity-20', 'pointer-events-none');
+            
+            // Show scope selector if it's part of a group
+            if(ev.groupId) {
+                document.getElementById('editScopeContainer').classList.remove('hidden');
+                document.getElementById('endDateDiv').classList.add('opacity-30', 'pointer-events-none');
+            }
+
+            document.getElementById('dailyModal').classList.remove('show');
         };
 
         const resetForm = () => {
             isEditing = false;
+            document.getElementById('editDocId').value = '';
+            document.getElementById('editGroupId').value = '';
             document.getElementById('eventTitle').value = '';
             document.getElementById('startDate').value = '';
             document.getElementById('endDate').value = '';
-            document.getElementById('formTitle').textContent = "New Activity";
-            document.getElementById('editModeOptions').classList.add('hidden');
+            document.getElementById('eventDesc').value = '';
+            document.getElementById('formTitle').textContent = "Create New Event";
+            document.getElementById('formContainer').classList.remove('edit-mode-active');
+            document.getElementById('saveEventBtn').textContent = "Push to Calendar";
+            document.getElementById('saveEventBtn').className = "w-full py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition-all";
             document.getElementById('cancelEditBtn').classList.add('hidden');
-            document.getElementById('saveBtn').className = "w-full py-4 bg-sky-600 hover:bg-sky-500 text-white font-black text-lg rounded-xl shadow-lg";
-            document.getElementById('saveBtn').textContent = "SAVE TO DATABASE";
-            document.getElementById('endDateWrapper').classList.remove('opacity-20', 'pointer-events-none');
+            document.getElementById('editScopeContainer').classList.add('hidden');
+            document.getElementById('endDateDiv').classList.remove('opacity-30', 'pointer-events-none');
         };
 
         const saveEvent = async () => {
             const title = document.getElementById('eventTitle').value;
             const org = document.getElementById('eventOrg').value;
-            const start = document.getElementById('startDate').value;
-            const color = orgColors[org];
+            const startStr = document.getElementById('startDate').value;
+            const desc = document.getElementById('eventDesc').value;
 
-            if(!title || !start) return alert("MISSING DATA: Title and Start Date required.");
+            if(!title || !startStr) return alert("Title and Date are required");
 
             if(isEditing) {
-                const isBulk = document.getElementById('bulkEditToggle').checked;
-                const originalId = document.getElementById('editDocId').value;
+                const scope = document.querySelector('input[name="editScope"]:checked').value;
+                const groupId = document.getElementById('editGroupId').value;
 
-                if(isBulk) {
-                    const q = query(collection(db, path), where("title", "==", title));
-                    const snap = await getDocs(q);
+                if(scope === 'group' && groupId) {
+                    const q = query(collection(db, path), where("groupId", "==", groupId));
+                    const snapshots = await getDocs(q);
                     const batch = writeBatch(db);
-                    snap.docs.forEach(d => {
-                        batch.update(d.ref, { org, color });
+                    snapshots.forEach(d => {
+                        batch.update(d.ref, { title, description: desc, org, color: orgColors[org] });
                     });
                     await batch.commit();
                 } else {
-                    await setDoc(doc(db, path, originalId), { title, org, color, date: start }, { merge: true });
+                    await setDoc(doc(db, path, document.getElementById('editDocId').value), {
+                        title, description: desc, org, color: orgColors[org], date: startStr,
+                        groupId: groupId || null
+                    }, { merge: true });
                 }
-                alert("UPDATE COMPLETE");
+                alert("Updated successfully");
             } else {
                 const endStr = document.getElementById('endDate').value;
-                let cur = new Date(start);
-                let end = endStr ? new Date(endStr) : new Date(start);
+                let current = new Date(startStr);
+                let end = endStr ? new Date(endStr) : new Date(startStr);
+                const groupId = endStr && endStr !== startStr ? `group_${Date.now()}` : null;
 
-                while(cur <= end) {
-                    const dStr = cur.toISOString().split('T')[0];
-                    await setDoc(doc(db, path, `${Date.now()}_${dStr}`), { title, org, color, date: dStr });
-                    cur.setDate(cur.getDate() + 1);
+                const batch = writeBatch(db);
+                while(current <= end) {
+                    const dateStr = current.toISOString().split('T')[0];
+                    const newDoc = doc(collection(db, path));
+                    batch.set(newDoc, {
+                        title, description: desc, org, color: orgColors[org], date: dateStr, groupId
+                    });
+                    current.setDate(current.getDate() + 1);
                 }
-                alert("ACTIVITIES CREATED");
+                await batch.commit();
+                alert("Created successfully");
             }
             resetForm();
         };
 
-        const showDaily = (date) => {
+        const showDaily = (date, dayEvents) => {
             const list = document.getElementById('modalEventList');
-            list.innerHTML = '';
+            list.innerHTML = dayEvents.length ? '' : '<p class="text-gray-500 text-center py-4 text-xs">No events scheduled.</p>';
             document.getElementById('modalDate').textContent = date;
             
-            (events[date] || []).forEach(ev => {
+            dayEvents.forEach(ev => {
                 const div = document.createElement('div');
-                div.className = "p-4 bg-black border border-slate-700 rounded-xl flex justify-between items-center";
+                div.className = "p-3 bg-gray-800 rounded-xl border-l-4 flex justify-between items-center";
+                div.style.borderColor = ev.color;
                 div.innerHTML = `
-                    <div>
-                        <p class="font-black text-lg" style="color:${ev.color}">${ev.title}</p>
-                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">${ev.org}</p>
+                    <div class="flex-1">
+                        <p class="font-bold text-sm text-white">${ev.title}</p>
+                        <p class="text-[10px] text-gray-400">${ev.org}</p>
                     </div>
-                    <div class="flex gap-4">
-                        <button class="text-sky-400 font-black" onclick="window.triggerEdit('${btoa(JSON.stringify(ev))}')">EDIT</button>
-                        <button class="text-red-500 font-black" onclick="window.triggerDel('${ev.id}')">DELETE</button>
+                    <div class="flex gap-1">
+                        <button class="hover:bg-blue-500/20 p-2 rounded-lg text-blue-400" onclick="window.triggerEdit('${btoa(JSON.stringify(ev))}')">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                        <button class="hover:bg-red-500/20 p-2 rounded-lg text-red-500" onclick="window.triggerDelete('${ev.id}', '${ev.groupId || ''}')">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
                     </div>
                 `;
                 list.appendChild(div);
@@ -380,21 +417,55 @@
             document.getElementById('dailyModal').classList.add('show');
         };
 
-        // Window Bindings
-        window.triggerEdit = (encoded) => { 
-            loadEdit(JSON.parse(atob(encoded))); 
+        // UI Binding & Event Listeners
+        document.getElementById('saveEventBtn').onclick = saveEvent;
+        document.getElementById('cancelEditBtn').onclick = resetForm;
+        document.getElementById('closeModal').onclick = () => document.getElementById('dailyModal').classList.remove('show');
+        document.getElementById('feedSearch').oninput = renderFeed;
+        
+        document.getElementById('tabUpcoming').onclick = (e) => {
+            feedTab = 'upcoming';
+            e.target.classList.add('border-sky-500', 'text-white');
+            e.target.classList.remove('text-gray-500');
+            document.getElementById('tabAll').classList.remove('border-sky-500', 'text-white');
+            document.getElementById('tabAll').classList.add('text-gray-500');
+            renderFeed();
+        };
+
+        document.getElementById('tabAll').onclick = (e) => {
+            feedTab = 'all';
+            e.target.classList.add('border-sky-500', 'text-white');
+            e.target.classList.remove('text-gray-500');
+            document.getElementById('tabUpcoming').classList.remove('border-sky-500', 'text-white');
+            document.getElementById('tabUpcoming').classList.add('text-gray-500');
+            renderFeed();
+        };
+
+        document.getElementById('prevBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} renderCalendar(); };
+        document.getElementById('nextBtn').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} renderCalendar(); };
+        
+        window.triggerDelete = async (id, groupId) => { 
+            let mode = "single";
+            if(groupId) {
+                const choice = confirm("This is a multi-day event. Click OK to delete ALL days in this range, or Cancel to delete ONLY this specific day.");
+                mode = choice ? "group" : "single";
+            } else {
+                if(!confirm("Delete this event?")) return;
+            }
+
+            if(mode === "group") {
+                const q = query(collection(db, path), where("groupId", "==", groupId));
+                const snapshots = await getDocs(q);
+                const batch = writeBatch(db);
+                snapshots.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            } else {
+                await deleteDoc(doc(db, path, id));
+            }
             document.getElementById('dailyModal').classList.remove('show');
         };
-        window.triggerDel = async (id) => { if(confirm("PERMANENTLY DELETE THIS ENTRY?")) await deleteDoc(doc(db, path, id)); };
 
-        // UI Event Listeners
-        document.getElementById('saveBtn').onclick = saveEvent;
-        document.getElementById('cancelEditBtn').onclick = resetForm;
-        document.getElementById('feedSearch').oninput = () => setupListener();
-        document.getElementById('closeModal').onclick = () => document.getElementById('dailyModal').classList.remove('show');
-        document.getElementById('prev').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} renderCalendar(); };
-        document.getElementById('next').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} renderCalendar(); };
-
+        window.triggerEdit = (encodedEv) => { loadEventForEdit(JSON.parse(atob(encodedEv))); };
         window.onload = initialize;
     </script>
 </body>
