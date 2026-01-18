@@ -50,41 +50,43 @@
         .calendar-section { flex: 0 0 65%; display: flex; flex-direction: column; }
         .sidebar-section { flex: 0 0 32%; display: flex; flex-direction: column; gap: 1rem; height: 100%; overflow: hidden; }
 
-        /* Remove the old .has-events-indicator and add these */
-.event-strips-container {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    width: 100%;
-    padding: 2px;
-    margin-top: auto; /* Pushes strips to the bottom of the cell */
-}
+        /* Updated Day Cell for Strips */
+        .day-cell {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 4px;
+            border-radius: 0.75rem;
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(81, 81, 255, 0.2);
+            transition: all 0.2s;
+            color: #1212BC;
+            font-weight: 700;
+            cursor: pointer;
+            overflow: hidden;
+        }
 
-.event-strip {
-    height: 4px;
-    width: 100%;
-    border-radius: 2px;
-    opacity: 0.8;
-}
+        .day-cell:hover { 
+            background: rgba(255, 255, 255, 0.6); 
+            transform: scale(1.02); 
+        }
 
-.day-cell {
-    aspect-ratio: 1 / 1;
-    display: flex;
-    flex-direction: column; /* Changed from align-items center to column */
-    align-items: center;
-    justify-content: space-between; /* Space between date number and strips */
-    padding: 6px 4px;
-    border-radius: 0.75rem;
-    background: rgba(210, 210, 255, 0.1);
-    border: 1px solid rgba(81, 81, 255, 0.1);
-    transition: all 0.2s;
-    color: #1212BC;
-    font-weight: 600;
-    cursor: pointer;
-    overflow: hidden;
-}
+        .strips-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: auto;
+            padding-bottom: 2px;
+        }
 
-       
+        .event-strip {
+            height: 4px;
+            width: 100%;
+            border-radius: 1px;
+        }
 
         /* LIGHT THEME FOR MONTHLY AGENDA */
         .monthly-agenda-container {
@@ -92,25 +94,22 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background: rgba(240, 244, 255, 0.95); /* Light, nearly opaque background */
+            background: rgba(240, 244, 255, 0.95);
             border-radius: 1.5rem;
             padding: 1.25rem;
             border: 1px solid #ffffff;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        .monthly-agenda-container h3 { color: #1e293b; } /* Dark Navy text */
-        
+        .monthly-agenda-container h3 { color: #1e293b; }
         #monthlyEventsList { flex: 1; overflow-y: auto; }
 
-        /* Darker text for list items in light container */
         .agenda-item-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
             color: #1e293b; 
         }
 
-        /* SCROLLBAR */
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
 
@@ -135,11 +134,6 @@
             </div>
             
             <div class="flex items-center gap-6">
-                <div class="flex items-center gap-2 bg-white bg-opacity-10 px-3 py-1 rounded-full border border-white border-opacity-10">
-                    <label for="indicatorColor" class="text-[10px] font-bold text-sky-300 uppercase">Marker</label>
-                    <input type="color" id="indicatorColor" value="#800000" class="w-6 h-6 bg-transparent border-none cursor-pointer">
-                </div>
-                
                 <div class="text-right">
                     <p class="text-[10px] text-gray-300 font-bold uppercase tracking-widest leading-none">Public Access</p>
                     <p id="userIdDisplay" class="text-xs font-mono text-blue-400">ID: ...</p>
@@ -216,14 +210,12 @@
     let events = {};
     let currentMonth = new Date().getMonth();
     let currentYear = new Date().getFullYear();
-    let indicatorColor = "#800000";
     let db;
 
     const calendarGrid = document.getElementById('calendarGrid');
     const currentMonthYear = document.getElementById('currentMonthYear');
     const upcomingEventsList = document.getElementById('upcomingEventsList');
     const monthlyEventsList = document.getElementById('monthlyEventsList');
-    const colorPicker = document.getElementById('indicatorColor');
 
     const initialize = async () => {
         const app = initializeApp(firebaseConfig);
@@ -258,63 +250,48 @@
         renderMonthlyList();
     };
 
-    colorPicker.oninput = (e) => {
-        indicatorColor = e.target.value;
-        renderCalendar();
-    };
+    const renderCalendar = () => {
+        calendarGrid.innerHTML = '';
+        const first = new Date(currentYear, currentMonth, 1).getDay();
+        const days = new Date(currentYear, currentMonth + 1, 0).getDate();
+        currentMonthYear.textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
 
-  const renderCalendar = () => {
-    calendarGrid.innerHTML = '';
-    const first = new Date(currentYear, currentMonth, 1).getDay();
-    const days = new Date(currentYear, currentMonth + 1, 0).getDate();
-    currentMonthYear.textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
+        for (let i = 0; i < first; i++) calendarGrid.appendChild(document.createElement('div'));
 
-    // Empty cells for padding
-    for (let i = 0; i < first; i++) calendarGrid.appendChild(document.createElement('div'));
+        for (let d = 1; d <= days; d++) {
+            const ds = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const cell = document.createElement('div');
+            cell.className = 'day-cell';
+            
+            const dateSpan = document.createElement('span');
+            dateSpan.textContent = d;
+            cell.appendChild(dateSpan);
 
-    for (let d = 1; d <= days; d++) {
-        const ds = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const cell = document.createElement('div');
-        cell.className = 'day-cell';
-        
-        // Date number
-        const dateNum = document.createElement('span');
-        dateNum.textContent = d;
-        cell.appendChild(dateNum);
-        
-        // Event Strips
-        if (events[ds] && events[ds].length > 0) {
-            const stripContainer = document.createElement('div');
-            stripContainer.className = 'event-strips-container';
+            // Add strips if events exist
+            if (events[ds]) {
+                const stripsContainer = document.createElement('div');
+                stripsContainer.className = 'strips-container';
+                
+                events[ds].forEach(ev => {
+                    const strip = document.createElement('div');
+                    strip.className = 'event-strip';
+                    strip.style.backgroundColor = ev.color || '#3b82f6';
+                    stripsContainer.appendChild(strip);
+                });
+                
+                cell.appendChild(stripsContainer);
+            }
             
-            events[ds].forEach(ev => {
-                const strip = document.createElement('div');
-                strip.className = 'event-strip';
-                // Uses the color from Firebase event data, 
-                // or falls back to the user-selected indicatorColor
-                strip.style.backgroundColor = ev.color || indicatorColor;
-                stripContainer.appendChild(strip);
-            });
-            
-            cell.appendChild(stripContainer);
-            
-            // Highlight the text if there are events
-            dateNum.classList.add('text-white', 'font-black');
-            cell.classList.add('bg-blue-600', 'bg-opacity-20');
+            cell.onclick = () => showDaily(ds);
+            calendarGrid.appendChild(cell);
         }
-        
-        cell.onclick = () => showDaily(ds);
-        calendarGrid.appendChild(cell);
-    }
-};
+    };
 
     const renderUpcoming = () => {
         upcomingEventsList.innerHTML = '';
         const todayStr = new Date().toISOString().split('T')[0];
-        const all = [];
-
-        // Group by title to identify multi-day events for "Ongoing" status
         const groupedByTitle = {};
+        
         Object.keys(events).forEach(date => {
             events[date].forEach(ev => {
                 if (!groupedByTitle[ev.title]) groupedByTitle[ev.title] = [];
@@ -361,14 +338,12 @@
             }
         });
 
-        // Grouping logic
         const grouped = inMonth.reduce((acc, e) => {
             if (!acc[e.title]) acc[e.title] = { title: e.title, color: e.color, dates: [] };
             acc[e.title].dates.push(e.dateObj);
             return acc;
         }, {});
 
-        // Sort grouped items chronologically based on their first date of the month
         const sortedGroups = Object.values(grouped).sort((a, b) => {
             const minA = Math.min(...a.dates.map(d => d.getTime()));
             const minB = Math.min(...b.dates.map(d => d.getTime()));
