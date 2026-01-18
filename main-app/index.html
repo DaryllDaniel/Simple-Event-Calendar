@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Event Manager</title>
+    <title>Admin - Event Manager (Edit Mode)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -63,7 +63,6 @@
         }
 
         .day-cell:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
-        
         .has-event { border-bottom: 4px solid #38bdf8; font-weight: 900; }
 
         .custom-scroll::-webkit-scrollbar { width: 5px; }
@@ -79,6 +78,9 @@
             justify-content: center;
         }
         .modal.show { display: flex; }
+
+        /* Highlight for Edit Mode */
+        .edit-mode-active { border: 2px solid #fbbf24 !important; background: rgba(251, 191, 36, 0.1) !important; }
     </style>
 </head>
 <body>
@@ -91,16 +93,19 @@
             </div>
             <div id="statusIndicator" class="flex items-center gap-3 text-xs font-mono">
                 <span id="loadingDot" class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
-                <span id="userStatus">Connecting to Database...</span>
+                <span id="userStatus">Connecting...</span>
             </div>
         </div>
 
         <div class="admin-grid">
-            <div class="bg-white bg-opacity-5 p-6 rounded-2xl border border-white border-opacity-10 flex flex-direction column gap-4 overflow-y-auto custom-scroll">
-                <h2 class="text-lg font-bold text-sky-400 mb-2">Create New Event</h2>
+            <div id="formContainer" class="bg-white bg-opacity-5 p-6 rounded-2xl border border-white border-opacity-10 flex flex-col gap-4 overflow-y-auto custom-scroll transition-all">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 id="formTitle" class="text-lg font-bold text-sky-400">Create New Event</h2>
+                    <button id="cancelEditBtn" class="hidden text-[10px] bg-red-500 px-2 py-1 rounded font-bold uppercase">Cancel Edit</button>
+                </div>
                 
                 <div class="space-y-4">
-                    <div>
+                    <input type="hidden" id="editDocId"> <div>
                         <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Organization</label>
                         <select id="eventOrg" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                             <option value="Loquitur">Loquitur (#FBFFC5)</option>
@@ -121,12 +126,12 @@
                         <input type="text" id="eventTitle" placeholder="e.g. Foundation Day" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none">
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
+                    <div id="dateRangeContainer" class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Start Date</label>
+                            <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Date / Start</label>
                             <input type="date" id="startDate" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs outline-none">
                         </div>
-                        <div>
+                        <div id="endDateDiv">
                             <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">End Date (Optional)</label>
                             <input type="date" id="endDate" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs outline-none">
                         </div>
@@ -137,7 +142,7 @@
                         <textarea id="eventDesc" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none" placeholder="Brief details..."></textarea>
                     </div>
 
-                    <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition-all shadow-lg active:scale-95">Push to Calendar</button>
+                    <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition-all shadow-lg">Push to Calendar</button>
                 </div>
             </div>
 
@@ -156,7 +161,7 @@
             </div>
 
             <div class="bg-black bg-opacity-30 p-4 rounded-2xl border border-white border-opacity-5 flex flex-col overflow-hidden">
-                <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Live Database (All)</h3>
+                <h3 class="text-xs font-bold text-gray-400 uppercase mb-3">Live Feed</h3>
                 <div id="fullEventList" class="flex-1 overflow-y-auto custom-scroll space-y-2 pr-2"></div>
             </div>
         </div>
@@ -194,16 +199,15 @@
         const path = `artifacts/${appId}/public/data/events`;
         
         let db, events = {}, currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear();
+        let isEditing = false;
 
         const initialize = async () => {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             const auth = getAuth(app);
-            
             await signInAnonymously(auth);
             document.getElementById('loadingDot').className = "w-2 h-2 bg-green-500 rounded-full";
             document.getElementById('userStatus').textContent = "Admin Authenticated";
-            
             setupListener();
         };
 
@@ -218,11 +222,11 @@
                     if(!data[ev.date]) data[ev.date] = [];
                     data[ev.date].push(ev);
 
-                    // Add to right sidebar feed
                     const card = document.createElement('div');
-                    card.className = "p-2 bg-white bg-opacity-5 rounded border-l-2 text-[11px]";
+                    card.className = "p-2 bg-white bg-opacity-5 rounded border-l-2 text-[11px] cursor-pointer hover:bg-opacity-10";
                     card.style.borderColor = ev.color;
                     card.innerHTML = `<div class="font-bold">${ev.title}</div><div class="text-gray-500">${ev.date}</div>`;
+                    card.onclick = () => loadEventForEdit(ev);
                     listEl.appendChild(card);
                 });
                 events = data;
@@ -243,41 +247,79 @@
                 const ds = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const cell = document.createElement('div');
                 cell.className = `day-cell ${events[ds] ? 'has-event' : ''}`;
-                if(events[ds]) cell.style.backgroundColor = events[ds][0].color + '33'; // 20% opacity
+                if(events[ds]) cell.style.backgroundColor = events[ds][0].color + '33';
                 cell.textContent = d;
                 cell.onclick = () => showDaily(ds);
                 grid.appendChild(cell);
             }
         };
 
+        const loadEventForEdit = (ev) => {
+            isEditing = true;
+            document.getElementById('editDocId').value = ev.id;
+            document.getElementById('eventTitle').value = ev.title;
+            document.getElementById('eventOrg').value = ev.org;
+            document.getElementById('startDate').value = ev.date;
+            document.getElementById('eventDesc').value = ev.description || '';
+            
+            // UI Feedback for edit mode
+            document.getElementById('formTitle').textContent = "Edit Event Mode";
+            document.getElementById('formContainer').classList.add('edit-mode-active');
+            document.getElementById('saveEventBtn').textContent = "Update Event Instance";
+            document.getElementById('saveEventBtn').className = "w-full py-3 bg-yellow-600 hover:bg-yellow-500 font-bold rounded-xl transition-all";
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+            document.getElementById('endDateDiv').classList.add('opacity-30', 'pointer-events-none');
+            
+            document.getElementById('dailyModal').classList.remove('show');
+        };
+
+        const resetForm = () => {
+            isEditing = false;
+            document.getElementById('editDocId').value = '';
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('eventDesc').value = '';
+            document.getElementById('formTitle').textContent = "Create New Event";
+            document.getElementById('formContainer').classList.remove('edit-mode-active');
+            document.getElementById('saveEventBtn').textContent = "Push to Calendar";
+            document.getElementById('saveEventBtn').className = "w-full py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition-all";
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+            document.getElementById('endDateDiv').classList.remove('opacity-30', 'pointer-events-none');
+        };
+
         const saveEvent = async () => {
             const title = document.getElementById('eventTitle').value;
             const org = document.getElementById('eventOrg').value;
             const startStr = document.getElementById('startDate').value;
-            const endStr = document.getElementById('endDate').value;
             const desc = document.getElementById('eventDesc').value;
 
-            if(!title || !startStr) return alert("Title and Start Date are required");
+            if(!title || !startStr) return alert("Title and Date are required");
 
-            let current = new Date(startStr);
-            let end = endStr ? new Date(endStr) : new Date(startStr);
-
-            while(current <= end) {
-                const dateStr = current.toISOString().split('T')[0];
-                const docId = `${Date.now()}_${dateStr}`;
+            if(isEditing) {
+                // Update Single Document
+                const docId = document.getElementById('editDocId').value;
                 await setDoc(doc(db, path, docId), {
-                    title, description: desc, org, color: orgColors[org], date: dateStr
+                    title, description: desc, org, color: orgColors[org], date: startStr
                 });
-                current.setDate(current.getDate() + 1);
-            }
-            alert("Event saved!");
-            document.getElementById('eventTitle').value = '';
-        };
+                alert("Event updated!");
+                resetForm();
+            } else {
+                // Create New (Single or Range)
+                const endStr = document.getElementById('endDate').value;
+                let current = new Date(startStr);
+                let end = endStr ? new Date(endStr) : new Date(startStr);
 
-        const deleteEvent = async (id) => {
-            if(confirm("Delete this entry?")) {
-                await deleteDoc(doc(db, path, id));
-                document.getElementById('dailyModal').classList.remove('show');
+                while(current <= end) {
+                    const dateStr = current.toISOString().split('T')[0];
+                    const docId = `${Date.now()}_${dateStr}`;
+                    await setDoc(doc(db, path, docId), {
+                        title, description: desc, org, color: orgColors[org], date: dateStr
+                    });
+                    current.setDate(current.getDate() + 1);
+                }
+                alert("New event(s) created!");
+                resetForm();
             }
         };
 
@@ -291,27 +333,34 @@
                 div.className = "p-3 bg-gray-800 rounded-xl border-l-4 flex justify-between items-center";
                 div.style.borderColor = ev.color;
                 div.innerHTML = `
-                    <div>
+                    <div class="flex-1">
                         <p class="font-bold text-sm">${ev.title}</p>
                         <p class="text-[10px] text-gray-400">${ev.org}</p>
                     </div>
-                    <button class="text-red-500 hover:text-red-400 p-2" onclick="window.triggerDelete('${ev.id}')">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </button>
+                    <div class="flex gap-2">
+                        <button class="text-blue-400 p-2" onclick="window.triggerEdit('${btoa(JSON.stringify(ev))}')">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                        <button class="text-red-500 p-2" onclick="window.triggerDelete('${ev.id}')">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </div>
                 `;
                 list.appendChild(div);
             });
             document.getElementById('dailyModal').classList.add('show');
         };
 
-        // UI Listeners
+        // UI Binding
         document.getElementById('saveEventBtn').onclick = saveEvent;
+        document.getElementById('cancelEditBtn').onclick = resetForm;
+        document.getElementById('closeModal').onclick = () => document.getElementById('dailyModal').classList.remove('show');
         document.getElementById('prevBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} renderCalendar(); };
         document.getElementById('nextBtn').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} renderCalendar(); };
-        document.getElementById('closeModal').onclick = () => document.getElementById('dailyModal').classList.remove('show');
         
-        // Expose to window for inline onclick
-        window.triggerDelete = deleteEvent;
+        // Window level helpers
+        window.triggerDelete = async (id) => { if(confirm("Delete this?")) await deleteDoc(doc(db, path, id)); };
+        window.triggerEdit = (encodedEv) => { loadEventForEdit(JSON.parse(atob(encodedEv))); };
 
         window.onload = initialize;
     </script>
