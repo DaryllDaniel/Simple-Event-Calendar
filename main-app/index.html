@@ -51,7 +51,6 @@
             overflow: hidden;
         }
 
-        /* Calendar Styles */
         .day-cell {
             aspect-ratio: 1 / 1;
             display: flex;
@@ -66,6 +65,7 @@
             cursor: pointer;
             overflow: hidden;
             position: relative;
+            min-height: 80px; /* Ensures cells appear even if empty */
         }
 
         .day-cell.selected-day { 
@@ -92,7 +92,7 @@
             border-radius: 1px;
         }
 
-        /* Modal Draggable Styles */
+        /* Modal Draggable */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -115,7 +115,6 @@
             border-radius: 1.5rem;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);
-            user-select: none;
         }
 
         .modal-header {
@@ -127,9 +126,6 @@
             align-items: center;
         }
 
-        .modal-body { padding: 1.5rem; }
-
-        /* FAB */
         .fab {
             position: fixed;
             bottom: 2rem;
@@ -144,9 +140,7 @@
             box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4);
             cursor: pointer;
             z-index: 50;
-            transition: transform 0.2s;
         }
-        .fab:hover { transform: scale(1.1); }
 
         .custom-scroll::-webkit-scrollbar { width: 5px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
@@ -162,21 +156,21 @@
             </div>
             <div id="statusIndicator" class="flex items-center gap-3 text-xs font-mono">
                 <span id="loadingDot" class="w-2 h-2 bg-green-500 rounded-full"></span>
-                <span id="userStatus">Ready</span>
+                <span id="userStatus">System Ready</span>
             </div>
         </div>
 
         <div class="admin-grid">
             <div class="flex flex-col">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 id="currentMonthYear" class="text-2xl font-black"></h2>
+                    <h2 id="currentMonthYear" class="text-2xl font-black">Loading Calendar...</h2>
                     <div class="flex gap-2">
                         <button id="prevBtn" class="p-2 bg-gray-800 rounded-lg hover:bg-gray-700">Prev</button>
                         <button id="nextBtn" class="p-2 bg-gray-800 rounded-lg hover:bg-gray-700">Next</button>
                     </div>
                 </div>
-                <div class="grid grid-cols-7 gap-2 mb-2 text-center text-[10px] font-bold text-gray-500">
-                    <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+                <div class="grid grid-cols-7 gap-2 mb-2 text-center text-[10px] font-bold text-gray-500 uppercase">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
                 </div>
                 <div id="calendarGrid" class="grid grid-cols-7 gap-2 flex-1"></div>
             </div>
@@ -193,27 +187,21 @@
     </div>
 
     <div id="openAddModal" class="fab">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
     </div>
 
     <div id="eventModalOverlay" class="modal-overlay">
         <div id="eventModal" class="modal-content">
             <div id="modalHeader" class="modal-header">
-                <h2 id="modalTitle" class="text-sm font-black uppercase tracking-widest text-sky-400">Add New Event</h2>
+                <h2 id="modalTitle" class="text-sm font-black uppercase tracking-widest text-sky-400">Manage Event</h2>
                 <button id="closeModal" class="text-gray-400 hover:text-white text-xl">&times;</button>
             </div>
-            <div class="modal-body space-y-4">
+            <div class="p-6 space-y-4">
                 <input type="hidden" id="editGroupId">
-                
                 <div class="bg-black bg-opacity-40 p-3 rounded-xl border border-blue-500 border-opacity-20">
-                    <label class="block text-[9px] font-bold uppercase text-gray-500 mb-1">Active Selection</label>
-                    <div id="dateDisplay" class="text-xs font-mono text-blue-300">Pick days on calendar</div>
+                    <div id="dateDisplay" class="text-xs font-mono text-blue-300">Click dates on calendar</div>
                 </div>
-
                 <div>
-                    <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Organization</label>
                     <select id="eventOrg" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none">
                         <option value="Loquitur">Loquitur</option><option value="CTELA">CTELA</option>
                         <option value="CCJE">CCJE</option><option value="CABM">CABM</option>
@@ -222,20 +210,11 @@
                         <option value="SSC">SSC</option><option value="GABAY">GABAY</option>
                     </select>
                 </div>
-
-                <div>
-                    <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Event Title</label>
-                    <input type="text" id="eventTitle" placeholder="Title" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Description</label>
-                    <textarea id="eventDesc" rows="2" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none" placeholder="Details..."></textarea>
-                </div>
-
-                <div class="flex gap-2 pt-2">
+                <input type="text" id="eventTitle" placeholder="Event Title" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none">
+                <textarea id="eventDesc" rows="2" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none" placeholder="Details..."></textarea>
+                <div class="flex gap-2">
                     <button id="deleteBtn" class="hidden flex-1 py-3 bg-red-900 bg-opacity-30 text-red-400 border border-red-900 rounded-xl font-bold text-[10px] uppercase">Delete</button>
-                    <button id="saveEventBtn" class="flex-[2] py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl text-xs transition-all">Save Event</button>
+                    <button id="saveEventBtn" class="flex-[2] py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl text-xs">Save Event</button>
                 </div>
             </div>
         </div>
@@ -259,47 +238,64 @@
         const path = `artifacts/default-app-id/public/data/events`;
         let db, allEvents = [], currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear(), selection = [], feedTab = 'upcoming';
 
-        // Initialize App
         const init = async () => {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             await signInAnonymously(getAuth(app));
+            
+            // Listen to data
             onSnapshot(collection(db, path), (snap) => {
                 allEvents = snap.docs.map(d => ({ ...d.data(), id: d.id }));
                 renderCalendar();
                 renderFeed();
             });
+            
+            // Initial render call to ensure calendar shows immediately
+            renderCalendar();
         };
 
-        // Render Calendar Logic
         const renderCalendar = () => {
             const grid = document.getElementById('calendarGrid');
+            if (!grid) return;
             grid.innerHTML = '';
-            document.getElementById('currentMonthYear').textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
+            
+            const dateObj = new Date(currentYear, currentMonth);
+            document.getElementById('currentMonthYear').textContent = dateObj.toLocaleString('default', { month: 'long', year: 'numeric' });
+
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-            for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
+            // Fill empty slots
+            for (let i = 0; i < firstDay; i++) {
+                grid.appendChild(document.createElement('div'));
+            }
+
+            // Fill days
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const dayEvents = allEvents.filter(e => e.date === dateStr);
-                const cell = document.createElement('div');
-                cell.className = `day-cell`;
-                if (selection.includes(dateStr)) cell.classList.add('selected-day');
-                else if (selection.length === 2 && dateStr > selection[0] && dateStr < selection[1]) cell.classList.add('in-range');
                 
+                const cell = document.createElement('div');
+                cell.className = 'day-cell';
+                
+                // Highlights
+                if (selection.includes(dateStr)) cell.classList.add('selected-day');
+                if (selection.length === 2 && dateStr > selection[0] && dateStr < selection[1]) cell.classList.add('in-range');
+
                 cell.innerHTML = `<span>${d}</span><div class="strip-container"></div>`;
                 const container = cell.querySelector('.strip-container');
                 dayEvents.forEach(ev => {
                     const s = document.createElement('div');
                     s.className = 'event-strip';
-                    s.style.backgroundColor = ev.color;
+                    s.style.backgroundColor = ev.color || '#38bdf8';
                     container.appendChild(s);
                 });
+
                 cell.onclick = () => {
                     if (selection.length >= 2 || selection.includes(dateStr)) selection = [dateStr];
                     else { selection.push(dateStr); selection.sort(); }
-                    updateDateDisplay(); renderCalendar();
+                    updateDateDisplay();
+                    renderCalendar();
                 };
                 grid.appendChild(cell);
             }
@@ -311,7 +307,6 @@
             else d.textContent = selection.length === 1 ? selection[0] : `${selection[0]} to ${selection[1]}`;
         };
 
-        // Feed Logic
         const renderFeed = () => {
             const list = document.getElementById('fullEventList');
             const search = document.getElementById('feedSearch').value.toLowerCase();
@@ -337,23 +332,18 @@
 
             filtered.sort((a,b) => a.startDate.localeCompare(b.startDate)).forEach(g => {
                 const card = document.createElement('div');
-                card.className = "p-3 bg-white bg-opacity-5 rounded-xl border-l-4 cursor-pointer hover:bg-opacity-10";
+                card.className = "p-3 bg-white bg-opacity-5 rounded-xl border-l-4 cursor-pointer hover:bg-opacity-10 transition-all";
                 card.style.borderColor = g.color;
-                card.innerHTML = `<div class="flex justify-between items-center"><span class="text-xs font-bold">${g.title}</span><span class="text-[9px] text-gray-500 font-mono">${g.startDate}</span></div><div class="text-[9px] text-gray-400 mt-1 uppercase">${g.org}</div>`;
+                card.innerHTML = `<div class="flex justify-between items-center"><span class="text-xs font-bold text-sky-400">${g.title}</span><span class="text-[9px] text-gray-500 font-mono">${g.startDate}</span></div><div class="text-[9px] text-gray-400 mt-1 uppercase">${g.org}</div>`;
                 card.onclick = () => loadEdit(g);
                 list.appendChild(card);
             });
         };
 
-        // Modal Logic
         const overlay = document.getElementById('eventModalOverlay');
         const modal = document.getElementById('eventModal');
-
         const openModal = () => overlay.classList.add('active');
-        const closeModal = () => {
-            overlay.classList.remove('active');
-            resetForm();
-        };
+        const closeModal = () => { overlay.classList.remove('active'); resetForm(); };
 
         const loadEdit = (g) => {
             document.getElementById('editGroupId').value = g.groupId || g.id;
@@ -368,10 +358,8 @@
         };
 
         const resetForm = () => {
-            selection = []; 
-            document.getElementById('editGroupId').value = '';
-            document.getElementById('eventTitle').value = ''; 
-            document.getElementById('eventDesc').value = '';
+            selection = []; document.getElementById('editGroupId').value = '';
+            document.getElementById('eventTitle').value = ''; document.getElementById('eventDesc').value = '';
             document.getElementById('modalTitle').textContent = "Add New Event";
             document.getElementById('saveEventBtn').textContent = "Save Event";
             document.getElementById('deleteBtn').classList.add('hidden');
@@ -382,15 +370,14 @@
             const title = document.getElementById('eventTitle').value;
             const org = document.getElementById('eventOrg').value;
             const gid = document.getElementById('editGroupId').value;
-            if (!title || !selection.length) return alert("Missing title or dates!");
+            if (!title || !selection.length) return alert("Select dates and title!");
 
             const batch = writeBatch(db);
-            // DUPLICATION FIX: Clear old group first
             if (gid) {
                 const q = query(collection(db, path), where("groupId", "==", gid));
                 const snap = await getDocs(q);
                 snap.forEach(d => batch.delete(d.ref));
-                batch.delete(doc(db, path, gid)); // Fallback for single-day items
+                batch.delete(doc(db, path, gid));
             }
 
             const newGid = `group_${Date.now()}`;
@@ -403,35 +390,30 @@
             await batch.commit(); closeModal();
         };
 
-        // Draggable Functionality
+        // Draggable Logic
         let isDragging = false, offset = [0,0];
-        const header = document.getElementById('modalHeader');
-        
-        header.addEventListener('mousedown', (e) => {
+        document.getElementById('modalHeader').addEventListener('mousedown', (e) => {
             isDragging = true;
             offset = [modal.offsetLeft - e.clientX, modal.offsetTop - e.clientY];
         });
-
         document.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             modal.style.left = (e.clientX + offset[0]) + 'px';
             modal.style.top = (e.clientY + offset[1]) + 'px';
-            modal.style.transform = 'none'; // Remove centring transform once dragged
+            modal.style.transform = 'none';
         });
-
         document.addEventListener('mouseup', () => isDragging = false);
 
-        // UI Handlers
+        // Listeners
         document.getElementById('openAddModal').onclick = openModal;
         document.getElementById('closeModal').onclick = closeModal;
         document.getElementById('saveEventBtn').onclick = saveEvent;
-        document.getElementById('resetBtn').onclick = resetForm;
         document.getElementById('feedSearch').oninput = renderFeed;
         document.getElementById('prevBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} renderCalendar(); };
         document.getElementById('nextBtn').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} renderCalendar(); };
         document.getElementById('deleteBtn').onclick = async () => {
             const gid = document.getElementById('editGroupId').value;
-            if (confirm("Delete this entire group?")) {
+            if (confirm("Delete this group?")) {
                 const q = query(collection(db, path), where("groupId", "==", gid));
                 const snap = await getDocs(q);
                 const batch = writeBatch(db);
