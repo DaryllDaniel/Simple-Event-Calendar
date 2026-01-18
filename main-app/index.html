@@ -338,108 +338,92 @@
             });
         };
 
-        const loadEdit = (group) => {
-            document.getElementById('editGroupId').value = group.groupId || group.id;
-            document.getElementById('eventTitle').value = group.title;
-            document.getElementById('eventOrg').value = group.org;
-            document.getElementById('eventDesc').value = group.description || '';
-            
-            selection = group.startDate === group.endDate ? [group.startDate] : [group.startDate, group.endDate];
-            
-            // Jump calendar to the event month
-            const d = new Date(group.startDate);
-            currentMonth = d.getMonth();
-            currentYear = d.getFullYear();
-            
-            document.getElementById('formTitle').textContent = "Edit Mode";
-            document.getElementById('saveEventBtn').textContent = "Update Group";
-            document.getElementById('saveEventBtn').className = "w-full py-3 bg-yellow-600 font-bold rounded-xl";
-            document.getElementById('deleteBtn').classList.remove('hidden');
-            
-            updateDateDisplay();
-            renderCalendar();
-        };
+      const loadEdit = (group) => {
+    // We store the ID or GroupID so we know exactly what to overwrite/delete
+    document.getElementById('editGroupId').value = group.groupId || group.id;
+    document.getElementById('eventTitle').value = group.title;
+    document.getElementById('eventOrg').value = group.org;
+    document.getElementById('eventDesc').value = group.description || '';
+    
+    // Convert group dates into visual selection for the calendar picker
+    selection = group.startDate === group.endDate ? [group.startDate] : [group.startDate, group.endDate];
+    
+    // Visual UI changes
+    document.getElementById('formTitle').textContent = "Update Event";
+    document.getElementById('saveEventBtn').textContent = "Save Changes";
+    document.getElementById('saveEventBtn').className = "w-full py-3 bg-yellow-600 hover:bg-yellow-500 font-bold rounded-xl transition-all";
+    document.getElementById('deleteBtn').classList.remove('hidden');
+    
+    updateDateDisplay();
+    renderCalendar();
+};
 
-        const resetForm = () => {
-            selection = [];
-            document.getElementById('editGroupId').value = '';
-            document.getElementById('eventTitle').value = '';
-            document.getElementById('eventDesc').value = '';
-            document.getElementById('formTitle').textContent = "Manage Event";
-            document.getElementById('saveEventBtn').textContent = "Push to Calendar";
-            document.getElementById('saveEventBtn').className = "w-full py-3 bg-blue-600 font-bold rounded-xl";
-            document.getElementById('deleteBtn').classList.add('hidden');
-            updateDateDisplay();
-            renderCalendar();
-        };
-
-        const saveEvent = async () => {
-            const title = document.getElementById('eventTitle').value;
-            const org = document.getElementById('eventOrg').value;
-            const desc = document.getElementById('eventDesc').value;
-            const gid = document.getElementById('editGroupId').value;
-
-            if (!title || selection.length === 0) return alert("Select date(s) and title!");
-
-            // If editing, delete the old entries first
-            if (gid) {
-                const q = query(collection(db, path), where("groupId", "==", gid));
-                const snap = await getDocs(q);
-                const batchDel = writeBatch(db);
-                snap.forEach(d => batchDel.delete(d.ref));
-                await batchDel.commit();
-            }
-
-            const batch = writeBatch(db);
-            const newGid = `group_${Date.now()}`;
-            let curr = new Date(selection[0]);
-            let last = selection.length > 1 ? new Date(selection[1]) : new Date(selection[0]);
-
-            while (curr <= last) {
-                const dStr = curr.toISOString().split('T')[0];
-                const newRef = doc(collection(db, path));
-                batch.set(newRef, { title, org, description: desc, color: orgColors[org], date: dStr, groupId: newGid });
-                curr.setDate(curr.getDate() + 1);
-            }
-            await batch.commit();
-            resetForm();
-        };
-
-       const deleteEvent = async () => {
-    const gid = document.getElementById('editGroupId').value;
+const saveEvent = async () => {
     const title = document.getElementById('eventTitle').value;
+    const org = document.getElementById('eventOrg').value;
+    const desc = document.getElementById('eventDesc').value;
+    const gid = document.getElementById('editGroupId').value;
 
-    if (!gid) {
-        alert("Please select an event from the feed first to delete it.");
-        return;
-    }
+    if (!title || selection.length === 0) return alert("Select date(s) and title!");
 
-    if (confirm(`Are you sure you want to delete all days associated with "${title}"?`)) {
-        try {
-            document.getElementById('userStatus').textContent = "Deleting...";
-            
-            // 1. Try to find all events in the group
-            const q = query(collection(db, path), where("groupId", "==", gid));
-            const snap = await getDocs(q);
-            const batch = writeBatch(db);
+    try {
+        const batch = writeBatch(db);
 
-            if (!snap.empty) {
-                // Delete the whole group
-                snap.forEach(d => batch.delete(d.ref));
-            } else {
-                // Fallback: If no group found, try deleting the ID directly 
-                // (for legacy single-day events)
-                batch.delete(doc(db, path, gid));
-            }
+        // --- STEP 1: PREVENT DUPLICATION ---
+        // If we are in "Edit Mode" (gid exists), find and delete ALL old entries
+        if (gid) {
+            // Check for group matches
+            const groupQuery = query(collection(db, path), where("groupId", "==", gid));
+            const groupSnap = await getDocs(groupQuery);
+            groupSnap.forEach(d => batch.delete(d.ref));
 
-            await batch.commit();
-            document.getElementById('userStatus').textContent = "Deleted successfully";
-            resetForm();
-        } catch (error) {
-            console.error("Delete failed:", error);
-            alert("Error deleting event. Check console for details.");
-            document.getElementById('userStatus').textContent = "Error";
+            // Also try to delete the ID directly in case it's a single-day event without a groupId
+            const directRef = doc(db, path, gid);
+            batch.delete(directRef);
         }
+
+        // --- STEP 2: CREATE NEW ENTRIES ---
+        const newGid = `group_${Date.now()}`; // Generate a fresh ID for this new version
+        let curr = new Date(selection[0]);
+        let last = selection.length > 1 ? new Date(selection[1]) : new Date(selection[0]);
+
+        while (curr <= last) {
+            const dStr = curr.toISOString().split('T')[0];
+            const newRef = doc(collection(db, path)); // Create a new unique document
+            batch.set(newRef, { 
+                title, 
+                org, 
+                description: desc, 
+                color: orgColors[org], 
+                date: dStr, 
+                groupId: newGid 
+            });
+            curr.setDate(curr.getDate() + 1);
+        }
+
+        await batch.commit();
+        resetForm();
+    } catch (error) {
+        console.error("Save failed:", error);
+        alert("Error saving changes.");
+    }
+};
+
+     const deleteEvent = async () => {
+    const gid = document.getElementById('editGroupId').value;
+    if (gid && confirm("Delete this event series?")) {
+        const batch = writeBatch(db);
+        
+        // Delete all by GroupID
+        const q = query(collection(db, path), where("groupId", "==", gid));
+        const snap = await getDocs(q);
+        snap.forEach(d => batch.delete(d.ref));
+        
+        // Fallback: Delete the ID directly
+        batch.delete(doc(db, path, gid));
+        
+        await batch.commit();
+        resetForm();
     }
 };
 
