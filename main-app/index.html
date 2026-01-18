@@ -405,17 +405,43 @@
             resetForm();
         };
 
-        const deleteEvent = async () => {
-            const gid = document.getElementById('editGroupId').value;
-            if (gid && confirm("Delete this event series?")) {
-                const q = query(collection(db, path), where("groupId", "==", gid));
-                const snap = await getDocs(q);
-                const batch = writeBatch(db);
+       const deleteEvent = async () => {
+    const gid = document.getElementById('editGroupId').value;
+    const title = document.getElementById('eventTitle').value;
+
+    if (!gid) {
+        alert("Please select an event from the feed first to delete it.");
+        return;
+    }
+
+    if (confirm(`Are you sure you want to delete all days associated with "${title}"?`)) {
+        try {
+            document.getElementById('userStatus').textContent = "Deleting...";
+            
+            // 1. Try to find all events in the group
+            const q = query(collection(db, path), where("groupId", "==", gid));
+            const snap = await getDocs(q);
+            const batch = writeBatch(db);
+
+            if (!snap.empty) {
+                // Delete the whole group
                 snap.forEach(d => batch.delete(d.ref));
-                await batch.commit();
-                resetForm();
+            } else {
+                // Fallback: If no group found, try deleting the ID directly 
+                // (for legacy single-day events)
+                batch.delete(doc(db, path, gid));
             }
-        };
+
+            await batch.commit();
+            document.getElementById('userStatus').textContent = "Deleted successfully";
+            resetForm();
+        } catch (error) {
+            console.error("Delete failed:", error);
+            alert("Error deleting event. Check console for details.");
+            document.getElementById('userStatus').textContent = "Error";
+        }
+    }
+};
 
         // Events
         document.getElementById('saveEventBtn').onclick = saveEvent;
