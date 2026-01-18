@@ -15,6 +15,7 @@
             background-color: #0d0d2b;
             margin: 0;
             color: white;
+            overflow: hidden;
         }
 
         body::before {
@@ -38,18 +39,19 @@
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            position: relative;
         }
 
         .admin-grid {
             display: grid;
-            grid-template-columns: 350px 1fr 300px;
+            grid-template-columns: 1fr 350px;
             gap: 1.5rem;
             padding: 1.5rem;
             flex: 1;
             overflow: hidden;
         }
 
-        /* Interactive Calendar Picker Styles */
+        /* Calendar Styles */
         .day-cell {
             aspect-ratio: 1 / 1;
             display: flex;
@@ -66,18 +68,15 @@
             position: relative;
         }
 
-        .day-cell:hover { background: rgba(255, 255, 255, 0.1); }
-        
-        /* Selection Glow */
         .day-cell.selected-day { 
             border: 2px solid #38bdf8 !important; 
             background: rgba(56, 189, 248, 0.2) !important; 
         }
+
         .day-cell.in-range { 
             background: rgba(56, 189, 248, 0.1) !important; 
         }
 
-        /* Color Strips for Multiple Events */
         .strip-container {
             width: 100%;
             display: flex;
@@ -86,25 +85,71 @@
             margin-top: auto;
             padding: 2px;
         }
+
         .event-strip {
             height: 4px;
             width: 100%;
             border-radius: 1px;
         }
 
-        .custom-scroll::-webkit-scrollbar { width: 5px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
-
-        .modal {
+        /* Modal Draggable Styles */
+        .modal-overlay {
             position: fixed;
             inset: 0;
-            z-index: 1000;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(2px);
             display: none;
+            z-index: 100;
+        }
+
+        .modal-overlay.active { display: block; }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1e293b;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);
+            user-select: none;
+        }
+
+        .modal-header {
+            padding: 1.25rem 1.5rem;
+            cursor: move;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body { padding: 1.5rem; }
+
+        /* FAB */
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 64px;
+            height: 64px;
+            background: #38bdf8;
+            border-radius: 50%;
+            display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4);
+            cursor: pointer;
+            z-index: 50;
+            transition: transform 0.2s;
         }
-        .modal.show { display: flex; }
+        .fab:hover { transform: scale(1.1); }
+
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -116,57 +161,12 @@
                 <h1 class="text-xl font-black tracking-tighter text-blue-400">KCP ADMIN</h1>
             </div>
             <div id="statusIndicator" class="flex items-center gap-3 text-xs font-mono">
-                <span id="loadingDot" class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></span>
-                <span id="userStatus">Connecting...</span>
+                <span id="loadingDot" class="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span id="userStatus">Ready</span>
             </div>
         </div>
 
         <div class="admin-grid">
-            <div id="formContainer" class="bg-white bg-opacity-5 p-6 rounded-2xl border border-white border-opacity-10 flex flex-col gap-4 overflow-y-auto custom-scroll">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 id="formTitle" class="text-lg font-bold text-sky-400">Manage Event</h2>
-                    <button id="resetBtn" class="text-[10px] bg-gray-700 px-2 py-1 rounded font-bold uppercase hover:bg-gray-600">Reset</button>
-                </div>
-                
-                <div class="space-y-4">
-                    <input type="hidden" id="editGroupId">
-                    
-                    <div class="bg-black bg-opacity-40 p-3 rounded-xl border border-blue-500 border-opacity-20">
-                        <label class="block text-[10px] font-bold uppercase text-gray-500 mb-1">Selection Picker</label>
-                        <div id="dateDisplay" class="text-xs font-mono text-blue-300">Click a day on the calendar...</div>
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Organization</label>
-                        <select id="eventOrg" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option value="Loquitur">Loquitur (#FBFFC5)</option>
-                            <option value="CTELA">CTELA (#5E58FF)</option>
-                            <option value="CCJE">CCJE (#00AF17)</option>
-                            <option value="CABM">CABM (#FFDE33)</option>
-                            <option value="CIT">CIT (#78778B)</option>
-                            <option value="COT">COT (#E325FF)</option>
-                            <option value="Sports">Sports (#F54D4D)</option>
-                            <option value="Scouts">Scouts (#94FF98)</option>
-                            <option value="SSC">SSC (#660202)</option>
-                            <option value="GABAY">GABAY (#C32929)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Event Title</label>
-                        <input type="text" id="eventTitle" placeholder="e.g. Foundation Day" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Description</label>
-                        <textarea id="eventDesc" rows="3" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none" placeholder="Details..."></textarea>
-                    </div>
-
-                    <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl transition-all shadow-lg">Push to Calendar</button>
-                    <button id="deleteBtn" class="hidden w-full py-2 bg-red-900 bg-opacity-30 text-red-400 border border-red-900 rounded-xl font-bold text-xs uppercase">Delete Group</button>
-                </div>
-            </div>
-
             <div class="flex flex-col">
                 <div class="flex justify-between items-center mb-4">
                     <h2 id="currentMonthYear" class="text-2xl font-black"></h2>
@@ -183,13 +183,60 @@
 
             <div class="bg-black bg-opacity-30 p-4 rounded-2xl border border-white border-opacity-5 flex flex-col overflow-hidden">
                 <input type="text" id="feedSearch" placeholder="Search events..." class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-500 mb-4">
-                
                 <div class="flex border-b border-white border-opacity-10 mb-3 text-[10px] font-bold">
                     <button id="tabUpcoming" class="flex-1 py-2 border-b-2 border-sky-500">UPCOMING</button>
                     <button id="tabAll" class="flex-1 py-2 text-gray-500">HISTORY</button>
                 </div>
-
                 <div id="fullEventList" class="flex-1 overflow-y-auto custom-scroll space-y-2 pr-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="openAddModal" class="fab">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+        </svg>
+    </div>
+
+    <div id="eventModalOverlay" class="modal-overlay">
+        <div id="eventModal" class="modal-content">
+            <div id="modalHeader" class="modal-header">
+                <h2 id="modalTitle" class="text-sm font-black uppercase tracking-widest text-sky-400">Add New Event</h2>
+                <button id="closeModal" class="text-gray-400 hover:text-white text-xl">&times;</button>
+            </div>
+            <div class="modal-body space-y-4">
+                <input type="hidden" id="editGroupId">
+                
+                <div class="bg-black bg-opacity-40 p-3 rounded-xl border border-blue-500 border-opacity-20">
+                    <label class="block text-[9px] font-bold uppercase text-gray-500 mb-1">Active Selection</label>
+                    <div id="dateDisplay" class="text-xs font-mono text-blue-300">Pick days on calendar</div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Organization</label>
+                    <select id="eventOrg" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none">
+                        <option value="Loquitur">Loquitur</option><option value="CTELA">CTELA</option>
+                        <option value="CCJE">CCJE</option><option value="CABM">CABM</option>
+                        <option value="CIT">CIT</option><option value="COT">COT</option>
+                        <option value="Sports">Sports</option><option value="Scouts">Scouts</option>
+                        <option value="SSC">SSC</option><option value="GABAY">GABAY</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Event Title</label>
+                    <input type="text" id="eventTitle" placeholder="Title" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1">Description</label>
+                    <textarea id="eventDesc" rows="2" class="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm outline-none" placeholder="Details..."></textarea>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button id="deleteBtn" class="hidden flex-1 py-3 bg-red-900 bg-opacity-30 text-red-400 border border-red-900 rounded-xl font-bold text-[10px] uppercase">Delete</button>
+                    <button id="saveEventBtn" class="flex-[2] py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl text-xs transition-all">Save Event</button>
+                </div>
             </div>
         </div>
     </div>
@@ -208,26 +255,15 @@
             appId: "1:532386656284:web:fd4533fb0f54b198752fd9"
         };
 
-        const orgColors = {
-            "Loquitur": "#FBFFC5", "CTELA": "#5E58FF", "CCJE": "#00AF17", "CABM": "#FFDE33",
-            "CIT": "#78778B", "COT": "#E325FF", "Sports": "#F54D4D", "Scouts": "#94FF98",
-            "SSC": "#660202", "GABAY": "#C32929"
-        };
-
+        const orgColors = { "Loquitur": "#FBFFC5", "CTELA": "#5E58FF", "CCJE": "#00AF17", "CABM": "#FFDE33", "CIT": "#78778B", "COT": "#E325FF", "Sports": "#F54D4D", "Scouts": "#94FF98", "SSC": "#660202", "GABAY": "#C32929" };
         const path = `artifacts/default-app-id/public/data/events`;
-        let db, allEvents = [], currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear();
-        let selection = [], feedTab = 'upcoming';
+        let db, allEvents = [], currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear(), selection = [], feedTab = 'upcoming';
 
-        const initialize = async () => {
+        // Initialize App
+        const init = async () => {
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             await signInAnonymously(getAuth(app));
-            document.getElementById('loadingDot').className = "w-2 h-2 bg-green-500 rounded-full";
-            document.getElementById('userStatus').textContent = "Admin Authenticated";
-            setupListener();
-        };
-
-        const setupListener = () => {
             onSnapshot(collection(db, path), (snap) => {
                 allEvents = snap.docs.map(d => ({ ...d.data(), id: d.id }));
                 renderCalendar();
@@ -235,70 +271,53 @@
             });
         };
 
+        // Render Calendar Logic
         const renderCalendar = () => {
             const grid = document.getElementById('calendarGrid');
             grid.innerHTML = '';
             document.getElementById('currentMonthYear').textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
-
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
             for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
-
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const dayEvents = allEvents.filter(e => e.date === dateStr);
-                
                 const cell = document.createElement('div');
                 cell.className = `day-cell`;
+                if (selection.includes(dateStr)) cell.classList.add('selected-day');
+                else if (selection.length === 2 && dateStr > selection[0] && dateStr < selection[1]) cell.classList.add('in-range');
                 
-                // Highlight Selection Range
-                if (selection.includes(dateStr)) {
-                    cell.classList.add('selected-day');
-                } else if (selection.length === 2) {
-                    const [s, e] = [...selection].sort();
-                    if (dateStr > s && dateStr < e) cell.classList.add('in-range');
-                }
-
                 cell.innerHTML = `<span>${d}</span><div class="strip-container"></div>`;
-                const stripContainer = cell.querySelector('.strip-container');
+                const container = cell.querySelector('.strip-container');
                 dayEvents.forEach(ev => {
-                    const strip = document.createElement('div');
-                    strip.className = 'event-strip';
-                    strip.style.backgroundColor = ev.color;
-                    stripContainer.appendChild(strip);
+                    const s = document.createElement('div');
+                    s.className = 'event-strip';
+                    s.style.backgroundColor = ev.color;
+                    container.appendChild(s);
                 });
-
-                cell.onclick = () => handleDateClick(dateStr);
+                cell.onclick = () => {
+                    if (selection.length >= 2 || selection.includes(dateStr)) selection = [dateStr];
+                    else { selection.push(dateStr); selection.sort(); }
+                    updateDateDisplay(); renderCalendar();
+                };
                 grid.appendChild(cell);
             }
         };
 
-        const handleDateClick = (dateStr) => {
-            if (selection.length >= 2 || selection.includes(dateStr)) {
-                selection = [dateStr];
-            } else {
-                selection.push(dateStr);
-                selection.sort();
-            }
-            updateDateDisplay();
-            renderCalendar();
-        };
-
         const updateDateDisplay = () => {
-            const disp = document.getElementById('dateDisplay');
-            if (selection.length === 0) disp.textContent = "Click dates on calendar...";
-            else if (selection.length === 1) disp.textContent = `Selected: ${selection[0]}`;
-            else disp.textContent = `Range: ${selection[0]} to ${selection[1]}`;
+            const d = document.getElementById('dateDisplay');
+            if (selection.length === 0) d.textContent = "Pick days on calendar";
+            else d.textContent = selection.length === 1 ? selection[0] : `${selection[0]} to ${selection[1]}`;
         };
 
+        // Feed Logic
         const renderFeed = () => {
-            const listEl = document.getElementById('fullEventList');
+            const list = document.getElementById('fullEventList');
             const search = document.getElementById('feedSearch').value.toLowerCase();
             const today = new Date().toISOString().split('T')[0];
-            listEl.innerHTML = '';
+            list.innerHTML = '';
 
-            // Grouping Logic for similar titles on consecutive days
             const groups = {};
             allEvents.forEach(ev => {
                 const gid = ev.groupId || ev.id;
@@ -306,149 +325,123 @@
                 groups[gid].dates.push(ev.date);
             });
 
-            let groupedList = Object.values(groups).map(g => {
+            let filtered = Object.values(groups).map(g => {
                 g.dates.sort();
                 g.startDate = g.dates[0];
                 g.endDate = g.dates[g.dates.length - 1];
                 return g;
-            });
-
-            let filtered = groupedList.filter(g => {
+            }).filter(g => {
                 const match = g.title.toLowerCase().includes(search) || g.org.toLowerCase().includes(search);
-                const isUpcoming = g.endDate >= today;
-                return match && (feedTab === 'all' || isUpcoming);
+                return match && (feedTab === 'all' || g.endDate >= today);
             });
 
-            filtered.sort((a, b) => feedTab === 'upcoming' ? a.startDate.localeCompare(b.startDate) : b.startDate.localeCompare(a.startDate));
-
-            filtered.forEach(g => {
+            filtered.sort((a,b) => a.startDate.localeCompare(b.startDate)).forEach(g => {
                 const card = document.createElement('div');
-                card.className = "p-3 bg-white bg-opacity-5 rounded-xl border-l-4 cursor-pointer hover:bg-opacity-10 transition-all";
+                card.className = "p-3 bg-white bg-opacity-5 rounded-xl border-l-4 cursor-pointer hover:bg-opacity-10";
                 card.style.borderColor = g.color;
-                const rangeLabel = g.startDate === g.endDate ? g.startDate : `${g.startDate} — ${g.endDate}`;
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-1">
-                        <span class="text-xs font-bold text-sky-400">${g.title}</span>
-                        <span class="text-[9px] text-gray-500 font-mono">${rangeLabel}</span>
-                    </div>
-                    <div class="text-[10px] text-gray-400">${g.org}</div>
-                `;
+                card.innerHTML = `<div class="flex justify-between items-center"><span class="text-xs font-bold">${g.title}</span><span class="text-[9px] text-gray-500 font-mono">${g.startDate}</span></div><div class="text-[9px] text-gray-400 mt-1 uppercase">${g.org}</div>`;
                 card.onclick = () => loadEdit(g);
-                listEl.appendChild(card);
+                list.appendChild(card);
             });
         };
 
-      const loadEdit = (group) => {
-    // We store the ID or GroupID so we know exactly what to overwrite/delete
-    document.getElementById('editGroupId').value = group.groupId || group.id;
-    document.getElementById('eventTitle').value = group.title;
-    document.getElementById('eventOrg').value = group.org;
-    document.getElementById('eventDesc').value = group.description || '';
-    
-    // Convert group dates into visual selection for the calendar picker
-    selection = group.startDate === group.endDate ? [group.startDate] : [group.startDate, group.endDate];
-    
-    // Visual UI changes
-    document.getElementById('formTitle').textContent = "Update Event";
-    document.getElementById('saveEventBtn').textContent = "Save Changes";
-    document.getElementById('saveEventBtn').className = "w-full py-3 bg-yellow-600 hover:bg-yellow-500 font-bold rounded-xl transition-all";
-    document.getElementById('deleteBtn').classList.remove('hidden');
-    
-    updateDateDisplay();
-    renderCalendar();
-};
+        // Modal Logic
+        const overlay = document.getElementById('eventModalOverlay');
+        const modal = document.getElementById('eventModal');
 
-const saveEvent = async () => {
-    const title = document.getElementById('eventTitle').value;
-    const org = document.getElementById('eventOrg').value;
-    const desc = document.getElementById('eventDesc').value;
-    const gid = document.getElementById('editGroupId').value;
+        const openModal = () => overlay.classList.add('active');
+        const closeModal = () => {
+            overlay.classList.remove('active');
+            resetForm();
+        };
 
-    if (!title || selection.length === 0) return alert("Select date(s) and title!");
+        const loadEdit = (g) => {
+            document.getElementById('editGroupId').value = g.groupId || g.id;
+            document.getElementById('eventTitle').value = g.title;
+            document.getElementById('eventOrg').value = g.org;
+            document.getElementById('eventDesc').value = g.description || '';
+            selection = g.startDate === g.endDate ? [g.startDate] : [g.startDate, g.endDate];
+            document.getElementById('modalTitle').textContent = "Edit Event Group";
+            document.getElementById('saveEventBtn').textContent = "Update Group";
+            document.getElementById('deleteBtn').classList.remove('hidden');
+            updateDateDisplay(); renderCalendar(); openModal();
+        };
 
-    try {
-        const batch = writeBatch(db);
+        const resetForm = () => {
+            selection = []; 
+            document.getElementById('editGroupId').value = '';
+            document.getElementById('eventTitle').value = ''; 
+            document.getElementById('eventDesc').value = '';
+            document.getElementById('modalTitle').textContent = "Add New Event";
+            document.getElementById('saveEventBtn').textContent = "Save Event";
+            document.getElementById('deleteBtn').classList.add('hidden');
+            updateDateDisplay(); renderCalendar();
+        };
 
-        // --- STEP 1: PREVENT DUPLICATION ---
-        // If we are in "Edit Mode" (gid exists), find and delete ALL old entries
-        if (gid) {
-            // Check for group matches
-            const groupQuery = query(collection(db, path), where("groupId", "==", gid));
-            const groupSnap = await getDocs(groupQuery);
-            groupSnap.forEach(d => batch.delete(d.ref));
+        const saveEvent = async () => {
+            const title = document.getElementById('eventTitle').value;
+            const org = document.getElementById('eventOrg').value;
+            const gid = document.getElementById('editGroupId').value;
+            if (!title || !selection.length) return alert("Missing title or dates!");
 
-            // Also try to delete the ID directly in case it's a single-day event without a groupId
-            const directRef = doc(db, path, gid);
-            batch.delete(directRef);
-        }
+            const batch = writeBatch(db);
+            // DUPLICATION FIX: Clear old group first
+            if (gid) {
+                const q = query(collection(db, path), where("groupId", "==", gid));
+                const snap = await getDocs(q);
+                snap.forEach(d => batch.delete(d.ref));
+                batch.delete(doc(db, path, gid)); // Fallback for single-day items
+            }
 
-        // --- STEP 2: CREATE NEW ENTRIES ---
-        const newGid = `group_${Date.now()}`; // Generate a fresh ID for this new version
-        let curr = new Date(selection[0]);
-        let last = selection.length > 1 ? new Date(selection[1]) : new Date(selection[0]);
+            const newGid = `group_${Date.now()}`;
+            let curr = new Date(selection[0]), last = new Date(selection[selection.length-1]);
+            while (curr <= last) {
+                const dStr = curr.toISOString().split('T')[0];
+                batch.set(doc(collection(db, path)), { title, org, date: dStr, color: orgColors[org], groupId: newGid, description: document.getElementById('eventDesc').value });
+                curr.setDate(curr.getDate() + 1);
+            }
+            await batch.commit(); closeModal();
+        };
 
-        while (curr <= last) {
-            const dStr = curr.toISOString().split('T')[0];
-            const newRef = doc(collection(db, path)); // Create a new unique document
-            batch.set(newRef, { 
-                title, 
-                org, 
-                description: desc, 
-                color: orgColors[org], 
-                date: dStr, 
-                groupId: newGid 
-            });
-            curr.setDate(curr.getDate() + 1);
-        }
-
-        await batch.commit();
-        resetForm();
-    } catch (error) {
-        console.error("Save failed:", error);
-        alert("Error saving changes.");
-    }
-};
-
-     const deleteEvent = async () => {
-    const gid = document.getElementById('editGroupId').value;
-    if (gid && confirm("Delete this event series?")) {
-        const batch = writeBatch(db);
+        // Draggable Functionality
+        let isDragging = false, offset = [0,0];
+        const header = document.getElementById('modalHeader');
         
-        // Delete all by GroupID
-        const q = query(collection(db, path), where("groupId", "==", gid));
-        const snap = await getDocs(q);
-        snap.forEach(d => batch.delete(d.ref));
-        
-        // Fallback: Delete the ID directly
-        batch.delete(doc(db, path, gid));
-        
-        await batch.commit();
-        resetForm();
-    }
-};
+        header.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            offset = [modal.offsetLeft - e.clientX, modal.offsetTop - e.clientY];
+        });
 
-        // Events
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            modal.style.left = (e.clientX + offset[0]) + 'px';
+            modal.style.top = (e.clientY + offset[1]) + 'px';
+            modal.style.transform = 'none'; // Remove centring transform once dragged
+        });
+
+        document.addEventListener('mouseup', () => isDragging = false);
+
+        // UI Handlers
+        document.getElementById('openAddModal').onclick = openModal;
+        document.getElementById('closeModal').onclick = closeModal;
         document.getElementById('saveEventBtn').onclick = saveEvent;
-        document.getElementById('deleteBtn').onclick = deleteEvent;
         document.getElementById('resetBtn').onclick = resetForm;
         document.getElementById('feedSearch').oninput = renderFeed;
         document.getElementById('prevBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} renderCalendar(); };
         document.getElementById('nextBtn').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} renderCalendar(); };
-        
-        document.getElementById('tabUpcoming').onclick = (e) => { 
-            feedTab = 'upcoming'; 
-            e.target.classList.add('border-sky-500'); 
-            document.getElementById('tabAll').classList.remove('border-sky-500'); 
-            renderFeed(); 
-        };
-        document.getElementById('tabAll').onclick = (e) => { 
-            feedTab = 'all'; 
-            e.target.classList.add('border-sky-500'); 
-            document.getElementById('tabUpcoming').classList.remove('border-sky-500'); 
-            renderFeed(); 
+        document.getElementById('deleteBtn').onclick = async () => {
+            const gid = document.getElementById('editGroupId').value;
+            if (confirm("Delete this entire group?")) {
+                const q = query(collection(db, path), where("groupId", "==", gid));
+                const snap = await getDocs(q);
+                const batch = writeBatch(db);
+                snap.forEach(d => batch.delete(d.ref));
+                batch.delete(doc(db, path, gid));
+                await batch.commit(); closeModal();
+            }
         };
 
-        window.onload = initialize;
+        window.onload = init;
     </script>
 </body>
 </html>
