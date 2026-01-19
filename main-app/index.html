@@ -13,91 +13,47 @@
             align-items: center;
             justify-content: center;
             background-color: #0d0d2b;
-            margin: 0;
-            color: white;
-            overflow: hidden;
+            margin: 0; color: white; overflow: hidden;
         }
-
         body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
+            content: ''; position: fixed; inset: 0;
             background-image: url('https://fastly.4sqi.net/img/general/600x600/390240903_YczNrD1Qc50M1y551y5idVeA1QAe2OhCXQ-4avE4XrA.jpg');
-            background-size: cover;
-            background-position: center;
-            filter: blur(15px) brightness(0.4);
-            z-index: -1;
+            background-size: cover; background-position: center; filter: blur(15px) brightness(0.4); z-index: -1;
         }
-
         #appContainer {
-            width: 98%;
-            max-width: 1600px;
-            height: 90vh;
+            width: 98%; max-width: 1600px; height: 90vh;
             background-color: rgba(15, 23, 42, 0.95);
-            display: flex;
-            flex-direction: column;
-            border-radius: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            display: flex; flex-direction: column; border-radius: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
         }
-
         .main-layout {
             display: grid;
-            grid-template-columns: 1fr 320px 350px;
-            gap: 1rem;
-            padding: 1.5rem;
-            flex: 1;
-            min-height: 0;
+            grid-template-columns: 350px 1fr 320px;
+            gap: 1rem; padding: 1.5rem; flex: 1; min-height: 0;
         }
-
         .panel {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 1rem;
+            background: rgba(0, 0, 0, 0.2); border-radius: 1rem;
             border: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            flex-direction: column;
-            padding: 1.25rem;
-            min-height: 0;
+            display: flex; flex-direction: column; padding: 1.25rem; min-height: 0;
         }
-
         .day-cell {
-            aspect-ratio: 1 / 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            border-radius: 0.5rem;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            cursor: pointer;
-            transition: 0.2s;
-            padding: 4px;
+            aspect-ratio: 1 / 1; display: flex; flex-direction: column;
+            align-items: center; border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer; transition: 0.2s; padding: 4px;
         }
-
         .day-cell.selected-day { border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.2); }
         .day-cell.in-range { background: rgba(56, 189, 248, 0.1); }
-
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 10px; }
-
         .form-input {
-            width: 100%;
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 0.5rem;
-            padding: 0.6rem;
-            font-size: 0.75rem;
-            outline: none;
-            color: white;
+            width: 100%; background: #1e293b; border: 1px solid #334155;
+            border-radius: 0.5rem; padding: 0.6rem; font-size: 0.75rem; color: white; outline: none;
         }
         .form-input:focus { border-color: #38bdf8; }
-
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 10px; }
         .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(4px);
-            display: none;
-            z-index: 100;
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px); display: none; z-index: 100;
         }
         .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
     </style>
@@ -117,6 +73,38 @@
         </div>
 
         <div class="main-layout">
+            <div class="panel border-r-2 border-blue-500 border-opacity-30">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 id="actionTitle" class="text-xs font-black text-blue-400 uppercase tracking-widest">Create New Event</h3>
+                    <button id="resetFormBtn" class="text-[10px] bg-gray-800 px-2 py-1 rounded hover:text-white text-gray-400">RESET</button>
+                </div>
+                <div class="space-y-4">
+                    <input type="hidden" id="editGroupId">
+                    <div>
+                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Date Span</label>
+                        <div id="dateDisplay" class="bg-black p-3 rounded-lg border border-blue-500 border-opacity-20 text-xs font-mono text-blue-300">Click dates on calendar</div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Organization</label>
+                        <select id="eventOrg" class="form-input">
+                            <option value="Loquitur">Loquitur</option><option value="SSC">SSC</option><option value="Sports">Sports</option><option value="GABAY">GABAY</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Event Title</label>
+                        <input type="text" id="eventTitle" placeholder="Enter title..." class="form-input">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Description</label>
+                        <textarea id="eventDesc" rows="4" placeholder="Event details..." class="form-input"></textarea>
+                    </div>
+                    <div class="pt-4 space-y-2">
+                        <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-xs uppercase shadow-lg shadow-blue-900/20">Save Event</button>
+                        <button id="deleteBtn" class="hidden w-full py-3 bg-red-900/20 text-red-500 border border-red-900/50 rounded-xl font-black text-xs uppercase">Delete Event</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="panel">
                 <div class="flex justify-between items-center mb-4">
                     <h2 id="currentMonthYear" class="text-xl font-bold"></h2>
@@ -132,52 +120,9 @@
             </div>
 
             <div class="panel">
-                <h3 class="text-xs font-black text-gray-400 uppercase mb-4 tracking-widest">Upcoming Feed</h3>
-                <input type="text" id="feedSearch" placeholder="Search events..." class="form-input mb-4">
+                <h3 class="text-xs font-black text-gray-400 uppercase mb-4 tracking-widest">Feed List</h3>
+                <input type="text" id="feedSearch" placeholder="Search..." class="form-input mb-4">
                 <div id="fullEventList" class="flex-1 overflow-y-auto custom-scroll space-y-2 pr-1"></div>
-            </div>
-
-            <div class="panel border-l-2 border-blue-500 border-opacity-30">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 id="actionTitle" class="text-xs font-black text-blue-400 uppercase tracking-widest">Create New Event</h3>
-                    <button id="resetFormBtn" class="text-[10px] bg-gray-800 px-2 py-1 rounded hover:text-white text-gray-400">RESET</button>
-                </div>
-
-                <div class="space-y-4">
-                    <input type="hidden" id="editGroupId">
-                    
-                    <div>
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Selected Dates</label>
-                        <div id="dateDisplay" class="bg-black p-3 rounded-lg border border-blue-500 border-opacity-20 text-xs font-mono text-blue-300">
-                            Click dates on calendar
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Organization</label>
-                        <select id="eventOrg" class="form-input">
-                            <option value="Loquitur">Loquitur</option>
-                            <option value="SSC">SSC</option>
-                            <option value="Sports">Sports</option>
-                            <option value="GABAY">GABAY</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Event Title</label>
-                        <input type="text" id="eventTitle" placeholder="Enter title..." class="form-input">
-                    </div>
-
-                    <div>
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Description</label>
-                        <textarea id="eventDesc" rows="4" placeholder="Event details..." class="form-input"></textarea>
-                    </div>
-
-                    <div class="pt-4 space-y-2">
-                        <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-xs uppercase shadow-lg shadow-blue-900/20">Save Event</button>
-                        <button id="deleteBtn" class="hidden w-full py-3 bg-red-900/20 text-red-500 border border-red-900/50 rounded-xl font-black text-xs uppercase hover:bg-red-900/40">Delete Event</button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -210,61 +155,117 @@
             await signInAnonymously(getAuth(app));
             onSnapshot(collection(db, path), (snap) => {
                 allEvents = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-                renderCalendar();
-                renderFeed();
+                renderCalendar(); renderFeed();
             });
         };
 
         const renderCalendar = () => {
-            const grid = document.getElementById('calendarGrid');
-            grid.innerHTML = '';
+            const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
             const dObj = new Date(currentYear, currentMonth);
             document.getElementById('currentMonthYear').textContent = dObj.toLocaleString('default', { month: 'long', year: 'numeric' });
-            
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
             for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
-
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const dayEvents = allEvents.filter(e => e.date === dateStr);
                 const cell = document.createElement('div');
                 cell.className = 'day-cell';
-                
                 if (selection.includes(dateStr)) cell.classList.add('selected-day');
                 if (selection.length === 2 && dateStr > selection[0] && dateStr < selection[1]) cell.classList.add('in-range');
-
                 cell.innerHTML = `<span class="text-[10px] font-bold">${d}</span><div class="w-full mt-auto flex flex-col gap-0.5"></div>`;
                 dayEvents.forEach(ev => {
                     const s = document.createElement('div');
-                    s.className = 'h-1 w-full rounded-full';
-                    s.style.backgroundColor = ev.color;
+                    s.className = 'h-1 w-full rounded-full'; s.style.backgroundColor = ev.color;
                     cell.lastChild.appendChild(s);
                 });
-
-                cell.onclick = () => handleCalendarClick(dateStr, dayEvents);
+                cell.onclick = () => {
+                    if (selection.length > 0 || document.getElementById('editGroupId').value) {
+                        if (selection.length >= 2 || selection.includes(dateStr)) selection = [dateStr];
+                        else { selection.push(dateStr); selection.sort(); }
+                        updateDateDisplay(); renderCalendar();
+                    } else showDayPopup(dateStr, dayEvents);
+                };
                 grid.appendChild(cell);
             }
         };
 
-        const handleCalendarClick = (dateStr, events) => {
-            // If we are actively editing or creating, just update dates
-            if (selection.length > 0 || document.getElementById('editGroupId').value) {
-                if (selection.length >= 2 || selection.includes(dateStr)) selection = [dateStr];
-                else { selection.push(dateStr); selection.sort(); }
-                updateDateDisplay();
-                renderCalendar();
-            } else {
-                showDayPopup(dateStr, events);
+        const renderFeed = () => {
+            const list = document.getElementById('fullEventList');
+            const search = document.getElementById('feedSearch').value.toLowerCase();
+            list.innerHTML = '';
+            const groups = {};
+            allEvents.forEach(e => {
+                const key = e.groupId || e.title;
+                if (!groups[key]) groups[key] = { ...e, dates: [] };
+                groups[key].dates.push(e.date);
+            });
+            Object.values(groups).filter(g => g.title.toLowerCase().includes(search)).forEach(g => {
+                g.dates.sort();
+                const card = document.createElement('div');
+                card.className = `p-3 bg-white/5 rounded-xl border-l-4 flex items-center gap-3 ${selectedGroups.has(g.groupId) ? 'ring-1 ring-blue-500 bg-white/10' : ''}`;
+                card.style.borderColor = g.color;
+                card.innerHTML = `
+                    <input type="checkbox" class="batch-cb w-4 h-4 cursor-pointer" data-gid="${g.groupId}" ${selectedGroups.has(g.groupId) ? 'checked' : ''}>
+                    <div class="flex-1 cursor-pointer overflow-hidden">
+                        <div class="text-[11px] font-bold truncate">${g.title}</div>
+                        <div class="text-[9px] text-gray-500">${g.dates[0]} ${g.dates.length > 1 ? '→' : ''}</div>
+                    </div>
+                `;
+                card.querySelector('.batch-cb').onclick = (e) => {
+                    e.stopPropagation();
+                    if(e.target.checked) selectedGroups.add(g.groupId);
+                    else selectedGroups.delete(g.groupId);
+                    updateBatchBar(); renderFeed();
+                };
+                card.onclick = () => loadEdit(g);
+                list.appendChild(card);
+            });
+        };
+
+        const loadEdit = (g) => {
+            const ev = allEvents.find(e => e.groupId === g.groupId);
+            if (!ev) return;
+            closeDayPopup();
+            document.getElementById('actionTitle').textContent = "Editing Event";
+            document.getElementById('editGroupId').value = ev.groupId;
+            document.getElementById('eventTitle').value = ev.title;
+            document.getElementById('eventOrg').value = ev.org;
+            document.getElementById('eventDesc').value = ev.description || '';
+            const gEvents = allEvents.filter(e => e.groupId === ev.groupId).sort((a,b) => a.date.localeCompare(b.date));
+            selection = [gEvents[0].date, gEvents[gEvents.length-1].date];
+            document.getElementById('deleteBtn').classList.remove('hidden');
+            document.getElementById('saveEventBtn').textContent = "Update Event";
+            updateDateDisplay(); renderCalendar();
+        };
+
+        const saveEvent = async () => {
+            const title = document.getElementById('eventTitle').value;
+            const org = document.getElementById('eventOrg').value;
+            const gid = document.getElementById('editGroupId').value || `group_${Date.now()}`;
+            if (!title || !selection.length) return alert("Missing Title or Dates");
+            const batch = writeBatch(db);
+            if (document.getElementById('editGroupId').value) {
+                const q = query(collection(db, path), where("groupId", "==", gid));
+                const snap = await getDocs(q);
+                snap.forEach(d => batch.delete(d.ref));
             }
+            let curr = new Date(selection[0]), last = new Date(selection[selection.length-1]);
+            while (curr <= last) {
+                const dStr = curr.toISOString().split('T')[0];
+                batch.set(doc(collection(db, path)), {
+                    groupId: gid, title, org, date: dStr, color: orgColors[org], description: document.getElementById('eventDesc').value
+                });
+                curr.setDate(curr.getDate() + 1);
+            }
+            await batch.commit(); resetForm();
         };
 
         const showDayPopup = (dateStr, events) => {
             activeDay = dateStr;
             document.getElementById('dayDetailTitle').textContent = dateStr;
             const list = document.getElementById('dayEventsList');
-            list.innerHTML = events.length ? '' : '<div class="text-gray-500 text-xs italic py-4">Quiet day.</div>';
+            list.innerHTML = events.length ? '' : '<div class="text-gray-500 text-xs italic py-4 text-center">No events scheduled.</div>';
             events.forEach(ev => {
                 const item = document.createElement('div');
                 item.className = "p-3 bg-white/5 rounded-xl border-l-4 cursor-pointer hover:bg-white/10";
@@ -276,133 +277,40 @@
             document.getElementById('dayDetailOverlay').classList.add('active');
         };
 
-        const renderFeed = () => {
-            const list = document.getElementById('fullEventList');
-            const search = document.getElementById('feedSearch').value.toLowerCase();
-            list.innerHTML = '';
-            
-            const groups = {};
-            allEvents.forEach(e => {
-                const key = e.groupId || e.title;
-                if (!groups[key]) groups[key] = { ...e, dates: [] };
-                groups[key].dates.push(e.date);
-            });
-
-            Object.values(groups).filter(g => g.title.toLowerCase().includes(search)).forEach(g => {
-                g.dates.sort();
-                const card = document.createElement('div');
-                card.className = `p-3 bg-white/5 rounded-xl border-l-4 flex items-center gap-3 ${selectedGroups.has(g.groupId) ? 'ring-2 ring-blue-500 bg-white/10' : ''}`;
-                card.style.borderColor = g.color;
-                
-                card.innerHTML = `
-                    <input type="checkbox" class="w-4 h-4 rounded" ${selectedGroups.has(g.groupId) ? 'checked' : ''}>
-                    <div class="flex-1 cursor-pointer" onclick="event.stopPropagation(); window.loadEditFromFeed('${g.groupId}')">
-                        <div class="text-[11px] font-bold truncate w-40">${g.title}</div>
-                        <div class="text-[9px] text-gray-500">${g.dates[0]} ${g.dates.length > 1 ? '→ ' + g.dates[g.dates.length-1] : ''}</div>
-                    </div>
-                `;
-                
-                card.querySelector('input').onchange = (e) => {
-                    if(e.target.checked) selectedGroups.add(g.groupId);
-                    else selectedGroups.delete(g.groupId);
-                    updateBatchBar();
-                    renderFeed();
-                };
-                list.appendChild(card);
-            });
-        };
-
-        window.loadEditFromFeed = (gid) => {
-            const ev = allEvents.find(e => e.groupId === gid);
-            if (ev) loadEdit(ev);
-        };
-
-        const loadEdit = (ev) => {
-            closeDayPopup();
-            document.getElementById('actionTitle').textContent = "Editing Event";
-            document.getElementById('editGroupId').value = ev.groupId;
-            document.getElementById('eventTitle').value = ev.title;
-            document.getElementById('eventOrg').value = ev.org;
-            document.getElementById('eventDesc').value = ev.description || '';
-            const gEvents = allEvents.filter(e => e.groupId === ev.groupId).sort((a,b) => a.date.localeCompare(b.date));
-            selection = [gEvents[0].date, gEvents[gEvents.length-1].date];
-            document.getElementById('deleteBtn').classList.remove('hidden');
-            document.getElementById('saveEventBtn').textContent = "Update Event";
-            updateDateDisplay();
-            renderCalendar();
-        };
-
         const updateDateDisplay = () => {
             const disp = document.getElementById('dateDisplay');
-            if (!selection.length) disp.textContent = "Click dates on calendar";
-            else disp.textContent = selection.length === 2 ? `${selection[0]} to ${selection[1]}` : selection[0];
+            disp.textContent = selection.length === 2 ? `${selection[0]} to ${selection[1]}` : (selection[0] || "Click dates on calendar");
         };
 
         const resetForm = () => {
             document.getElementById('actionTitle').textContent = "Create New Event";
-            document.getElementById('editGroupId').value = '';
-            document.getElementById('eventTitle').value = '';
-            document.getElementById('eventDesc').value = '';
-            document.getElementById('deleteBtn').classList.add('hidden');
+            document.getElementById('editGroupId').value = ''; document.getElementById('eventTitle').value = '';
+            document.getElementById('eventDesc').value = ''; document.getElementById('deleteBtn').classList.add('hidden');
             document.getElementById('saveEventBtn').textContent = "Save Event";
-            selection = [];
-            updateDateDisplay();
-            renderCalendar();
-        };
-
-        const saveEvent = async () => {
-            const title = document.getElementById('eventTitle').value;
-            const org = document.getElementById('eventOrg').value;
-            const gid = document.getElementById('editGroupId').value || `group_${Date.now()}`;
-            if (!title || !selection.length) return alert("Missing Title or Dates");
-
-            const batch = writeBatch(db);
-            if (document.getElementById('editGroupId').value) {
-                const q = query(collection(db, path), where("groupId", "==", gid));
-                const snap = await getDocs(q);
-                snap.forEach(d => batch.delete(d.ref));
-            }
-
-            let curr = new Date(selection[0]), last = new Date(selection[selection.length-1]);
-            while (curr <= last) {
-                const dStr = curr.toISOString().split('T')[0];
-                batch.set(doc(collection(db, path)), {
-                    groupId: gid, title, org, date: dStr,
-                    color: orgColors[org], description: document.getElementById('eventDesc').value
-                });
-                curr.setDate(curr.getDate() + 1);
-            }
-            await batch.commit();
-            resetForm();
+            selection = []; updateDateDisplay(); renderCalendar();
         };
 
         const updateBatchBar = () => {
-            const bar = document.getElementById('batchBar');
             document.getElementById('batchCount').textContent = `${selectedGroups.size} SELECTED`;
-            bar.classList.toggle('hidden', selectedGroups.size === 0);
+            document.getElementById('batchBar').classList.toggle('hidden', selectedGroups.size === 0);
         };
 
-        // UI Events
         document.getElementById('resetFormBtn').onclick = resetForm;
         document.getElementById('saveEventBtn').onclick = saveEvent;
         document.getElementById('feedSearch').oninput = renderFeed;
-        document.getElementById('startAddFromDay').onclick = () => { selection = [activeDay]; updateDateDisplay(); closeDayPopup(); renderCalendar(); };
         document.getElementById('prevBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} renderCalendar(); };
         document.getElementById('nextBtn').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} renderCalendar(); };
-        
+        document.getElementById('startAddFromDay').onclick = () => { selection = [activeDay]; updateDateDisplay(); closeDayPopup(); renderCalendar(); };
         document.getElementById('batchDeleteBtn').onclick = async () => {
-            if (!confirm(`Permanently delete ${selectedGroups.size} events?`)) return;
+            if (!confirm(`Delete ${selectedGroups.size} events?`)) return;
             const batch = writeBatch(db);
             for (const gid of selectedGroups) {
                 const q = query(collection(db, path), where("groupId", "==", gid));
                 const snap = await getDocs(q);
                 snap.forEach(d => batch.delete(d.ref));
             }
-            await batch.commit();
-            selectedGroups.clear();
-            updateBatchBar();
+            await batch.commit(); selectedGroups.clear(); updateBatchBar();
         };
-
         document.getElementById('deleteBtn').onclick = async () => {
             if (!confirm("Delete this event?")) return;
             const gid = document.getElementById('editGroupId').value;
@@ -410,8 +318,7 @@
             const q = query(collection(db, path), where("groupId", "==", gid));
             const snap = await getDocs(q);
             snap.forEach(d => batch.delete(d.ref));
-            await batch.commit();
-            resetForm();
+            await batch.commit(); resetForm();
         };
 
         window.closeDayPopup = () => document.getElementById('dayDetailOverlay').classList.remove('active');
