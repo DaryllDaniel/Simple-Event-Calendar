@@ -298,29 +298,103 @@
             document.getElementById('eventModal').classList.add('active');
         };
 
-        window.handleSave = async () => {
-            const title = document.getElementById('f-title').value;
-            const org = document.getElementById('f-org').value;
-            const endDate = document.getElementById('f-endDate').value;
-            const gid = document.getElementById('f-id').value || Date.now().toString();
+        
 
-            if(!title) return;
+      // Function to populate the form with existing event data
+window.startEdit = (ev) => {
+    // Find all days associated with this specific event group
+    const group = allEvents
+        .filter(e => e.groupId === (ev.groupId || ev.id))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Fill the hidden ID field (essential for the Save function to know it's an update)
+    document.getElementById('f-id').value = ev.groupId || ev.id;
+    
+    // Populate visible inputs
+    document.getElementById('f-title').value = ev.title;
+    document.getElementById('f-org').value = ev.org;
+    
+    // Set End Date if it's a multi-day event, otherwise leave blank
+    document.getElementById('f-endDate').value = group.length > 1 ? group[group.length - 1].date : "";
+
+    // Update UI Labels
+    document.getElementById('editModeLabel').textContent = "Editing Event";
+    document.getElementById('saveBtn').textContent = "Update Event";
+    document.getElementById('deleteEventBtn').classList.remove('hidden');
+};
+
+// Updated handleSave logic to handle the "Edit" (Batch Replace)
+window.handleSave = async () => {
+    const title = document.getElementById('f-title').value;
+    const org = document.getElementById('f-org').value;
+    const endDate = document.getElementById('f-endDate').value;
+    const editId = document.getElementById('f-id').value;
+    const gid = editId || Date.now().toString();
+
+    if(!title) return alert("Title is required");
+
+    const batch = writeBatch(db);
+    
+    // If we are editing (editId exists), we delete all previous instances of this group 
+    // to prevent ghost events when dates are changed.
+    if(editId) {
+        allEvents.filter(e => e.groupId === editId).forEach(d => {
+            batch.delete(doc(db, path, d.id));
+        });
+    }
+
+    // Re-create the events (single or range)
+    let curr = new Date(selectedDate);
+    const end = endDate ? new Date(endDate) : new Date(selectedDate);
+    
+    while(curr <= end) {
+        const dateKey = curr.toISOString().split('T')[0];
+        const newRef = doc(collection(db, path));
+        batch.set(newRef, { 
+            title, 
+            org, 
+            groupId: gid, 
+            date: dateKey, 
+            color: orgColors[org] || "#38bdf8", 
+            createdAt: new Date().toISOString() 
+        });
+        curr.setDate(curr.getDate() + 1);
+    }
+
+    await batch.commit();
+    closeModal();
+};
+
+        // Add this to your script block
+window.handleDelete = async () => {
+    const gid = document.getElementById('f-id').value;
+    
+    if (!gid) return; // Safety check
+
+    if (confirm("Are you sure you want to delete this event? This will remove all days associated with it.")) {
+        try {
             const batch = writeBatch(db);
-            if(document.getElementById('f-id').value) {
-                allEvents.filter(e => e.groupId === gid).forEach(d => batch.delete(doc(db, path, d.id)));
-            }
+            
+            // Find every document in the database that shares this Group ID
+            const targets = allEvents.filter(e => (e.groupId === gid || e.id === gid));
+            
+            targets.forEach(eventDoc => {
+                const docRef = doc(db, path, eventDoc.id);
+                batch.delete(docRef);
+            });
 
-            let curr = new Date(selectedDate);
-            const end = endDate ? new Date(endDate) : new Date(selectedDate);
-            while(curr <= end) {
-                const dateKey = curr.toISOString().split('T')[0];
-                const newRef = doc(collection(db, path));
-                batch.set(newRef, { title, org, groupId: gid, date: dateKey, color: orgColors[org] || "#38bdf8", createdAt: new Date().toISOString() });
-                curr.setDate(curr.getDate() + 1);
-            }
             await batch.commit();
+            console.log("Group deleted successfully");
             closeModal();
-        };
+        } catch (error) {
+            console.error("Error deleting event:", error);
+            alert("Failed to delete event.");
+        }
+    }
+};
+
+// Ensure your HTML button is linked:
+// <button id="deleteEventBtn" onclick="handleDelete()" class="...">Delete</button>
 
         const renderFeed = () => {
             const list = document.getElementById('fullEventList'); 
