@@ -274,30 +274,102 @@
             }
         };
 
-        const openDay = (dateStr) => {
-            selectedDate = dateStr;
-            document.getElementById('modalTitle').textContent = new Date(dateStr).toLocaleDateString(undefined, { dateStyle: 'long' });
-            document.getElementById('f-id').value = "";
-            document.getElementById('f-title').value = "";
-            document.getElementById('f-endDate').value = "";
-            document.getElementById('deleteEventBtn').classList.add('hidden');
-            
-            // Note: Modal shows ALL events for that day so you can see conflicts
-            const dayEvents = allEvents.filter(e => e.date === dateStr);
-            const list = document.getElementById('modalExistingEvents');
-            list.innerHTML = dayEvents.length ? '' : '<p class="text-slate-500 text-center py-4">No events scheduled.</p>';
-            
-            dayEvents.forEach(ev => {
-                const item = document.createElement('div');
-                item.className = "flex justify-between items-center bg-white/5 p-3 rounded-xl border-l-4 hover:bg-white/10 cursor-pointer mb-2";
-                item.style.borderColor = ev.color;
-                item.innerHTML = `<div><p class="text-[9px] font-bold text-slate-500 uppercase">${ev.org}</p><p class="font-bold text-sm">${ev.title}</p></div>`;
-                item.onclick = (e) => { e.stopPropagation(); editExisting(ev.id); };
-                list.appendChild(item);
-            });
-            document.getElementById('eventModal').classList.add('active');
+     // Open the modal for a specific day
+const openDay = (dateStr) => {
+    selectedDate = dateStr;
+    document.getElementById('modalTitle').textContent = new Date(dateStr).toLocaleDateString(undefined, { dateStyle: 'long' });
+    
+    // Reset form to "Create" mode by default
+    resetForm();
+    
+    // Filter all events for this specific day
+    const dayEvents = allEvents.filter(e => e.date === dateStr);
+    const list = document.getElementById('modalExistingEvents');
+    
+    // UI: Show list of events or a "no events" message
+    list.innerHTML = dayEvents.length 
+        ? '<p class="text-[10px] font-bold text-slate-500 uppercase mb-2 tracking-widest">Events on this day</p>' 
+        : '<p class="text-slate-500 text-center py-4 text-xs">No events scheduled.</p>';
+    
+    dayEvents.forEach(ev => {
+        const item = document.createElement('div');
+        item.className = "flex justify-between items-center bg-white/5 p-3 rounded-xl border-l-4 hover:bg-white/10 cursor-pointer mb-2 transition-all group";
+        item.style.borderColor = ev.color;
+        
+        item.innerHTML = `
+            <div>
+                <p class="text-[9px] font-bold text-slate-500 uppercase">${ev.org}</p>
+                <p class="font-bold text-sm">${ev.title}</p>
+            </div>
+            <span class="text-[10px] font-bold text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">EDIT</span>
+        `;
+        
+        // This links the specific event to the Edit form
+        item.onclick = (e) => { 
+            e.stopPropagation(); 
+            startEdit(ev); 
         };
+        list.appendChild(item);
+    });
+    
+    document.getElementById('eventModal').classList.add('active');
+};
 
+// Reset the form to default state
+const resetForm = () => {
+    document.getElementById('f-id').value = "";
+    document.getElementById('f-title').value = "";
+    document.getElementById('f-endDate').value = "";
+    // Note: If you have an editModeLabel in HTML, update it here
+    const label = document.getElementById('editModeLabel');
+    if(label) label.textContent = "Create New Event";
+    
+    document.querySelector('#eventModal button[onclick="handleSave()"]').textContent = "Create Event";
+    document.getElementById('deleteEventBtn').classList.add('hidden');
+};
+
+// Populate the form with existing event data
+window.startEdit = (ev) => {
+    // Find the full group (for multi-day events)
+    const group = allEvents
+        .filter(e => e.groupId === (ev.groupId || ev.id))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+    document.getElementById('f-id').value = ev.groupId || ev.id;
+    document.getElementById('f-title').value = ev.title;
+    document.getElementById('f-org').value = ev.org;
+    
+    // If it's a range, set the end date field
+    document.getElementById('f-endDate').value = group.length > 1 ? group[group.length - 1].date : "";
+
+    // UI Updates
+    const label = document.getElementById('editModeLabel');
+    if(label) label.textContent = "Editing Event";
+    
+    document.querySelector('#eventModal button[onclick="handleSave()"]').textContent = "Update Event";
+    document.getElementById('deleteEventBtn').classList.remove('hidden');
+};
+
+// Handle Delete logic
+window.handleDelete = async () => {
+    const gid = document.getElementById('f-id').value;
+    if (!gid) return;
+
+    if (confirm("Delete this event? This will remove all dates associated with it.")) {
+        const batch = writeBatch(db);
+        const targets = allEvents.filter(e => (e.groupId === gid || e.id === gid));
+        
+        targets.forEach(eventDoc => {
+            batch.delete(doc(db, path, eventDoc.id));
+        });
+
+        await batch.commit();
+        closeModal();
+    }
+};
+
+// Ensure handleDelete is linked to your button in the HTML:
+// <button id="deleteEventBtn" onclick="handleDelete()" ...>Delete</button>
         
 
       // Function to populate the form with existing event data
