@@ -50,8 +50,6 @@
             backdrop-filter: blur(6px); display: none; z-index: 100;
         }
         .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
-        .loading-spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -80,7 +78,10 @@
                     <div>
                         <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Organization</label>
                         <select id="eventOrg" class="form-input">
-                            <option value="Loquitur">Loquitur</option><option value="SSC">SSC</option><option value="Sports">Sports</option><option value="GABAY">GABAY</option>
+                            <option value="Loquitur">Loquitur</option>
+                            <option value="SSC">SSC</option>
+                            <option value="Sports">Sports</option>
+                            <option value="GABAY">GABAY</option>
                         </select>
                     </div>
                     <div>
@@ -113,7 +114,7 @@
             </div>
 
             <div class="panel">
-                <h3 class="text-xs font-black text-gray-400 uppercase mb-4 tracking-widest text-center">Upcoming</h3>
+                <h3 class="text-xs font-black text-gray-400 uppercase mb-4 tracking-widest text-center">Upcoming Events</h3>
                 <div id="fullEventList" class="flex-1 overflow-y-auto custom-scroll space-y-2"></div>
             </div>
         </div>
@@ -130,14 +131,22 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, writeBatch, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyDCRT5OxfwUD25pS6igy8v3xYlaGmMXK_0", authDomain: "event-calendar-prototype-b11b6.firebaseapp.com", projectId: "event-calendar-prototype-b11b6", storageBucket: "event-calendar-prototype-b11b6.firebasestorage.app", messagingSenderId: "532386656284", appId: "1:532386656284:web:fd4533fb0f54b198752fd9" };
+        const firebaseConfig = { 
+            apiKey: "AIzaSyDCRT5OxfwUD25pS6igy8v3xYlaGmMXK_0", 
+            authDomain: "event-calendar-prototype-b11b6.firebaseapp.com", 
+            projectId: "event-calendar-prototype-b11b6", 
+            storageBucket: "event-calendar-prototype-b11b6.firebasestorage.app", 
+            messagingSenderId: "532386656284", 
+            appId: "1:532386656284:web:fd4533fb0f54b198752fd9" 
+        };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const path = `artifacts/default-app-id/public/data/events`;
-        const orgColors = { "Loquitur": "#FBFFC5", "SSC": "#660202", "Sports": "#F54D4D", "GABAY": "#C32929" };
+        const orgColors = { "Loquitur": "#FBFFC5", "SSC": "#ff4d4d", "Sports": "#38bdf8", "GABAY": "#C32929" };
 
         let allEvents = [], selection = [], currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear(), activeDay = "";
 
@@ -145,42 +154,61 @@
             await signInAnonymously(getAuth(app));
             onSnapshot(collection(db, path), (snap) => {
                 allEvents = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-                renderCalendar(); renderFeed();
+                renderCalendar(); 
+                renderFeed();
             });
         };
 
+        // --- CALENDAR LOGIC ---
         const renderCalendar = () => {
             const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
             document.getElementById('currentMonthYear').textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
+            
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
             for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
+            
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const dayEvents = allEvents.filter(e => e.date === dateStr);
                 const cell = document.createElement('div');
+                
                 cell.className = `day-cell ${selection.includes(dateStr) ? 'selected-day' : ''}`;
                 if (selection.length === 2 && dateStr > selection[0] && dateStr < selection[1]) cell.classList.add('in-range');
+                
                 cell.innerHTML = `<span class="text-[10px] font-bold">${d}</span><div class="w-full mt-auto flex flex-col gap-0.5"></div>`;
+                
                 dayEvents.forEach(ev => {
                     const s = document.createElement('div');
-                    s.className = 'h-1 w-full rounded-full'; s.style.backgroundColor = ev.color;
+                    s.className = 'h-1 w-full rounded-full'; 
+                    s.style.backgroundColor = ev.color;
                     cell.lastChild.appendChild(s);
                 });
+
                 cell.onclick = () => {
-                    if (selection.length === 1 && !selection.includes(dateStr)) { selection.push(dateStr); selection.sort(); }
-                    else { selection = [dateStr]; if(!document.getElementById('eventTitle').value) showDayPopup(dateStr, dayEvents); }
-                    updateDateDisplay(); renderCalendar();
+                    if (selection.length === 1 && !selection.includes(dateStr)) { 
+                        selection.push(dateStr); 
+                        selection.sort(); 
+                    } else { 
+                        selection = [dateStr]; 
+                        // If not currently typing a title, show what's happening that day
+                        if(!document.getElementById('eventTitle').value) showDayPopup(dateStr, dayEvents); 
+                    }
+                    updateDateDisplay(); 
+                    renderCalendar();
                 };
                 grid.appendChild(cell);
             }
         };
 
+        // --- POPUP LOGIC ---
         const showDayPopup = (dateStr, events) => {
             activeDay = dateStr;
             document.getElementById('dayDetailTitle').textContent = dateStr;
             const list = document.getElementById('dayEventsList');
             list.innerHTML = events.length ? '' : '<p class="text-gray-500 text-center py-4 italic">No events</p>';
+            
             events.forEach(ev => {
                 const item = document.createElement('div');
                 item.className = "p-3 bg-white/5 rounded-xl border-l-4 flex justify-between items-center";
@@ -192,11 +220,13 @@
             document.getElementById('dayDetailOverlay').classList.add('active');
         };
 
+        // --- FORM LOGIC (ADD / EDIT / DELETE) ---
         window.prepareEdit = (docId) => {
             const ev = allEvents.find(e => e.id === docId);
             if(!ev) return;
-            const gid = ev.groupId || docId; // Fallback to docId if no groupId exists
-            const groupData = allEvents.filter(e => (e.groupId && e.groupId === gid) || e.id === docId).sort((a,b) => a.date.localeCompare(b.date));
+            
+            const gid = ev.groupId || docId;
+            const groupData = allEvents.filter(e => e.groupId === gid).sort((a,b) => a.date.localeCompare(b.date));
             
             document.getElementById('actionTitle').textContent = "Update Event";
             document.getElementById('editGroupId').value = gid;
@@ -204,82 +234,68 @@
             document.getElementById('eventTitle').value = ev.title;
             document.getElementById('eventOrg').value = ev.org;
             document.getElementById('eventDesc').value = ev.description || '';
+            
             selection = groupData.length > 1 ? [groupData[0].date, groupData[groupData.length-1].date] : [ev.date];
+            
             document.getElementById('deleteBtn').classList.remove('hidden');
             document.getElementById('saveEventBtn').textContent = "Update Event";
-            closeDayPopup(); updateDateDisplay(); renderCalendar();
+            window.closeDayPopup(); 
+            updateDateDisplay(); 
+            renderCalendar();
         };
 
-        const saveEvent = async () => {
-            const btn = document.getElementById('saveEventBtn');
+        async function saveEvent() {
             const title = document.getElementById('eventTitle').value;
             const org = document.getElementById('eventOrg').value;
-            const existingGid = document.getElementById('editGroupId').value;
-            const existingDid = document.getElementById('editDocId').value;
-            const gid = existingGid || `group_${Date.now()}`;
-            
-            if (!title || !selection.length) return alert("Title and date required");
-            btn.disabled = true; btn.textContent = "Processing...";
+            const desc = document.getElementById('eventDesc').value;
+            const editGroupId = document.getElementById('editGroupId').value;
 
-            try {
-                const batch = writeBatch(db);
-                // Wipe existing entries for this specific event/group
-                if (existingGid || existingDid) {
-                    const q = existingGid 
-                        ? query(collection(db, path), where("groupId", "==", existingGid))
-                        : query(collection(db, path), where("__name__", "==", existingDid));
-                    const snap = await getDocs(q);
-                    snap.forEach(d => batch.delete(d.ref));
-                }
+            if (!title || selection.length === 0) return alert("Select a date and enter a title.");
 
-                // Create new entries
-                let start = new Date(selection[0]), end = new Date(selection[selection.length-1]);
-                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                    batch.set(doc(collection(db, path)), {
-                        groupId: gid, title, org, date: d.toISOString().split('T')[0],
-                        description: document.getElementById('eventDesc').value, color: orgColors[org]
-                    });
-                }
-                await batch.commit();
-                resetForm();
-            } catch (err) { alert("Error saving: " + err.message); }
-            finally { btn.disabled = false; }
-        };
+            const batch = writeBatch(db);
+            const groupId = editGroupId || Date.now().toString();
 
-        const deleteEvent = async () => {
+            // If updating, clear existing instances of this event group first
+            if (editGroupId) {
+                allEvents.filter(e => e.groupId === editGroupId).forEach(d => {
+                    batch.delete(doc(db, path, d.id));
+                });
+            }
+
+            // Calculate date range
+            const dates = [];
+            let curr = new Date(selection[0]);
+            const end = new Date(selection[1] || selection[0]);
+            while (curr <= end) {
+                dates.push(curr.toISOString().split('T')[0]);
+                curr.setDate(curr.getDate() + 1);
+            }
+
+            dates.forEach(date => {
+                const newRef = doc(collection(db, path));
+                batch.set(newRef, {
+                    title, org, description: desc, date, groupId,
+                    color: orgColors[org] || "#38bdf8",
+                    createdAt: new Date().toISOString()
+                });
+            });
+
+            await batch.commit();
+            resetForm();
+        }
+
+        async function deleteEvent() {
             const gid = document.getElementById('editGroupId').value;
-            const did = document.getElementById('editDocId').value;
-            if(!confirm("Delete this event?")) return;
-            
-            try {
-                const batch = writeBatch(db);
-                const q = gid 
-                    ? query(collection(db, path), where("groupId", "==", gid))
-                    : query(collection(db, path), where("__name__", "==", did));
-                const snap = await getDocs(q);
-                snap.forEach(d => batch.delete(d.ref));
-                await batch.commit();
-                resetForm();
-            } catch (err) { alert("Error deleting: " + err.message); }
-        };
+            if(!gid || !confirm("Delete this event entirely?")) return;
 
-        const renderFeed = () => {
-            const list = document.getElementById('fullEventList'); list.innerHTML = '';
-            const groups = {};
-            allEvents.forEach(e => { 
-                const key = e.groupId || e.id;
-                if(!groups[key]) groups[key] = {...e, dates: []}; 
-                groups[key].dates.push(e.date); 
+            const batch = writeBatch(db);
+            allEvents.filter(e => e.groupId === gid).forEach(d => {
+                batch.delete(doc(db, path, d.id));
             });
-            Object.values(groups).sort((a,b) => a.dates[0].localeCompare(b.dates[0])).forEach(g => {
-                const card = document.createElement('div');
-                card.className = "p-3 bg-white/5 rounded-xl border-l-4 cursor-pointer hover:bg-white/10 transition-colors";
-                card.style.borderColor = g.color;
-                card.innerHTML = `<div class="text-[11px] font-bold">${g.title}</div><div class="text-[9px] text-gray-500">${g.dates[0]}</div>`;
-                card.onclick = () => window.prepareEdit(g.id);
-                list.appendChild(card);
-            });
-        };
+
+            await batch.commit();
+            resetForm();
+        }
 
         const resetForm = () => {
             document.getElementById('actionTitle').textContent = "Create New Event";
@@ -289,21 +305,46 @@
             document.getElementById('eventDesc').value = ''; 
             document.getElementById('deleteBtn').classList.add('hidden');
             document.getElementById('saveEventBtn').textContent = "Save Event";
-            selection = []; updateDateDisplay(); renderCalendar();
+            selection = []; 
+            updateDateDisplay(); 
+            renderCalendar();
+        };
+
+        const renderFeed = () => {
+            const list = document.getElementById('fullEventList'); list.innerHTML = '';
+            const groups = {};
+            
+            allEvents.forEach(e => { 
+                const key = e.groupId || e.id;
+                if(!groups[key]) groups[key] = {...e, dates: []}; 
+                groups[key].dates.push(e.date); 
+            });
+
+            Object.values(groups).sort((a,b) => a.dates[0].localeCompare(b.dates[0])).forEach(g => {
+                const card = document.createElement('div');
+                card.className = "p-3 bg-white/5 rounded-xl border-l-4 cursor-pointer hover:bg-white/10 transition-colors";
+                card.style.borderColor = g.color;
+                card.innerHTML = `<div class="text-[11px] font-bold">${g.title}</div>
+                                  <div class="text-[9px] text-gray-500">${g.dates.length > 1 ? `${g.dates[0]} to ${g.dates[g.dates.length-1]}` : g.dates[0]}</div>`;
+                card.onclick = () => window.prepareEdit(g.id);
+                list.appendChild(card);
+            });
         };
 
         const updateDateDisplay = () => {
             const d = document.getElementById('dateDisplay');
-            d.textContent = selection.length === 2 ? `${selection[0]} to ${selection[1]}` : (selection[0] || "Click calendar");
+            d.textContent = selection.length === 2 ? `${selection[0]} to ${selection[1]}` : (selection[0] || "Click calendar...");
         };
 
+        // --- EVENT LISTENERS ---
         document.getElementById('resetFormBtn').onclick = resetForm;
         document.getElementById('saveEventBtn').onclick = saveEvent;
         document.getElementById('deleteBtn').onclick = deleteEvent;
         document.getElementById('prevBtn').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); };
         document.getElementById('nextBtn').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); };
-        document.getElementById('startAddFromDay').onclick = () => { resetForm(); selection=[activeDay]; updateDateDisplay(); closeDayPopup(); renderCalendar(); };
+        document.getElementById('startAddFromDay').onclick = () => { resetForm(); selection=[activeDay]; updateDateDisplay(); window.closeDayPopup(); renderCalendar(); };
         window.closeDayPopup = () => document.getElementById('dayDetailOverlay').classList.remove('active');
+        
         init();
     </script>
 </body>
