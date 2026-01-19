@@ -50,6 +50,8 @@
             backdrop-filter: blur(6px); display: none; z-index: 100;
         }
         .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
+        .loading-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -58,7 +60,7 @@
         <div class="px-8 py-4 border-b border-white border-opacity-10 flex justify-between items-center bg-black bg-opacity-30">
             <div class="flex items-center gap-4">
                 <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-6 brightness-0 invert">
-                <h1 class="text-lg font-black text-blue-400">KCP SYSTEM ADMIN</h1>
+                <h1 class="text-lg font-black text-blue-400 uppercase tracking-tighter">KCP System Admin</h1>
             </div>
         </div>
 
@@ -66,13 +68,14 @@
             <div class="panel border-r-2 border-blue-500 border-opacity-30">
                 <div class="flex justify-between items-center mb-6">
                     <h3 id="actionTitle" class="text-xs font-black text-blue-400 uppercase tracking-widest">Create New Event</h3>
-                    <button id="resetFormBtn" class="text-[10px] bg-gray-800 px-2 py-1 rounded hover:text-white text-gray-400 uppercase">New</button>
+                    <button id="resetFormBtn" class="text-[10px] bg-gray-800 px-2 py-1 rounded hover:text-white text-gray-400 uppercase">Clear</button>
                 </div>
                 <div class="space-y-4">
                     <input type="hidden" id="editGroupId">
+                    <input type="hidden" id="editDocId">
                     <div>
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Date Span</label>
-                        <div id="dateDisplay" class="bg-black p-3 rounded-lg border border-blue-500 border-opacity-20 text-xs font-mono text-blue-300">Click calendar</div>
+                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Date Selection</label>
+                        <div id="dateDisplay" class="bg-black p-3 rounded-lg border border-blue-500 border-opacity-20 text-xs font-mono text-blue-300">Click on calendar...</div>
                     </div>
                     <div>
                         <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Organization</label>
@@ -81,16 +84,16 @@
                         </select>
                     </div>
                     <div>
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Event Title</label>
-                        <input type="text" id="eventTitle" placeholder="Enter title..." class="form-input">
+                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Title</label>
+                        <input type="text" id="eventTitle" placeholder="Event Name" class="form-input">
                     </div>
                     <div>
                         <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Description</label>
-                        <textarea id="eventDesc" rows="4" placeholder="Event details..." class="form-input"></textarea>
+                        <textarea id="eventDesc" rows="4" placeholder="Details..." class="form-input"></textarea>
                     </div>
                     <div class="pt-4 space-y-2">
-                        <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-xs uppercase">Save Event</button>
-                        <button id="deleteBtn" class="hidden w-full py-3 bg-red-600/20 text-red-500 border border-red-600/50 rounded-xl font-black text-xs uppercase hover:bg-red-600/40">Delete Permanently</button>
+                        <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-xs uppercase transition-all active:scale-95">Save Event</button>
+                        <button id="deleteBtn" class="hidden w-full py-3 bg-red-600/20 text-red-500 border border-red-600/50 rounded-xl font-black text-xs uppercase hover:bg-red-600/40">Delete Event</button>
                     </div>
                 </div>
             </div>
@@ -110,8 +113,8 @@
             </div>
 
             <div class="panel">
-                <h3 class="text-xs font-black text-gray-400 uppercase mb-4 tracking-widest text-center">Event List</h3>
-                <div id="fullEventList" class="flex-1 overflow-y-auto custom-scroll space-y-2 pr-1"></div>
+                <h3 class="text-xs font-black text-gray-400 uppercase mb-4 tracking-widest text-center">Upcoming</h3>
+                <div id="fullEventList" class="flex-1 overflow-y-auto custom-scroll space-y-2"></div>
             </div>
         </div>
     </div>
@@ -119,9 +122,9 @@
     <div id="dayDetailOverlay" class="modal-overlay">
         <div class="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <h2 id="dayDetailTitle" class="text-xl font-bold text-sky-400 mb-4"></h2>
-            <div id="dayEventsList" class="space-y-3 mb-6 max-h-60 overflow-y-auto custom-scroll pr-2"></div>
-            <button id="startAddFromDay" class="w-full py-3 bg-blue-600 rounded-xl text-xs font-black uppercase mb-2">Create New Event Here</button>
-            <button onclick="closeDayPopup()" class="w-full py-3 bg-gray-800 rounded-xl text-xs font-black uppercase text-gray-400">Close</button>
+            <div id="dayEventsList" class="space-y-3 mb-6"></div>
+            <button id="startAddFromDay" class="w-full py-3 bg-blue-600 rounded-xl text-xs font-black uppercase mb-2">New Event Here</button>
+            <button onclick="closeDayPopup()" class="w-full py-3 bg-gray-800 rounded-xl text-xs font-black uppercase text-gray-400">Cancel</button>
         </div>
     </div>
 
@@ -166,7 +169,7 @@
                 });
                 cell.onclick = () => {
                     if (selection.length === 1 && !selection.includes(dateStr)) { selection.push(dateStr); selection.sort(); }
-                    else { selection = [dateStr]; if(!document.getElementById('editGroupId').value) showDayPopup(dateStr, dayEvents); }
+                    else { selection = [dateStr]; if(!document.getElementById('eventTitle').value) showDayPopup(dateStr, dayEvents); }
                     updateDateDisplay(); renderCalendar();
                 };
                 grid.appendChild(cell);
@@ -177,24 +180,27 @@
             activeDay = dateStr;
             document.getElementById('dayDetailTitle').textContent = dateStr;
             const list = document.getElementById('dayEventsList');
-            list.innerHTML = events.length ? '' : '<p class="text-gray-500 text-center py-4">Empty day.</p>';
+            list.innerHTML = events.length ? '' : '<p class="text-gray-500 text-center py-4 italic">No events</p>';
             events.forEach(ev => {
                 const item = document.createElement('div');
                 item.className = "p-3 bg-white/5 rounded-xl border-l-4 flex justify-between items-center";
                 item.style.borderColor = ev.color;
-                item.innerHTML = `<div><div class="text-[10px] text-gray-500 font-bold">${ev.org}</div><div class="text-sm font-bold">${ev.title}</div></div>
-                                  <button class="bg-blue-600 px-3 py-1 rounded text-[10px] font-bold" onclick="window.loadEdit('${ev.groupId}')">EDIT</button>`;
+                item.innerHTML = `<div><div class="text-[9px] text-gray-500 font-bold uppercase">${ev.org}</div><div class="text-sm font-bold">${ev.title}</div></div>
+                                  <button class="bg-blue-600 px-3 py-1 rounded text-[10px] font-bold" onclick="window.prepareEdit('${ev.id}')">EDIT</button>`;
                 list.appendChild(item);
             });
             document.getElementById('dayDetailOverlay').classList.add('active');
         };
 
-        window.loadEdit = (gid) => {
-            const groupData = allEvents.filter(e => e.groupId === gid).sort((a,b) => a.date.localeCompare(b.date));
-            if(!groupData.length) return;
-            const ev = groupData[0];
-            document.getElementById('actionTitle').textContent = "Editing Mode";
+        window.prepareEdit = (docId) => {
+            const ev = allEvents.find(e => e.id === docId);
+            if(!ev) return;
+            const gid = ev.groupId || docId; // Fallback to docId if no groupId exists
+            const groupData = allEvents.filter(e => (e.groupId && e.groupId === gid) || e.id === docId).sort((a,b) => a.date.localeCompare(b.date));
+            
+            document.getElementById('actionTitle').textContent = "Update Event";
             document.getElementById('editGroupId').value = gid;
+            document.getElementById('editDocId').value = docId;
             document.getElementById('eventTitle').value = ev.title;
             document.getElementById('eventOrg').value = ev.org;
             document.getElementById('eventDesc').value = ev.description || '';
@@ -205,57 +211,83 @@
         };
 
         const saveEvent = async () => {
+            const btn = document.getElementById('saveEventBtn');
             const title = document.getElementById('eventTitle').value;
             const org = document.getElementById('eventOrg').value;
-            const gid = document.getElementById('editGroupId').value || `group_${Date.now()}`;
-            if (!title || !selection.length) return alert("Title and Date required");
+            const existingGid = document.getElementById('editGroupId').value;
+            const existingDid = document.getElementById('editDocId').value;
+            const gid = existingGid || `group_${Date.now()}`;
+            
+            if (!title || !selection.length) return alert("Title and date required");
+            btn.disabled = true; btn.textContent = "Processing...";
 
-            const batch = writeBatch(db);
-            // Crucial: Wipe old group first if editing
-            const q = query(collection(db, path), where("groupId", "==", gid));
-            const snap = await getDocs(q);
-            snap.forEach(d => batch.delete(d.ref));
+            try {
+                const batch = writeBatch(db);
+                // Wipe existing entries for this specific event/group
+                if (existingGid || existingDid) {
+                    const q = existingGid 
+                        ? query(collection(db, path), where("groupId", "==", existingGid))
+                        : query(collection(db, path), where("__name__", "==", existingDid));
+                    const snap = await getDocs(q);
+                    snap.forEach(d => batch.delete(d.ref));
+                }
 
-            let start = new Date(selection[0]), end = new Date(selection[selection.length-1]);
-            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                batch.set(doc(collection(db, path)), {
-                    groupId: gid, title, org, date: d.toISOString().split('T')[0],
-                    description: document.getElementById('eventDesc').value, color: orgColors[org]
-                });
-            }
-            await batch.commit();
-            resetForm();
+                // Create new entries
+                let start = new Date(selection[0]), end = new Date(selection[selection.length-1]);
+                for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                    batch.set(doc(collection(db, path)), {
+                        groupId: gid, title, org, date: d.toISOString().split('T')[0],
+                        description: document.getElementById('eventDesc').value, color: orgColors[org]
+                    });
+                }
+                await batch.commit();
+                resetForm();
+            } catch (err) { alert("Error saving: " + err.message); }
+            finally { btn.disabled = false; }
         };
 
         const deleteEvent = async () => {
             const gid = document.getElementById('editGroupId').value;
-            if(!gid || !confirm("Delete this event entirely?")) return;
-            const batch = writeBatch(db);
-            const q = query(collection(db, path), where("groupId", "==", gid));
-            const snap = await getDocs(q);
-            snap.forEach(d => batch.delete(d.ref));
-            await batch.commit();
-            resetForm();
+            const did = document.getElementById('editDocId').value;
+            if(!confirm("Delete this event?")) return;
+            
+            try {
+                const batch = writeBatch(db);
+                const q = gid 
+                    ? query(collection(db, path), where("groupId", "==", gid))
+                    : query(collection(db, path), where("__name__", "==", did));
+                const snap = await getDocs(q);
+                snap.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+                resetForm();
+            } catch (err) { alert("Error deleting: " + err.message); }
         };
 
         const renderFeed = () => {
             const list = document.getElementById('fullEventList'); list.innerHTML = '';
             const groups = {};
-            allEvents.forEach(e => { if(!groups[e.groupId]) groups[e.groupId] = {...e, dates: []}; groups[e.groupId].dates.push(e.date); });
+            allEvents.forEach(e => { 
+                const key = e.groupId || e.id;
+                if(!groups[key]) groups[key] = {...e, dates: []}; 
+                groups[key].dates.push(e.date); 
+            });
             Object.values(groups).sort((a,b) => a.dates[0].localeCompare(b.dates[0])).forEach(g => {
                 const card = document.createElement('div');
-                card.className = "p-3 bg-white/5 rounded-xl border-l-4 cursor-pointer hover:bg-white/10";
+                card.className = "p-3 bg-white/5 rounded-xl border-l-4 cursor-pointer hover:bg-white/10 transition-colors";
                 card.style.borderColor = g.color;
                 card.innerHTML = `<div class="text-[11px] font-bold">${g.title}</div><div class="text-[9px] text-gray-500">${g.dates[0]}</div>`;
-                card.onclick = () => window.loadEdit(g.groupId);
+                card.onclick = () => window.prepareEdit(g.id);
                 list.appendChild(card);
             });
         };
 
         const resetForm = () => {
             document.getElementById('actionTitle').textContent = "Create New Event";
-            document.getElementById('editGroupId').value = ''; document.getElementById('eventTitle').value = '';
-            document.getElementById('eventDesc').value = ''; document.getElementById('deleteBtn').classList.add('hidden');
+            document.getElementById('editGroupId').value = ''; 
+            document.getElementById('editDocId').value = '';
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventDesc').value = ''; 
+            document.getElementById('deleteBtn').classList.add('hidden');
             document.getElementById('saveEventBtn').textContent = "Save Event";
             selection = []; updateDateDisplay(); renderCalendar();
         };
