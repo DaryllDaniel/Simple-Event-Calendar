@@ -231,7 +231,7 @@
             renderFeed();
         };
 
-        const renderCalendar = () => {
+      const renderCalendar = () => {
             const grid = document.getElementById('calendarGrid'); 
             grid.innerHTML = '';
             document.getElementById('currentMonthYear').textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -240,15 +240,16 @@
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             const today = new Date().toISOString().split('T')[0];
             
+            // 1. Add empty cells for the start of the month
             for (let i = 0; i < firstDay; i++) {
                 const empty = document.createElement('div');
                 empty.className = 'day-cell empty';
                 grid.appendChild(empty);
             }
             
+            // 2. Add actual days
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                // Dots only show filtered events
                 const dayEvents = filteredEvents.filter(e => e.date === dateStr);
                 const cell = document.createElement('div');
                 cell.className = `day-cell ${dateStr === today ? 'today' : ''}`;
@@ -260,6 +261,16 @@
                 `;
                 cell.onclick = () => openDay(dateStr);
                 grid.appendChild(cell);
+            }
+
+            // 3. NEW: Fill the remaining cells to ensure exactly 6 rows (42 cells)
+            // This prevents February or short months from stretching
+            const currentCells = firstDay + daysInMonth;
+            const totalCellsNeeded = 42; 
+            for (let i = currentCells; i < totalCellsNeeded; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'day-cell empty opacity-20'; // Slightly darker to show they are "outside" the month
+                grid.appendChild(empty);
             }
         };
 
