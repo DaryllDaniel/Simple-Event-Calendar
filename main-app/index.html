@@ -42,18 +42,22 @@
             background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
             cursor: pointer; transition: 0.2s; padding: 4px;
         }
+        .day-cell:hover { background: rgba(255, 255, 255, 0.08); }
         .day-cell.selected-day { border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.2); }
         .day-cell.in-range { background: rgba(56, 189, 248, 0.1); }
+        
         .form-input {
             width: 100%; background: #1e293b; border: 1px solid #334155;
             border-radius: 0.5rem; padding: 0.6rem; font-size: 0.75rem; color: white; outline: none;
         }
         .form-input:focus { border-color: #38bdf8; }
+        
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 10px; }
+        
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(4px); display: none; z-index: 100;
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px); display: none; z-index: 100;
         }
         .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
     </style>
@@ -77,8 +81,8 @@
                 <div class="space-y-4">
                     <input type="hidden" id="editGroupId">
                     <div>
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Date Span</label>
-                        <div id="dateDisplay" class="bg-black p-3 rounded-lg border border-blue-500 border-opacity-20 text-xs font-mono text-blue-300">Click dates on calendar</div>
+                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Date Span (Click Calendar to Set)</label>
+                        <div id="dateDisplay" class="bg-black p-3 rounded-lg border border-blue-500 border-opacity-20 text-xs font-mono text-blue-300">Select dates on calendar</div>
                     </div>
                     <div>
                         <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Organization</label>
@@ -95,8 +99,8 @@
                         <textarea id="eventDesc" rows="4" placeholder="Event details..." class="form-input"></textarea>
                     </div>
                     <div class="pt-4 space-y-2">
-                        <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-xs uppercase">Save Event</button>
-                        <button id="deleteBtn" class="hidden w-full py-3 bg-red-900/20 text-red-500 border border-red-900/50 rounded-xl font-black text-xs uppercase">Delete Event</button>
+                        <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-xs uppercase transition-colors">Save Event</button>
+                        <button id="deleteBtn" class="hidden w-full py-3 bg-red-900/20 text-red-500 border border-red-900/50 rounded-xl font-black text-xs uppercase hover:bg-red-900/40">Delete Event</button>
                     </div>
                 </div>
             </div>
@@ -116,7 +120,7 @@
             </div>
 
             <div class="panel">
-                <h3 class="text-xs font-black text-gray-400 uppercase mb-4 tracking-widest">Event List</h3>
+                <h3 class="text-xs font-black text-gray-400 uppercase mb-4 tracking-widest text-center">Upcoming Events</h3>
                 <input type="text" id="feedSearch" placeholder="Search..." class="form-input mb-4">
                 <div id="fullEventList" class="flex-1 overflow-y-auto custom-scroll space-y-2 pr-1"></div>
             </div>
@@ -124,13 +128,19 @@
     </div>
 
     <div id="dayDetailOverlay" class="modal-overlay">
-        <div class="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="dayDetailTitle" class="text-xs font-black text-sky-400 uppercase"></h2>
-                <button onclick="closeDayPopup()" class="text-xl">&times;</button>
+        <div class="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Day Explorer</h2>
+                    <p id="dayDetailTitle" class="text-xl font-bold text-sky-400"></p>
+                </div>
+                <button onclick="closeDayPopup()" class="text-2xl text-gray-500 hover:text-white">&times;</button>
             </div>
-            <div id="dayEventsList" class="space-y-3 mb-6"></div>
-            <button id="startAddFromDay" class="w-full py-2 bg-blue-600 rounded-lg text-xs font-bold">START NEW EVENT HERE</button>
+            <div id="dayEventsList" class="space-y-3 mb-6 max-h-80 overflow-y-auto custom-scroll pr-2"></div>
+            <div class="grid grid-cols-1 gap-2">
+                <button id="startAddFromDay" class="w-full py-3 bg-blue-600 rounded-xl text-xs font-black uppercase">Create New Event Here</button>
+                <button onclick="closeDayPopup()" class="w-full py-3 bg-gray-800 rounded-xl text-xs font-black uppercase text-gray-400">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -183,18 +193,47 @@
                 });
 
                 cell.onclick = () => {
-                    // Update selection logic
-                    if (selection.length >= 2 || selection.includes(dateStr)) {
-                        selection = [dateStr];
+                    // If we are already building a selection (editing or creating)
+                    if (selection.length > 0) {
+                        if (selection.length >= 2 || selection.includes(dateStr)) selection = [dateStr];
+                        else { selection.push(dateStr); selection.sort(); }
+                        updateDateDisplay();
+                        renderCalendar();
                     } else {
-                        selection.push(dateStr);
-                        selection.sort();
+                        // Otherwise open the day explorer
+                        showDayPopup(dateStr, dayEvents);
                     }
-                    updateDateDisplay();
-                    renderCalendar();
                 };
                 grid.appendChild(cell);
             }
+        };
+
+        const showDayPopup = (dateStr, events) => {
+            activeDay = dateStr;
+            document.getElementById('dayDetailTitle').textContent = new Date(dateStr).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' });
+            const list = document.getElementById('dayEventsList');
+            list.innerHTML = events.length ? '' : '<div class="text-gray-500 text-sm italic py-8 text-center border-2 border-dashed border-white/5 rounded-2xl">No events scheduled.</div>';
+            
+            events.forEach(ev => {
+                const item = document.createElement('div');
+                item.className = "p-4 bg-white/5 rounded-xl border-l-4 flex justify-between items-center group";
+                item.style.borderColor = ev.color;
+                item.innerHTML = `
+                    <div class="flex-1">
+                        <div class="text-[10px] text-gray-500 font-bold uppercase mb-1">${ev.org}</div>
+                        <div class="text-sm font-bold text-white">${ev.title}</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="edit-btn p-2 hover:bg-blue-500/20 rounded-lg text-blue-400 transition-colors" title="Edit">✎</button>
+                        <button class="del-btn p-2 hover:bg-red-500/20 rounded-lg text-red-500 transition-colors" title="Delete">✕</button>
+                    </div>
+                `;
+                
+                item.querySelector('.edit-btn').onclick = () => { loadEdit(ev); closeDayPopup(); };
+                item.querySelector('.del-btn').onclick = () => { deleteByGid(ev.groupId); closeDayPopup(); };
+                list.appendChild(item);
+            });
+            document.getElementById('dayDetailOverlay').classList.add('active');
         };
 
         const renderFeed = () => {
@@ -209,7 +248,7 @@
                 groups[key].dates.push(e.date);
             });
 
-            Object.values(groups).filter(g => g.title.toLowerCase().includes(search)).sort((a,b) => b.dates[0].localeCompare(a.dates[0])).forEach(g => {
+            Object.values(groups).filter(g => g.title.toLowerCase().includes(search)).sort((a,b) => a.dates[0].localeCompare(b.dates[0])).forEach(g => {
                 g.dates.sort();
                 const card = document.createElement('div');
                 card.className = "p-3 bg-white/5 rounded-xl border-l-4 cursor-pointer hover:bg-white/10 transition-all";
@@ -224,14 +263,12 @@
         };
 
         const loadEdit = (g) => {
-            closeDayPopup();
             document.getElementById('actionTitle').textContent = "Editing Event";
             document.getElementById('editGroupId').value = g.groupId;
             document.getElementById('eventTitle').value = g.title;
             document.getElementById('eventOrg').value = g.org;
             document.getElementById('eventDesc').value = g.description || '';
             
-            // Get all dates for this group to show on calendar
             const groupDates = allEvents.filter(e => e.groupId === g.groupId).map(e => e.date).sort();
             selection = [groupDates[0], groupDates[groupDates.length - 1]];
             
@@ -243,7 +280,7 @@
 
         const updateDateDisplay = () => {
             const disp = document.getElementById('dateDisplay');
-            if (selection.length === 0) disp.textContent = "Click dates on calendar";
+            if (selection.length === 0) disp.textContent = "Select dates on calendar";
             else if (selection.length === 1) disp.textContent = selection[0];
             else disp.textContent = `${selection[0]} to ${selection[1]}`;
         };
@@ -269,14 +306,12 @@
 
             const batch = writeBatch(db);
             
-            // If editing, find and delete all existing docs in this group first
             if (document.getElementById('editGroupId').value) {
                 const q = query(collection(db, path), where("groupId", "==", gid));
                 const snap = await getDocs(q);
                 snap.forEach(d => batch.delete(d.ref));
             }
 
-            // Create new entries for the selection span
             let start = new Date(selection[0]);
             let end = new Date(selection[selection.length - 1]);
             
@@ -284,11 +319,8 @@
                 const dStr = d.toISOString().split('T')[0];
                 const newRef = doc(collection(db, path));
                 batch.set(newRef, {
-                    groupId: gid,
-                    title: title,
-                    org: org,
+                    groupId: gid, title, org, date: dStr,
                     description: document.getElementById('eventDesc').value,
-                    date: dStr,
                     color: orgColors[org] || '#38bdf8'
                 });
             }
@@ -297,26 +329,24 @@
             resetForm();
         };
 
-        const deleteEvent = async () => {
-            const gid = document.getElementById('editGroupId').value;
-            if (!gid || !confirm("Delete this event group?")) return;
-            
+        const deleteByGid = async (gid) => {
+            if (!confirm("Permanently delete this event?")) return;
             const batch = writeBatch(db);
             const q = query(collection(db, path), where("groupId", "==", gid));
             const snap = await getDocs(q);
             snap.forEach(d => batch.delete(d.ref));
-            
             await batch.commit();
-            resetForm();
+            if (document.getElementById('editGroupId').value === gid) resetForm();
         };
 
         // UI Binding
         document.getElementById('resetFormBtn').onclick = resetForm;
         document.getElementById('saveEventBtn').onclick = saveEvent;
-        document.getElementById('deleteBtn').onclick = deleteEvent;
+        document.getElementById('deleteBtn').onclick = () => deleteByGid(document.getElementById('editGroupId').value);
         document.getElementById('feedSearch').oninput = renderFeed;
         document.getElementById('prevBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} renderCalendar(); };
         document.getElementById('nextBtn').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} renderCalendar(); };
+        document.getElementById('startAddFromDay').onclick = () => { resetForm(); selection = [activeDay]; updateDateDisplay(); closeDayPopup(); renderCalendar(); };
         
         window.closeDayPopup = () => document.getElementById('dayDetailOverlay').classList.remove('active');
         init();
