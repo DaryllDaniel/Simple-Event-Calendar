@@ -3,135 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - KCP Event Manager</title>
+    <title>KCP Admin - Smooth Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif; height: 100vh; display: flex;
-            align-items: center; justify-content: center; background-color: #0d0d2b;
-            margin: 0; color: white; overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            overflow: hidden;
         }
-        body::before {
-            content: ''; position: fixed; inset: 0;
-            background-image: url('https://fastly.4sqi.net/img/general/600x600/390240903_YczNrD1Qc50M1y551y5idVeA1QAe2OhCXQ-4avE4XrA.jpg');
-            background-size: cover; background-position: center; filter: blur(15px) brightness(0.4); z-index: -1;
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        #appContainer {
-            width: 98%; max-width: 1600px; height: 90vh;
-            background-color: rgba(15, 23, 42, 0.95); display: flex; flex-direction: column;
-            border-radius: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-        }
-        .main-layout {
-            display: grid; grid-template-columns: 350px 1fr 320px; gap: 1rem;
-            padding: 1.5rem; flex: 1; min-height: 0;
-        }
-        .panel {
-            background: rgba(0, 0, 0, 0.2); border-radius: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.05); display: flex;
-            flex-direction: column; padding: 1.25rem; min-height: 0;
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            overflow: hidden;
         }
         .day-cell {
-            aspect-ratio: 1 / 1; display: flex; flex-direction: column;
-            align-items: center; border-radius: 0.5rem; background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; padding: 4px;
+            aspect-ratio: 1;
+            background: #0f172a;
+            padding: 0.5rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
         }
-        .day-cell.selected-day { border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.2); }
-        .day-cell.in-range { background: rgba(56, 189, 248, 0.1); }
-        .form-input {
-            width: 100%; background: #1e293b; border: 1px solid #334155;
-            border-radius: 0.5rem; padding: 0.6rem; font-size: 0.75rem; color: white; outline: none;
+        .day-cell:hover { background: #1e293b; }
+        .day-cell.today { background: rgba(56, 189, 248, 0.1); }
+        .day-cell.today span { color: #38bdf8; font-weight: 800; }
+        
+        .event-dot {
+            height: 4px;
+            width: 4px;
+            border-radius: 99px;
+            display: inline-block;
         }
-        .form-input:focus { border-color: #38bdf8; }
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 10px; }
+
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(6px); display: none; z-index: 100;
+            position: fixed; inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center;
+            z-index: 50;
         }
-        .modal-overlay.active { display: flex; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
-<body>
+<body class="p-4 h-screen flex flex-col">
 
-    <div id="appContainer">
-        <div class="px-8 py-4 border-b border-white border-opacity-10 flex justify-between items-center bg-black bg-opacity-30">
-            <div class="flex items-center gap-4">
-                <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-6 brightness-0 invert">
-                <h1 class="text-lg font-black text-blue-400 uppercase tracking-tighter">KCP System Admin</h1>
+    <header class="flex justify-between items-center mb-6 px-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-bold text-xl">K</div>
+            <div>
+                <h1 class="font-extrabold text-xl tracking-tight">Events Dashboard</h1>
+                <p class="text-xs text-slate-400">Manage Campus Schedule</p>
             </div>
         </div>
-
-        <div class="main-layout">
-            <div class="panel border-r-2 border-blue-500 border-opacity-30">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 id="actionTitle" class="text-xs font-black text-blue-400 uppercase tracking-widest">Create New Event</h3>
-                    <button id="resetFormBtn" class="text-[10px] bg-gray-800 px-2 py-1 rounded hover:text-white text-gray-400 uppercase">Clear</button>
-                </div>
-                <div class="space-y-4">
-                    <input type="hidden" id="editGroupId">
-                    <input type="hidden" id="editDocId">
-                    <div>
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Date Selection</label>
-                        <div id="dateDisplay" class="bg-black p-3 rounded-lg border border-blue-500 border-opacity-20 text-xs font-mono text-blue-300">Click on calendar...</div>
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Organization</label>
-                        <select id="eventOrg" class="form-input">
-                            <option value="Loquitur">Loquitur</option>
-                            <option value="SSC">SSC</option>
-                            <option value="Sports">Sports</option>
-                            <option value="GABAY">GABAY</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Title</label>
-                        <input type="text" id="eventTitle" placeholder="Event Name" class="form-input">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Description</label>
-                        <textarea id="eventDesc" rows="4" placeholder="Details..." class="form-input"></textarea>
-                    </div>
-                    <div class="pt-4 space-y-2">
-                        <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-xs uppercase transition-all active:scale-95">Save Event</button>
-                        <button id="deleteBtn" class="hidden w-full py-3 bg-red-600/20 text-red-500 border border-red-600/50 rounded-xl font-black text-xs uppercase hover:bg-red-600/40">Delete Event</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="panel">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 id="currentMonthYear" class="text-xl font-bold"></h2>
-                    <div class="flex gap-2">
-                        <button id="prevBtn" class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">←</button>
-                        <button id="nextBtn" class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">→</button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-7 gap-1 mb-2 text-center text-[10px] font-bold text-gray-500 uppercase">
-                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                </div>
-                <div id="calendarGrid" class="grid grid-cols-7 gap-1 flex-1 overflow-y-auto custom-scroll"></div>
-            </div>
-
-            <div class="panel">
-                <h3 class="text-xs font-black text-gray-400 uppercase mb-4 tracking-widest text-center">Upcoming Events</h3>
-                <div id="fullEventList" class="flex-1 overflow-y-auto custom-scroll space-y-2"></div>
+        <div class="flex items-center gap-4">
+            <h2 id="currentMonthYear" class="text-xl font-bold min-w-[150px] text-center"></h2>
+            <div class="flex gap-1">
+                <button id="prevBtn" class="p-2 hover:bg-slate-800 rounded-lg transition-colors">←</button>
+                <button id="nextBtn" class="p-2 hover:bg-slate-800 rounded-lg transition-colors">→</button>
             </div>
         </div>
-    </div>
+    </header>
 
-    <div id="dayDetailOverlay" class="modal-overlay">
-        <div class="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <h2 id="dayDetailTitle" class="text-xl font-bold text-sky-400 mb-4"></h2>
-            <div id="dayEventsList" class="space-y-3 mb-6"></div>
-            <button id="startAddFromDay" class="w-full py-3 bg-blue-600 rounded-xl text-xs font-black uppercase mb-2">New Event Here</button>
-            <button onclick="closeDayPopup()" class="w-full py-3 bg-gray-800 rounded-xl text-xs font-black uppercase text-gray-400">Cancel</button>
+    <main class="grid grid-cols-12 gap-6 flex-1 min-h-0">
+        <div class="col-span-8 flex flex-col">
+            <div class="grid grid-cols-7 text-center mb-2 text-[10px] uppercase tracking-widest font-bold text-slate-500">
+                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+            <div id="calendarGrid" class="calendar-grid flex-1"></div>
+        </div>
+
+        <div class="col-span-4 glass rounded-3xl p-6 flex flex-col min-h-0">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-lg">Upcoming</h3>
+                <span class="bg-blue-500/10 text-blue-400 text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wide">Sync Active</span>
+            </div>
+            <div id="fullEventList" class="space-y-4 overflow-y-auto custom-scroll flex-1 pr-2">
+                </div>
+        </div>
+    </main>
+
+    <div id="eventModal" class="modal-overlay">
+        <div class="glass w-full max-w-lg rounded-[2rem] overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                <h3 id="modalTitle" class="text-xl font-extrabold">January 1, 2024</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white text-2xl">×</button>
+            </div>
+
+            <div class="p-8">
+                <div id="modalExistingEvents" class="space-y-3 mb-8"></div>
+
+                <div id="eventForm" class="space-y-4 border-t border-white/5 pt-6">
+                    <h4 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">Event Details</h4>
+                    <input type="hidden" id="f-id">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Event Title</label>
+                            <input type="text" id="f-title" placeholder="e.g. Finals Week" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Organization</label>
+                            <select id="f-org" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 focus:outline-none">
+                                <option value="Loquitur">Loquitur</option>
+                                <option value="SSC">SSC</option>
+                                <option value="Sports">Sports</option>
+                                <option value="GABAY">GABAY</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">End Date (Optional)</label>
+                            <input type="date" id="f-endDate" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-4">
+                        <button id="deleteEventBtn" class="hidden flex-1 py-4 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-2xl font-bold transition-all">Delete</button>
+                        <button id="saveEventBtn" onclick="handleSave()" class="flex-[2] py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-bold shadow-lg shadow-blue-600/20 transition-all">Save Event</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, writeBatch } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
 
         const firebaseConfig = { 
@@ -146,26 +156,26 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const path = `artifacts/default-app-id/public/data/events`;
-        const orgColors = { "Loquitur": "#FBFFC5", "SSC": "#ff4d4d", "Sports": "#38bdf8", "GABAY": "#C32929" };
+        const orgColors = { "Loquitur": "#FBFFC5", "SSC": "#ef4444", "Sports": "#38bdf8", "GABAY": "#C32929" };
 
-        let allEvents = [], selection = [], currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear(), activeDay = "";
+        let allEvents = [], currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear(), selectedDate = "";
 
         const init = async () => {
             await signInAnonymously(getAuth(app));
             onSnapshot(collection(db, path), (snap) => {
                 allEvents = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-                renderCalendar(); 
+                renderCalendar();
                 renderFeed();
             });
         };
 
-        // --- CALENDAR LOGIC ---
         const renderCalendar = () => {
             const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
             document.getElementById('currentMonthYear').textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
             
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const today = new Date().toISOString().split('T')[0];
             
             for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
             
@@ -173,177 +183,134 @@
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const dayEvents = allEvents.filter(e => e.date === dateStr);
                 const cell = document.createElement('div');
-                
-                cell.className = `day-cell ${selection.includes(dateStr) ? 'selected-day' : ''}`;
-                if (selection.length === 2 && dateStr > selection[0] && dateStr < selection[1]) cell.classList.add('in-range');
-                
-                cell.innerHTML = `<span class="text-[10px] font-bold">${d}</span><div class="w-full mt-auto flex flex-col gap-0.5"></div>`;
-                
-                dayEvents.forEach(ev => {
-                    const s = document.createElement('div');
-                    s.className = 'h-1 w-full rounded-full'; 
-                    s.style.backgroundColor = ev.color;
-                    cell.lastChild.appendChild(s);
-                });
-
-                cell.onclick = () => {
-                    if (selection.length === 1 && !selection.includes(dateStr)) { 
-                        selection.push(dateStr); 
-                        selection.sort(); 
-                    } else { 
-                        selection = [dateStr]; 
-                        // If not currently typing a title, show what's happening that day
-                        if(!document.getElementById('eventTitle').value) showDayPopup(dateStr, dayEvents); 
-                    }
-                    updateDateDisplay(); 
-                    renderCalendar();
-                };
+                cell.className = `day-cell ${dateStr === today ? 'today' : ''}`;
+                cell.innerHTML = `
+                    <span class="text-sm opacity-60">${d}</span>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        ${dayEvents.map(e => `<div class="event-dot" style="background:${e.color}"></div>`).join('')}
+                    </div>
+                `;
+                cell.onclick = () => openDay(dateStr);
                 grid.appendChild(cell);
             }
         };
 
-        // --- POPUP LOGIC ---
-        const showDayPopup = (dateStr, events) => {
-            activeDay = dateStr;
-            document.getElementById('dayDetailTitle').textContent = dateStr;
-            const list = document.getElementById('dayEventsList');
-            list.innerHTML = events.length ? '' : '<p class="text-gray-500 text-center py-4 italic">No events</p>';
+        const openDay = (dateStr) => {
+            selectedDate = dateStr;
+            document.getElementById('modalTitle').textContent = new Date(dateStr).toLocaleDateString(undefined, { dateStyle: 'long' });
+            document.getElementById('f-id').value = ""; // Reset for new
+            document.getElementById('f-title').value = "";
+            document.getElementById('f-endDate').value = "";
+            document.getElementById('deleteEventBtn').classList.add('hidden');
             
-            events.forEach(ev => {
+            const dayEvents = allEvents.filter(e => e.date === dateStr);
+            const list = document.getElementById('modalExistingEvents');
+            list.innerHTML = dayEvents.length ? '<h4 class="text-[10px] font-bold text-slate-500 uppercase mb-2">Scheduled</h4>' : '';
+            
+            dayEvents.forEach(ev => {
                 const item = document.createElement('div');
-                item.className = "p-3 bg-white/5 rounded-xl border-l-4 flex justify-between items-center";
+                item.className = "flex justify-between items-center bg-white/5 p-3 rounded-2xl border-l-4 hover:bg-white/10 cursor-pointer transition-all";
                 item.style.borderColor = ev.color;
-                item.innerHTML = `<div><div class="text-[9px] text-gray-500 font-bold uppercase">${ev.org}</div><div class="text-sm font-bold">${ev.title}</div></div>
-                                  <button class="bg-blue-600 px-3 py-1 rounded text-[10px] font-bold" onclick="window.prepareEdit('${ev.id}')">EDIT</button>`;
+                item.innerHTML = `
+                    <div>
+                        <p class="text-[10px] font-bold opacity-50 uppercase">${ev.org}</p>
+                        <p class="font-bold text-sm">${ev.title}</p>
+                    </div>
+                    <button class="text-blue-400 text-xs font-bold">Edit</button>
+                `;
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    editExisting(ev.id);
+                };
                 list.appendChild(item);
             });
-            document.getElementById('dayDetailOverlay').classList.add('active');
+
+            document.getElementById('eventModal').classList.add('active');
         };
 
-        // --- FORM LOGIC (ADD / EDIT / DELETE) ---
-        window.prepareEdit = (docId) => {
+        window.editExisting = (docId) => {
             const ev = allEvents.find(e => e.id === docId);
-            if(!ev) return;
-            
             const gid = ev.groupId || docId;
-            const groupData = allEvents.filter(e => e.groupId === gid).sort((a,b) => a.date.localeCompare(b.date));
+            const group = allEvents.filter(e => e.groupId === gid).sort((a,b) => a.date.localeCompare(b.date));
             
-            document.getElementById('actionTitle').textContent = "Update Event";
-            document.getElementById('editGroupId').value = gid;
-            document.getElementById('editDocId').value = docId;
-            document.getElementById('eventTitle').value = ev.title;
-            document.getElementById('eventOrg').value = ev.org;
-            document.getElementById('eventDesc').value = ev.description || '';
-            
-            selection = groupData.length > 1 ? [groupData[0].date, groupData[groupData.length-1].date] : [ev.date];
-            
-            document.getElementById('deleteBtn').classList.remove('hidden');
-            document.getElementById('saveEventBtn').textContent = "Update Event";
-            window.closeDayPopup(); 
-            updateDateDisplay(); 
-            renderCalendar();
+            document.getElementById('f-id').value = gid;
+            document.getElementById('f-title').value = ev.title;
+            document.getElementById('f-org').value = ev.org;
+            document.getElementById('f-endDate').value = group.length > 1 ? group[group.length - 1].date : "";
+            document.getElementById('deleteEventBtn').classList.remove('hidden');
+            document.getElementById('deleteEventBtn').onclick = () => handleDelete(gid);
         };
 
-        async function saveEvent() {
-            const title = document.getElementById('eventTitle').value;
-            const org = document.getElementById('eventOrg').value;
-            const desc = document.getElementById('eventDesc').value;
-            const editGroupId = document.getElementById('editGroupId').value;
+        window.handleSave = async () => {
+            const title = document.getElementById('f-title').value;
+            const org = document.getElementById('f-org').value;
+            const endDate = document.getElementById('f-endDate').value;
+            const gid = document.getElementById('f-id').value || Date.now().toString();
 
-            if (!title || selection.length === 0) return alert("Select a date and enter a title.");
+            if(!title) return alert("Title required");
 
             const batch = writeBatch(db);
-            const groupId = editGroupId || Date.now().toString();
-
-            // If updating, clear existing instances of this event group first
-            if (editGroupId) {
-                allEvents.filter(e => e.groupId === editGroupId).forEach(d => {
-                    batch.delete(doc(db, path, d.id));
-                });
+            // If editing, clean old docs first
+            if(document.getElementById('f-id').value) {
+                allEvents.filter(e => e.groupId === gid).forEach(d => batch.delete(doc(db, path, d.id)));
             }
 
-            // Calculate date range
-            const dates = [];
-            let curr = new Date(selection[0]);
-            const end = new Date(selection[1] || selection[0]);
-            while (curr <= end) {
-                dates.push(curr.toISOString().split('T')[0]);
-                curr.setDate(curr.getDate() + 1);
-            }
-
-            dates.forEach(date => {
+            let curr = new Date(selectedDate);
+            const end = endDate ? new Date(endDate) : new Date(selectedDate);
+            
+            while(curr <= end) {
+                const dateKey = curr.toISOString().split('T')[0];
                 const newRef = doc(collection(db, path));
                 batch.set(newRef, {
-                    title, org, description: desc, date, groupId,
+                    title, org, groupId: gid, date: dateKey,
                     color: orgColors[org] || "#38bdf8",
                     createdAt: new Date().toISOString()
                 });
-            });
+                curr.setDate(curr.getDate() + 1);
+            }
 
             await batch.commit();
-            resetForm();
-        }
+            closeModal();
+        };
 
-        async function deleteEvent() {
-            const gid = document.getElementById('editGroupId').value;
-            if(!gid || !confirm("Delete this event entirely?")) return;
-
+        window.handleDelete = async (gid) => {
+            if(!confirm("Delete this entire event?")) return;
             const batch = writeBatch(db);
-            allEvents.filter(e => e.groupId === gid).forEach(d => {
-                batch.delete(doc(db, path, d.id));
-            });
-
+            allEvents.filter(e => e.groupId === gid).forEach(d => batch.delete(doc(db, path, d.id)));
             await batch.commit();
-            resetForm();
-        }
-
-        const resetForm = () => {
-            document.getElementById('actionTitle').textContent = "Create New Event";
-            document.getElementById('editGroupId').value = ''; 
-            document.getElementById('editDocId').value = '';
-            document.getElementById('eventTitle').value = '';
-            document.getElementById('eventDesc').value = ''; 
-            document.getElementById('deleteBtn').classList.add('hidden');
-            document.getElementById('saveEventBtn').textContent = "Save Event";
-            selection = []; 
-            updateDateDisplay(); 
-            renderCalendar();
+            closeModal();
         };
 
         const renderFeed = () => {
             const list = document.getElementById('fullEventList'); list.innerHTML = '';
             const groups = {};
-            
-            allEvents.forEach(e => { 
-                const key = e.groupId || e.id;
-                if(!groups[key]) groups[key] = {...e, dates: []}; 
-                groups[key].dates.push(e.date); 
+            allEvents.forEach(e => {
+                const k = e.groupId || e.id;
+                if(!groups[k]) groups[k] = {...e, dates: []};
+                groups[k].dates.push(e.date);
             });
 
             Object.values(groups).sort((a,b) => a.dates[0].localeCompare(b.dates[0])).forEach(g => {
                 const card = document.createElement('div');
-                card.className = "p-3 bg-white/5 rounded-xl border-l-4 cursor-pointer hover:bg-white/10 transition-colors";
+                card.className = "p-4 glass rounded-2xl border-l-4 cursor-pointer hover:scale-[1.02] transition-all";
                 card.style.borderColor = g.color;
-                card.innerHTML = `<div class="text-[11px] font-bold">${g.title}</div>
-                                  <div class="text-[9px] text-gray-500">${g.dates.length > 1 ? `${g.dates[0]} to ${g.dates[g.dates.length-1]}` : g.dates[0]}</div>`;
-                card.onclick = () => window.prepareEdit(g.id);
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase">${g.org}</p>
+                            <h4 class="font-bold text-sm">${g.title}</h4>
+                            <p class="text-[10px] text-slate-400 mt-1 italic">${g.dates[0] === g.dates[g.dates.length-1] ? g.dates[0] : g.dates[0] + ' to ' + g.dates[g.dates.length-1]}</p>
+                        </div>
+                    </div>
+                `;
+                card.onclick = () => openDay(g.dates[0]);
                 list.appendChild(card);
             });
         };
 
-        const updateDateDisplay = () => {
-            const d = document.getElementById('dateDisplay');
-            d.textContent = selection.length === 2 ? `${selection[0]} to ${selection[1]}` : (selection[0] || "Click calendar...");
-        };
-
-        // --- EVENT LISTENERS ---
-        document.getElementById('resetFormBtn').onclick = resetForm;
-        document.getElementById('saveEventBtn').onclick = saveEvent;
-        document.getElementById('deleteBtn').onclick = deleteEvent;
+        window.closeModal = () => document.getElementById('eventModal').classList.remove('active');
         document.getElementById('prevBtn').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); };
         document.getElementById('nextBtn').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); };
-        document.getElementById('startAddFromDay').onclick = () => { resetForm(); selection=[activeDay]; updateDateDisplay(); window.closeDayPopup(); renderCalendar(); };
-        window.closeDayPopup = () => document.getElementById('dayDetailOverlay').classList.remove('active');
         
         init();
     </script>
