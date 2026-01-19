@@ -7,12 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #0d0d2b;
+            font-family: 'Inter', sans-serif; height: 100vh; display: flex;
+            align-items: center; justify-content: center; background-color: #0d0d2b;
             margin: 0; color: white; overflow: hidden;
         }
         body::before {
@@ -22,39 +18,33 @@
         }
         #appContainer {
             width: 98%; max-width: 1600px; height: 90vh;
-            background-color: rgba(15, 23, 42, 0.95);
-            display: flex; flex-direction: column; border-radius: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            background-color: rgba(15, 23, 42, 0.95); display: flex; flex-direction: column;
+            border-radius: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
         }
         .main-layout {
-            display: grid;
-            grid-template-columns: 350px 1fr 320px;
-            gap: 1rem; padding: 1.5rem; flex: 1; min-height: 0;
+            display: grid; grid-template-columns: 350px 1fr 320px; gap: 1rem;
+            padding: 1.5rem; flex: 1; min-height: 0;
         }
         .panel {
             background: rgba(0, 0, 0, 0.2); border-radius: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex; flex-direction: column; padding: 1.25rem; min-height: 0;
+            border: 1px solid rgba(255, 255, 255, 0.05); display: flex;
+            flex-direction: column; padding: 1.25rem; min-height: 0;
         }
         .day-cell {
             aspect-ratio: 1 / 1; display: flex; flex-direction: column;
-            align-items: center; border-radius: 0.5rem;
-            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
-            cursor: pointer; transition: 0.2s; padding: 4px; position: relative;
+            align-items: center; border-radius: 0.5rem; background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; padding: 4px;
         }
-        .day-cell:hover { background: rgba(255, 255, 255, 0.08); }
-        .day-cell.selected-day { border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.2); z-index: 10; }
+        .day-cell.selected-day { border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.2); }
         .day-cell.in-range { background: rgba(56, 189, 248, 0.1); }
-        
         .form-input {
             width: 100%; background: #1e293b; border: 1px solid #334155;
             border-radius: 0.5rem; padding: 0.6rem; font-size: 0.75rem; color: white; outline: none;
         }
         .form-input:focus { border-color: #38bdf8; }
-        
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 10px; }
-        
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(6px); display: none; z-index: 100;
@@ -68,7 +58,7 @@
         <div class="px-8 py-4 border-b border-white border-opacity-10 flex justify-between items-center bg-black bg-opacity-30">
             <div class="flex items-center gap-4">
                 <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-6 brightness-0 invert">
-                <h1 class="text-lg font-black tracking-tight text-blue-400">KCP SYSTEM ADMIN</h1>
+                <h1 class="text-lg font-black text-blue-400">KCP SYSTEM ADMIN</h1>
             </div>
         </div>
 
@@ -76,13 +66,13 @@
             <div class="panel border-r-2 border-blue-500 border-opacity-30">
                 <div class="flex justify-between items-center mb-6">
                     <h3 id="actionTitle" class="text-xs font-black text-blue-400 uppercase tracking-widest">Create New Event</h3>
-                    <button id="resetFormBtn" class="text-[10px] bg-gray-800 px-2 py-1 rounded hover:text-white text-gray-400 uppercase">Clear Form</button>
+                    <button id="resetFormBtn" class="text-[10px] bg-gray-800 px-2 py-1 rounded hover:text-white text-gray-400 uppercase">New</button>
                 </div>
                 <div class="space-y-4">
                     <input type="hidden" id="editGroupId">
                     <div>
                         <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Date Span</label>
-                        <div id="dateDisplay" class="bg-black p-3 rounded-lg border border-blue-500 border-opacity-20 text-xs font-mono text-blue-300">Select on calendar</div>
+                        <div id="dateDisplay" class="bg-black p-3 rounded-lg border border-blue-500 border-opacity-20 text-xs font-mono text-blue-300">Click calendar</div>
                     </div>
                     <div>
                         <label class="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Organization</label>
@@ -99,8 +89,8 @@
                         <textarea id="eventDesc" rows="4" placeholder="Event details..." class="form-input"></textarea>
                     </div>
                     <div class="pt-4 space-y-2">
-                        <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-xs uppercase transition-colors">Apply Changes</button>
-                        <button id="deleteBtn" class="hidden w-full py-3 bg-red-900/20 text-red-500 border border-red-900/50 rounded-xl font-black text-xs uppercase hover:bg-red-900/40">Delete Event</button>
+                        <button id="saveEventBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-black text-xs uppercase">Save Event</button>
+                        <button id="deleteBtn" class="hidden w-full py-3 bg-red-600/20 text-red-500 border border-red-600/50 rounded-xl font-black text-xs uppercase hover:bg-red-600/40">Delete Permanently</button>
                     </div>
                 </div>
             </div>
@@ -121,7 +111,6 @@
 
             <div class="panel">
                 <h3 class="text-xs font-black text-gray-400 uppercase mb-4 tracking-widest text-center">Event List</h3>
-                <input type="text" id="feedSearch" placeholder="Search..." class="form-input mb-4">
                 <div id="fullEventList" class="flex-1 overflow-y-auto custom-scroll space-y-2 pr-1"></div>
             </div>
         </div>
@@ -129,23 +118,16 @@
 
     <div id="dayDetailOverlay" class="modal-overlay">
         <div class="bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Selected Date</h2>
-                    <p id="dayDetailTitle" class="text-xl font-bold text-sky-400"></p>
-                </div>
-                <button onclick="closeDayPopup()" class="text-2xl text-gray-500 hover:text-white">&times;</button>
-            </div>
-            <div id="dayEventsList" class="space-y-3 mb-6 max-h-80 overflow-y-auto custom-scroll pr-2"></div>
-            <div class="grid grid-cols-1 gap-2">
-                <button id="startAddFromDay" class="w-full py-3 bg-blue-600 rounded-xl text-xs font-black uppercase">Create New Event Here</button>
-            </div>
+            <h2 id="dayDetailTitle" class="text-xl font-bold text-sky-400 mb-4"></h2>
+            <div id="dayEventsList" class="space-y-3 mb-6 max-h-60 overflow-y-auto custom-scroll pr-2"></div>
+            <button id="startAddFromDay" class="w-full py-3 bg-blue-600 rounded-xl text-xs font-black uppercase mb-2">Create New Event Here</button>
+            <button onclick="closeDayPopup()" class="w-full py-3 bg-gray-800 rounded-xl text-xs font-black uppercase text-gray-400">Close</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, writeBatch, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, writeBatch, query, where, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
 
         const firebaseConfig = { apiKey: "AIzaSyDCRT5OxfwUD25pS6igy8v3xYlaGmMXK_0", authDomain: "event-calendar-prototype-b11b6.firebaseapp.com", projectId: "event-calendar-prototype-b11b6", storageBucket: "event-calendar-prototype-b11b6.firebasestorage.app", messagingSenderId: "532386656284", appId: "1:532386656284:web:fd4533fb0f54b198752fd9" };
@@ -160,52 +142,32 @@
             await signInAnonymously(getAuth(app));
             onSnapshot(collection(db, path), (snap) => {
                 allEvents = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-                renderCalendar(); 
-                renderFeed();
+                renderCalendar(); renderFeed();
             });
         };
 
         const renderCalendar = () => {
             const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
-            const dObj = new Date(currentYear, currentMonth);
-            document.getElementById('currentMonthYear').textContent = dObj.toLocaleString('default', { month: 'long', year: 'numeric' });
-            
+            document.getElementById('currentMonthYear').textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
             for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
-
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const dayEvents = allEvents.filter(e => e.date === dateStr);
                 const cell = document.createElement('div');
-                cell.className = 'day-cell';
-                
-                if (selection.includes(dateStr)) cell.classList.add('selected-day');
+                cell.className = `day-cell ${selection.includes(dateStr) ? 'selected-day' : ''}`;
                 if (selection.length === 2 && dateStr > selection[0] && dateStr < selection[1]) cell.classList.add('in-range');
-
                 cell.innerHTML = `<span class="text-[10px] font-bold">${d}</span><div class="w-full mt-auto flex flex-col gap-0.5"></div>`;
                 dayEvents.forEach(ev => {
                     const s = document.createElement('div');
                     s.className = 'h-1 w-full rounded-full'; s.style.backgroundColor = ev.color;
                     cell.lastChild.appendChild(s);
                 });
-
                 cell.onclick = () => {
-                    // Logic: If one date selected, and you click another, it makes a range. 
-                    // If range exists or you click the same date, it resets to a single selection.
-                    if (selection.length === 1 && !selection.includes(dateStr)) {
-                        selection.push(dateStr);
-                        selection.sort();
-                    } else {
-                        selection = [dateStr];
-                        // Also show day explorer if no form is being actively filled
-                        if(!document.getElementById('eventTitle').value) {
-                             showDayPopup(dateStr, dayEvents);
-                        }
-                    }
-                    updateDateDisplay();
-                    renderCalendar();
+                    if (selection.length === 1 && !selection.includes(dateStr)) { selection.push(dateStr); selection.sort(); }
+                    else { selection = [dateStr]; if(!document.getElementById('editGroupId').value) showDayPopup(dateStr, dayEvents); }
+                    updateDateDisplay(); renderCalendar();
                 };
                 grid.appendChild(cell);
             }
@@ -213,118 +175,61 @@
 
         const showDayPopup = (dateStr, events) => {
             activeDay = dateStr;
-            document.getElementById('dayDetailTitle').textContent = new Date(dateStr).toLocaleDateString('default', { month: 'long', day: 'numeric' });
+            document.getElementById('dayDetailTitle').textContent = dateStr;
             const list = document.getElementById('dayEventsList');
-            list.innerHTML = events.length ? '' : '<p class="text-center text-gray-500 py-4 italic text-sm">No events on this day.</p>';
-            
+            list.innerHTML = events.length ? '' : '<p class="text-gray-500 text-center py-4">Empty day.</p>';
             events.forEach(ev => {
                 const item = document.createElement('div');
-                item.className = "p-4 bg-white/5 rounded-xl border-l-4 flex justify-between items-center";
+                item.className = "p-3 bg-white/5 rounded-xl border-l-4 flex justify-between items-center";
                 item.style.borderColor = ev.color;
-                item.innerHTML = `
-                    <div class="flex-1">
-                        <div class="text-[10px] text-gray-500 font-bold uppercase">${ev.org}</div>
-                        <div class="text-sm font-bold text-white">${ev.title}</div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button class="edit-btn px-3 py-1 bg-blue-600/20 text-blue-400 rounded-lg text-xs font-bold">Edit</button>
-                    </div>
-                `;
-                item.querySelector('.edit-btn').onclick = () => { loadEdit(ev); closeDayPopup(); };
+                item.innerHTML = `<div><div class="text-[10px] text-gray-500 font-bold">${ev.org}</div><div class="text-sm font-bold">${ev.title}</div></div>
+                                  <button class="bg-blue-600 px-3 py-1 rounded text-[10px] font-bold" onclick="window.loadEdit('${ev.groupId}')">EDIT</button>`;
                 list.appendChild(item);
             });
             document.getElementById('dayDetailOverlay').classList.add('active');
         };
 
-        const renderFeed = () => {
-            const list = document.getElementById('fullEventList');
-            const search = document.getElementById('feedSearch').value.toLowerCase();
-            list.innerHTML = '';
-            const groups = {};
-            allEvents.forEach(e => {
-                const key = e.groupId || e.id;
-                if (!groups[key]) groups[key] = { ...e, dates: [] };
-                groups[key].dates.push(e.date);
-            });
-            Object.values(groups).filter(g => g.title.toLowerCase().includes(search)).sort((a,b) => a.dates[0].localeCompare(b.dates[0])).forEach(g => {
-                g.dates.sort();
-                const card = document.createElement('div');
-                card.className = "p-3 bg-white/5 rounded-xl border-l-4 cursor-pointer hover:bg-white/10 transition-all";
-                card.style.borderColor = g.color;
-                card.innerHTML = `
-                    <div class="text-[11px] font-bold truncate">${g.title}</div>
-                    <div class="text-[9px] text-gray-500">${g.dates[0]} ${g.dates.length > 1 ? '→ ' + g.dates[g.dates.length-1] : ''}</div>
-                `;
-                card.onclick = () => loadEdit(g);
-                list.appendChild(card);
-            });
-        };
-
-        const loadEdit = (g) => {
-            document.getElementById('actionTitle').textContent = "Editing Event";
-            document.getElementById('editGroupId').value = g.groupId;
-            document.getElementById('eventTitle').value = g.title;
-            document.getElementById('eventOrg').value = g.org;
-            document.getElementById('eventDesc').value = g.description || '';
-            
-            const groupDates = allEvents.filter(e => e.groupId === g.groupId).map(e => e.date).sort();
-            // Load exactly the span it had
-            selection = groupDates.length > 1 ? [groupDates[0], groupDates[groupDates.length-1]] : [groupDates[0]];
-            
+        window.loadEdit = (gid) => {
+            const groupData = allEvents.filter(e => e.groupId === gid).sort((a,b) => a.date.localeCompare(b.date));
+            if(!groupData.length) return;
+            const ev = groupData[0];
+            document.getElementById('actionTitle').textContent = "Editing Mode";
+            document.getElementById('editGroupId').value = gid;
+            document.getElementById('eventTitle').value = ev.title;
+            document.getElementById('eventOrg').value = ev.org;
+            document.getElementById('eventDesc').value = ev.description || '';
+            selection = groupData.length > 1 ? [groupData[0].date, groupData[groupData.length-1].date] : [ev.date];
             document.getElementById('deleteBtn').classList.remove('hidden');
-            document.getElementById('saveEventBtn').textContent = "Save Changes";
-            updateDateDisplay();
-            renderCalendar();
-        };
-
-        const updateDateDisplay = () => {
-            const disp = document.getElementById('dateDisplay');
-            if (selection.length === 0) disp.textContent = "Select on calendar";
-            else if (selection.length === 1) disp.textContent = selection[0];
-            else disp.textContent = `${selection[0]} to ${selection[1]}`;
-        };
-
-        const resetForm = () => {
-            document.getElementById('actionTitle').textContent = "Create New Event";
-            document.getElementById('editGroupId').value = '';
-            document.getElementById('eventTitle').value = '';
-            document.getElementById('eventDesc').value = '';
-            document.getElementById('deleteBtn').classList.add('hidden');
-            document.getElementById('saveEventBtn').textContent = "Save Event";
-            selection = [];
-            updateDateDisplay();
-            renderCalendar();
+            document.getElementById('saveEventBtn').textContent = "Update Event";
+            closeDayPopup(); updateDateDisplay(); renderCalendar();
         };
 
         const saveEvent = async () => {
             const title = document.getElementById('eventTitle').value;
             const org = document.getElementById('eventOrg').value;
             const gid = document.getElementById('editGroupId').value || `group_${Date.now()}`;
-            if (!title || selection.length === 0) return alert("Title and Date required");
+            if (!title || !selection.length) return alert("Title and Date required");
 
             const batch = writeBatch(db);
-            if (document.getElementById('editGroupId').value) {
-                const q = query(collection(db, path), where("groupId", "==", gid));
-                const snap = await getDocs(q);
-                snap.forEach(d => batch.delete(d.ref));
-            }
+            // Crucial: Wipe old group first if editing
+            const q = query(collection(db, path), where("groupId", "==", gid));
+            const snap = await getDocs(q);
+            snap.forEach(d => batch.delete(d.ref));
 
-            let start = new Date(selection[0]);
-            let end = new Date(selection[selection.length - 1]);
+            let start = new Date(selection[0]), end = new Date(selection[selection.length-1]);
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                const dStr = d.toISOString().split('T')[0];
                 batch.set(doc(collection(db, path)), {
-                    groupId: gid, title, org, date: dStr,
-                    description: document.getElementById('eventDesc').value,
-                    color: orgColors[org] || '#38bdf8'
+                    groupId: gid, title, org, date: d.toISOString().split('T')[0],
+                    description: document.getElementById('eventDesc').value, color: orgColors[org]
                 });
             }
             await batch.commit();
             resetForm();
         };
 
-        const deleteByGid = async (gid) => {
-            if (!confirm("Delete this event?")) return;
+        const deleteEvent = async () => {
+            const gid = document.getElementById('editGroupId').value;
+            if(!gid || !confirm("Delete this event entirely?")) return;
             const batch = writeBatch(db);
             const q = query(collection(db, path), where("groupId", "==", gid));
             const snap = await getDocs(q);
@@ -333,13 +238,39 @@
             resetForm();
         };
 
+        const renderFeed = () => {
+            const list = document.getElementById('fullEventList'); list.innerHTML = '';
+            const groups = {};
+            allEvents.forEach(e => { if(!groups[e.groupId]) groups[e.groupId] = {...e, dates: []}; groups[e.groupId].dates.push(e.date); });
+            Object.values(groups).sort((a,b) => a.dates[0].localeCompare(b.dates[0])).forEach(g => {
+                const card = document.createElement('div');
+                card.className = "p-3 bg-white/5 rounded-xl border-l-4 cursor-pointer hover:bg-white/10";
+                card.style.borderColor = g.color;
+                card.innerHTML = `<div class="text-[11px] font-bold">${g.title}</div><div class="text-[9px] text-gray-500">${g.dates[0]}</div>`;
+                card.onclick = () => window.loadEdit(g.groupId);
+                list.appendChild(card);
+            });
+        };
+
+        const resetForm = () => {
+            document.getElementById('actionTitle').textContent = "Create New Event";
+            document.getElementById('editGroupId').value = ''; document.getElementById('eventTitle').value = '';
+            document.getElementById('eventDesc').value = ''; document.getElementById('deleteBtn').classList.add('hidden');
+            document.getElementById('saveEventBtn').textContent = "Save Event";
+            selection = []; updateDateDisplay(); renderCalendar();
+        };
+
+        const updateDateDisplay = () => {
+            const d = document.getElementById('dateDisplay');
+            d.textContent = selection.length === 2 ? `${selection[0]} to ${selection[1]}` : (selection[0] || "Click calendar");
+        };
+
         document.getElementById('resetFormBtn').onclick = resetForm;
         document.getElementById('saveEventBtn').onclick = saveEvent;
-        document.getElementById('deleteBtn').onclick = () => deleteByGid(document.getElementById('editGroupId').value);
-        document.getElementById('prevBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} renderCalendar(); };
-        document.getElementById('nextBtn').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} renderCalendar(); };
-        document.getElementById('startAddFromDay').onclick = () => { resetForm(); selection = [activeDay]; updateDateDisplay(); closeDayPopup(); renderCalendar(); };
-        
+        document.getElementById('deleteBtn').onclick = deleteEvent;
+        document.getElementById('prevBtn').onclick = () => { currentMonth--; if(currentMonth<0){currentMonth=11;currentYear--;} renderCalendar(); };
+        document.getElementById('nextBtn').onclick = () => { currentMonth++; if(currentMonth>11){currentMonth=0;currentYear++;} renderCalendar(); };
+        document.getElementById('startAddFromDay').onclick = () => { resetForm(); selection=[activeDay]; updateDateDisplay(); closeDayPopup(); renderCalendar(); };
         window.closeDayPopup = () => document.getElementById('dayDetailOverlay').classList.remove('active');
         init();
     </script>
