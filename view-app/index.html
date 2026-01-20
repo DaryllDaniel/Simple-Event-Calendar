@@ -28,8 +28,9 @@
         }
 
         #appContainer {
-            width: 90%;
-            height: 900px;
+            width: 95%;
+            max-width: 1400px;
+            height: 850px;
             background-color: rgba(192, 205, 255, .85);
             color: #ffffff;
             display: flex;
@@ -47,31 +48,26 @@
             padding: 1.5rem;
         }
 
-        .calendar-section { flex: 0 0 65%; display: flex; flex-direction: column; }
-        .sidebar-section { flex: 0 0 32%; display: flex; flex-direction: column; gap: 1rem; height: 100%; overflow: hidden; }
+        .calendar-section { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .sidebar-section { flex: 0 0 300px; display: flex; flex-direction: column; gap: 1rem; height: 100%; overflow: hidden; }
 
-        /* Updated Day Cell for Strips */
         .day-cell {
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 1.4 / 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
             padding: 4px;
-            border-radius: 0.75rem;
+            border-radius: 0.5rem;
             background: rgba(255, 255, 255, 0.4);
             border: 1px solid rgba(81, 81, 255, 0.2);
             transition: all 0.2s;
             color: #1212BC;
             font-weight: 700;
             cursor: pointer;
-            overflow: hidden;
         }
 
-        .day-cell:hover { 
-            background: rgba(255, 255, 255, 0.6); 
-            transform: scale(1.02); 
-        }
+        .day-cell:hover { background: rgba(255, 255, 255, 0.7); transform: translateY(-2px); }
+        .day-cell.active { background: #ffffff; border: 2px solid #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
         .strips-container {
             width: 100%;
@@ -79,16 +75,23 @@
             flex-direction: column;
             gap: 2px;
             margin-top: auto;
-            padding-bottom: 2px;
         }
 
-        .event-strip {
-            height: 4px;
-            width: 100%;
-            border-radius: 1px;
+        .event-strip { height: 4px; width: 100%; border-radius: 1px; }
+
+        /* New Day Detail Panel */
+        .day-detail-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 1rem;
+            margin-top: 1rem;
+            padding: 1rem;
+            min-height: 180px;
+            max-height: 220px;
+            overflow-y: auto;
+            color: #1e293b;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        /* LIGHT THEME FOR MONTHLY AGENDA */
         .monthly-agenda-container {
             flex: 1;
             display: flex;
@@ -98,41 +101,17 @@
             border-radius: 1.5rem;
             padding: 1.25rem;
             border: 1px solid #ffffff;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-
-        .monthly-agenda-container h3 { color: #1e293b; }
-        #monthlyEventsList { flex: 1; overflow-y: auto; }
-
-        .agenda-item-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            color: #1e293b; 
         }
 
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
-
-        .modal {
-            position: fixed;
-            inset: 0;
-            z-index: 1000;
-            background: rgba(0,0,0,0.6);
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal.show { display: flex; }
     </style>
 </head>
 <body>
 
     <div id="appContainer" class="rounded-3xl">
         <div class="px-8 py-4 border-b border-white border-opacity-20 flex justify-between items-center bg-black bg-opacity-30">
-            <div class="flex items-center gap-4">
-                <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-10 brightness-0 invert">
-            </div>
-            
+            <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-10 brightness-0 invert">
             <div class="flex items-center gap-6">
                 <div class="text-right">
                     <p class="text-[10px] text-gray-300 font-bold uppercase tracking-widest leading-none">Public Access</p>
@@ -144,250 +123,240 @@
 
         <div class="main-content-split">
             <div class="calendar-section">
-                <div class="flex justify-between items-center mb-6">
+                <div class="flex justify-between items-center mb-4">
                     <h2 id="currentMonthYear" class="text-3xl font-black text-white"></h2>
                     <div class="flex gap-2">
-                        <button id="prevMonthBtn" class="p-3 rounded-xl bg-white hover:bg-blue-50 text-gray-600 shadow-sm transition-colors">
+                        <button id="prevMonthBtn" class="p-2 rounded-lg bg-white text-gray-600 hover:bg-blue-50 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         </button>
-                        <button id="nextMonthBtn" class="p-3 rounded-xl bg-white hover:bg-blue-50 text-gray-600 shadow-sm transition-colors">
+                        <button id="nextMonthBtn" class="p-2 rounded-lg bg-white text-gray-600 hover:bg-blue-50 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </button>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-7 gap-3 text-center text-[10px] font-black text-blue-700 uppercase tracking-widest mb-2">
+                <div class="grid grid-cols-7 gap-2 text-center text-[10px] font-black text-blue-800 uppercase tracking-widest mb-2">
                     <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
                 </div>
-                <div id="calendarGrid" class="grid grid-cols-7 gap-3 flex-1"></div>
+                
+                <div id="calendarGrid" class="grid grid-cols-7 gap-2"></div>
+
+                <div class="day-detail-panel custom-scroll">
+                    <div id="detailHeader" class="flex justify-between items-center mb-3 border-b pb-2">
+                        <h3 id="selectedDateTitle" class="font-black text-blue-900">Select a date</h3>
+                        <span id="eventCountBadge" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold"></span>
+                    </div>
+                    <div id="dayEventsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <p class="text-gray-400 text-sm italic">Click on any day in the calendar to view scheduled activities.</p>
+                    </div>
+                </div>
             </div>
 
             <div class="sidebar-section">
-                <div class="dashboard-fixed bg-blue-700 rounded-2xl p-5 text-white shadow-lg border border-blue-500">
-                    <h3 class="text-sm font-bold flex items-center gap-2 mb-3">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        UPCOMING
-                    </h3>
+                <div class="bg-blue-700 rounded-2xl p-5 text-white shadow-lg border border-blue-500">
+                    <h3 class="text-xs font-bold flex items-center gap-2 mb-3 tracking-widest">UPCOMING</h3>
                     <div id="upcomingEventsList" class="space-y-2"></div>
                 </div>
 
                 <div class="monthly-agenda-container">
-                    <div class="mb-4">
-                        <h3 class="text-xs font-black uppercase tracking-widest">Monthly Agenda</h3>
-                        <input type="text" id="monthlySearchInput" placeholder="Filter activities..." class="w-full mt-2 p-2 bg-gray-50 rounded-lg text-xs border border-gray-300 text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
+                    <h3 class="text-xs font-black uppercase tracking-widest text-slate-700 mb-2">Monthly Agenda</h3>
+                    <input type="text" id="monthlySearchInput" placeholder="Filter..." class="w-full mb-3 p-2 bg-white rounded-lg text-xs border border-gray-300 text-gray-800 outline-none focus:ring-2 focus:ring-blue-400">
                     <ul id="monthlyEventsList" class="custom-scroll space-y-2"></ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="dailyEventsModal" class="modal">
-        <div class="bg-white p-8 rounded-3xl shadow-2xl max-w-sm w-full mx-4">
-            <h3 id="dailyEventsTitle" class="text-2xl font-black text-gray-800 mb-6"></h3>
-            <ul id="dailyEventsList" class="space-y-4 mb-6 max-h-60 overflow-y-auto custom-scroll"></ul>
-            <button id="closeDailyEventsModal" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg">Close</button>
-        </div>
-    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
 
-   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
-    
-    const firebaseConfig = {
-        apiKey: "AIzaSyDCRT5OxfwUD25pS6igy8v3xYlaGmMXK_0",
-        authDomain: "event-calendar-prototype-b11b6.firebaseapp.com",
-        projectId: "event-calendar-prototype-b11b6",
-        storageBucket: "event-calendar-prototype-b11b6.firebasestorage.app",
-        messagingSenderId: "532386656284",
-        appId: "1:532386656284:web:fd4533fb0f54b198752fd9"
-    };
-    
-    const appId = "default-app-id";
-    const publicCollectionPath = `artifacts/${appId}/public/data/events`;
-    
-    let events = {};
-    let currentMonth = new Date().getMonth();
-    let currentYear = new Date().getFullYear();
-    let db;
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCRT5OxfwUD25pS6igy8v3xYlaGmMXK_0",
+            authDomain: "event-calendar-prototype-b11b6.firebaseapp.com",
+            projectId: "event-calendar-prototype-b11b6",
+            storageBucket: "event-calendar-prototype-b11b6.firebasestorage.app",
+            messagingSenderId: "532386656284",
+            appId: "1:532386656284:web:fd4533fb0f54b198752fd9"
+        };
 
-    const calendarGrid = document.getElementById('calendarGrid');
-    const currentMonthYear = document.getElementById('currentMonthYear');
-    const upcomingEventsList = document.getElementById('upcomingEventsList');
-    const monthlyEventsList = document.getElementById('monthlyEventsList');
+        const appId = "default-app-id";
+        const publicCollectionPath = `artifacts/${appId}/public/data/events`;
 
-    const initialize = async () => {
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        db = getFirestore(app);
-        await signInAnonymously(auth);
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                document.getElementById('userIdDisplay').textContent = `ID: ${user.uid.substring(0,6)}`;
-                document.getElementById('loadingIndicator').classList.add('hidden');
-                setupListener();
-            }
-        });
-    };
+        let events = {};
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let db;
 
-    const setupListener = () => {
-        onSnapshot(collection(db, publicCollectionPath), (snapshot) => {
-            const data = {};
-            snapshot.docs.forEach(doc => {
-                const ev = doc.data();
-                if (!data[ev.date]) data[ev.date] = [];
-                data[ev.date].push(ev);
+        const calendarGrid = document.getElementById('calendarGrid');
+        const currentMonthYear = document.getElementById('currentMonthYear');
+        const upcomingEventsList = document.getElementById('upcomingEventsList');
+        const monthlyEventsList = document.getElementById('monthlyEventsList');
+        const dayEventsContainer = document.getElementById('dayEventsContainer');
+        const selectedDateTitle = document.getElementById('selectedDateTitle');
+
+        const initialize = async () => {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            db = getFirestore(app);
+            await signInAnonymously(auth);
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    document.getElementById('userIdDisplay').textContent = `ID: ${user.uid.substring(0,6)}`;
+                    document.getElementById('loadingIndicator').classList.add('hidden');
+                    setupListener();
+                }
             });
-            events = data;
-            refreshUI();
-        });
-    };
+        };
 
-    const refreshUI = () => {
-        renderCalendar();
-        renderUpcoming();
-        renderMonthlyList();
-    };
-
-    const renderCalendar = () => {
-        calendarGrid.innerHTML = '';
-        const first = new Date(currentYear, currentMonth, 1).getDay();
-        const days = new Date(currentYear, currentMonth + 1, 0).getDate();
-        currentMonthYear.textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
-
-        for (let i = 0; i < first; i++) calendarGrid.appendChild(document.createElement('div'));
-
-        for (let d = 1; d <= days; d++) {
-            const ds = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const cell = document.createElement('div');
-            cell.className = 'day-cell';
-            
-            const dateSpan = document.createElement('span');
-            dateSpan.textContent = d;
-            cell.appendChild(dateSpan);
-
-            // Add strips if events exist
-            if (events[ds]) {
-                const stripsContainer = document.createElement('div');
-                stripsContainer.className = 'strips-container';
-                
-                events[ds].forEach(ev => {
-                    const strip = document.createElement('div');
-                    strip.className = 'event-strip';
-                    strip.style.backgroundColor = ev.color || '#3b82f6';
-                    stripsContainer.appendChild(strip);
+        const setupListener = () => {
+            onSnapshot(collection(db, publicCollectionPath), (snapshot) => {
+                const data = {};
+                snapshot.docs.forEach(doc => {
+                    const ev = doc.data();
+                    if (!data[ev.date]) data[ev.date] = [];
+                    data[ev.date].push(ev);
                 });
-                
-                cell.appendChild(stripsContainer);
-            }
-            
-            cell.onclick = () => showDaily(ds);
-            calendarGrid.appendChild(cell);
-        }
-    };
-
-    const renderUpcoming = () => {
-        upcomingEventsList.innerHTML = '';
-        const todayStr = new Date().toISOString().split('T')[0];
-        const groupedByTitle = {};
-        
-        Object.keys(events).forEach(date => {
-            events[date].forEach(ev => {
-                if (!groupedByTitle[ev.title]) groupedByTitle[ev.title] = [];
-                groupedByTitle[ev.title].push(date);
+                events = data;
+                refreshUI();
             });
-        });
+        };
 
-        const displayItems = [];
-        Object.keys(groupedByTitle).forEach(title => {
-            const dates = groupedByTitle[title].sort();
-            const start = dates[0];
-            const end = dates[dates.length - 1];
+        const refreshUI = () => {
+            renderCalendar();
+            renderUpcoming();
+            renderMonthlyList();
+        };
 
-            if (todayStr >= start && todayStr <= end) {
-                displayItems.push({ title, status: 'ONGOING', dateLabel: 'Currently Active', sortKey: '0' });
-            } else if (start > todayStr) {
-                displayItems.push({ title, status: 'UPCOMING', dateLabel: new Date(start + 'T00:00:00').toDateString(), sortKey: start });
+        const renderCalendar = () => {
+            calendarGrid.innerHTML = '';
+            const first = new Date(currentYear, currentMonth, 1).getDay();
+            const days = new Date(currentYear, currentMonth + 1, 0).getDate();
+            currentMonthYear.textContent = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            for (let i = 0; i < first; i++) calendarGrid.appendChild(document.createElement('div'));
+
+            for (let d = 1; d <= days; d++) {
+                const ds = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const cell = document.createElement('div');
+                cell.className = 'day-cell';
+                cell.innerHTML = `<span>${d}</span>`;
+
+                if (events[ds]) {
+                    const strips = document.createElement('div');
+                    strips.className = 'strips-container';
+                    events[ds].forEach(ev => {
+                        const s = document.createElement('div');
+                        s.className = 'event-strip';
+                        s.style.backgroundColor = ev.color || '#3b82f6';
+                        strips.appendChild(s);
+                    });
+                    cell.appendChild(strips);
+                }
+
+                cell.onclick = () => {
+                    document.querySelectorAll('.day-cell').forEach(c => c.classList.remove('active'));
+                    cell.classList.add('active');
+                    showDaily(ds);
+                };
+                calendarGrid.appendChild(cell);
             }
-        });
+        };
 
-        displayItems.sort((a, b) => a.sortKey.localeCompare(b.sortKey)).slice(0, 3).forEach(item => {
-            const isOngoing = item.status === 'ONGOING';
-            const div = document.createElement('div');
-            div.className = `p-3 rounded-xl border ${isOngoing ? 'bg-orange-500 bg-opacity-20 border-orange-400' : 'bg-white bg-opacity-10 border-white border-opacity-10'}`;
-            div.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <p class="text-[10px] font-bold ${isOngoing ? 'text-orange-300' : 'text-sky-200'} uppercase tracking-tighter">${item.dateLabel}</p>
-                    ${isOngoing ? '<span class="text-[8px] bg-orange-600 px-1.5 py-0.5 rounded-md font-black animate-pulse">LIVE</span>' : ''}
-                </div>
-                <p class="font-bold text-sm text-white truncate">${item.title}</p>`;
-            upcomingEventsList.appendChild(div);
-        });
-    };
+        const showDaily = (date) => {
+            dayEventsContainer.innerHTML = '';
+            const dayEvents = events[date] || [];
+            selectedDateTitle.textContent = new Date(date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+            document.getElementById('eventCountBadge').textContent = `${dayEvents.length} Activities`;
 
-    const renderMonthlyList = () => {
-        const query = document.getElementById('monthlySearchInput').value.toLowerCase();
-        monthlyEventsList.innerHTML = '';
-        const inMonth = [];
-        
-        Object.keys(events).forEach(d => {
-            const dateObj = new Date(d + 'T00:00:00');
-            if (dateObj.getMonth() === currentMonth && dateObj.getFullYear() === currentYear) {
-                events[d].forEach(e => inMonth.push({ ...e, dateObj }));
+            if (dayEvents.length === 0) {
+                dayEventsContainer.innerHTML = '<p class="text-gray-400 text-sm col-span-2">No events scheduled for this day.</p>';
+                return;
             }
-        });
 
-        const grouped = inMonth.reduce((acc, e) => {
-            if (!acc[e.title]) acc[e.title] = { title: e.title, color: e.color, dates: [] };
-            acc[e.title].dates.push(e.dateObj);
-            return acc;
-        }, {});
+            dayEvents.forEach(e => {
+                const div = document.createElement('div');
+                div.className = 'p-3 bg-white rounded-xl border-l-4 shadow-sm';
+                div.style.borderColor = e.color || '#3b82f6';
+                div.innerHTML = `
+                    <p class="font-bold text-sm text-gray-800">${e.title}</p>
+                    <p class="text-[11px] text-gray-500 mt-1 line-clamp-2">${e.description || 'No description available.'}</p>
+                `;
+                dayEventsContainer.appendChild(div);
+            });
+        };
 
-        const sortedGroups = Object.values(grouped).sort((a, b) => {
-            const minA = Math.min(...a.dates.map(d => d.getTime()));
-            const minB = Math.min(...b.dates.map(d => d.getTime()));
-            return minA - minB;
-        });
-
-        sortedGroups.filter(g => g.title.toLowerCase().includes(query)).forEach(g => {
-            g.dates.sort((a,b) => a-b);
-            const start = g.dates[0], end = g.dates[g.dates.length-1];
-            const dateLabel = start.getDate() === end.getDate() ? 
-                             `${start.getDate()}` : `${start.getDate()}-${end.getDate()}`;
+        const renderUpcoming = () => {
+            upcomingEventsList.innerHTML = '';
+            const todayStr = new Date().toISOString().split('T')[0];
+            const groupedByTitle = {};
             
-            const li = document.createElement('li');
-            li.className = 'agenda-item-card flex items-center gap-3 p-3 rounded-xl shadow-sm transition-all hover:translate-x-1';
-            li.innerHTML = `
-                <div class="w-10 text-center font-black text-blue-600 text-xs border-r border-gray-200 pr-2">${dateLabel}</div>
-                <div class="flex-1">
-                    <p class="text-xs font-bold truncate">${g.title}</p>
-                </div>
-                <div class="w-3 h-3 rounded-full border border-gray-100 shadow-sm" style="background:${g.color}"></div>`;
-            monthlyEventsList.appendChild(li);
-        });
-    };
+            Object.keys(events).forEach(date => {
+                events[date].forEach(ev => {
+                    if (!groupedByTitle[ev.title]) groupedByTitle[ev.title] = [];
+                    groupedByTitle[ev.title].push(date);
+                });
+            });
 
-    const showDaily = (date) => {
-        const list = document.getElementById('dailyEventsList');
-        list.innerHTML = '';
-        document.getElementById('dailyEventsTitle').textContent = new Date(date + 'T00:00:00').toLocaleDateString(undefined, {day:'numeric', month:'short', year: 'numeric'});
-        (events[date] || []).forEach(e => {
-            const li = document.createElement('li');
-            li.className = 'p-4 bg-gray-50 rounded-2xl border-l-4';
-            li.style.borderColor = e.color;
-            li.innerHTML = `<p class="font-bold text-gray-800">${e.title}</p><p class="text-xs text-gray-500 mt-1">${e.description || 'No description provided.'}</p>`;
-            list.appendChild(li);
-        });
-        document.getElementById('dailyEventsModal').classList.add('show');
-    };
+            const displayItems = [];
+            Object.keys(groupedByTitle).forEach(title => {
+                const dates = groupedByTitle[title].sort();
+                const start = dates[0], end = dates[dates.length - 1];
+                if (todayStr >= start && todayStr <= end) displayItems.push({ title, status: 'ONGOING', dateLabel: 'Currently Active', sortKey: '0' });
+                else if (start > todayStr) displayItems.push({ title, status: 'UPCOMING', dateLabel: new Date(start + 'T00:00:00').toDateString(), sortKey: start });
+            });
 
-    document.getElementById('prevMonthBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} refreshUI(); };
-    document.getElementById('nextMonthBtn').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} refreshUI(); };
-    document.getElementById('monthlySearchInput').oninput = renderMonthlyList;
-    document.getElementById('closeDailyEventsModal').onclick = () => document.getElementById('dailyEventsModal').classList.remove('show');
+            displayItems.sort((a, b) => a.sortKey.localeCompare(b.sortKey)).slice(0, 3).forEach(item => {
+                const isOngoing = item.status === 'ONGOING';
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border ${isOngoing ? 'bg-orange-500/20 border-orange-400' : 'bg-white/10 border-white/10'}`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <p class="text-[10px] font-bold ${isOngoing ? 'text-orange-300' : 'text-sky-200'} uppercase">${item.dateLabel}</p>
+                        ${isOngoing ? '<span class="text-[8px] bg-orange-600 px-1.5 py-0.5 rounded font-black animate-pulse">LIVE</span>' : ''}
+                    </div>
+                    <p class="font-bold text-xs text-white truncate">${item.title}</p>`;
+                upcomingEventsList.appendChild(div);
+            });
+        };
 
-    window.onload = initialize;
-</script>
+        const renderMonthlyList = () => {
+            const query = document.getElementById('monthlySearchInput').value.toLowerCase();
+            monthlyEventsList.innerHTML = '';
+            const inMonth = [];
+            Object.keys(events).forEach(d => {
+                const dateObj = new Date(d + 'T00:00:00');
+                if (dateObj.getMonth() === currentMonth && dateObj.getFullYear() === currentYear) {
+                    events[d].forEach(e => inMonth.push({ ...e, dateObj }));
+                }
+            });
+
+            const grouped = inMonth.reduce((acc, e) => {
+                if (!acc[e.title]) acc[e.title] = { title: e.title, color: e.color, dates: [] };
+                acc[e.title].dates.push(e.dateObj);
+                return acc;
+            }, {});
+
+            Object.values(grouped).filter(g => g.title.toLowerCase().includes(query)).forEach(g => {
+                g.dates.sort((a,b) => a-b);
+                const start = g.dates[0], end = g.dates[g.dates.length-1];
+                const dateLabel = start.getDate() === end.getDate() ? `${start.getDate()}` : `${start.getDate()}-${end.getDate()}`;
+                const li = document.createElement('li');
+                li.className = 'flex items-center gap-3 p-2 bg-white rounded-lg shadow-sm border border-gray-100';
+                li.innerHTML = `
+                    <div class="w-8 text-center font-black text-blue-600 text-[10px] border-r pr-2">${dateLabel}</div>
+                    <div class="flex-1 text-[11px] font-bold text-slate-700 truncate">${g.title}</div>
+                    <div class="w-2 h-2 rounded-full" style="background:${g.color}"></div>`;
+                monthlyEventsList.appendChild(li);
+            });
+        };
+
+        document.getElementById('prevMonthBtn').onclick = () => { currentMonth--; if(currentMonth < 0){currentMonth=11; currentYear--;} refreshUI(); };
+        document.getElementById('nextMonthBtn').onclick = () => { currentMonth++; if(currentMonth > 11){currentMonth=0; currentYear++;} refreshUI(); };
+        document.getElementById('monthlySearchInput').oninput = renderMonthlyList;
+
+        window.onload = initialize;
+    </script>
 </body>
 </html>
