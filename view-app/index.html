@@ -3,165 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Activity Calendar Viewer</title>
+    <title>Fun Activity Calendar</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #a5f3fc 0%, #ddd6fe 100%);
             min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+        }
+
+        /* Glassmorphism bubbly container */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 4px solid #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        /* Fun Day Cells */
+        .day-cell {
+            aspect-ratio: 1 / 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            background-color: #000033;
-            margin: 0;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image: url('https://fastly.4sqi.net/img/general/600x600/390240903_YczNrD1Qc50M1y551y5idVeA1QAe2OhCXQ-4avE4XrA.jpg');
-            background-size: cover;
-            background-position: center;
-            filter: blur(10px);
-            z-index: -1;
-        }
-
-        #appContainer {
-            width: 95%;
-            max-width: 1400px;
-            height: 850px;
-            background-color: rgba(192, 205, 255, .85);
-            color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        .main-content-split {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            gap: 1.5rem;
-            padding: 1.5rem;
-        }
-
-        .calendar-section { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-        .sidebar-section { flex: 0 0 300px; display: flex; flex-direction: column; gap: 1rem; height: 100%; overflow: hidden; }
-
-        .day-cell {
-            aspect-ratio: 1.4 / 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 4px;
-            border-radius: 0.5rem;
-            background: rgba(255, 255, 255, 0.4);
-            border: 1px solid rgba(81, 81, 255, 0.2);
-            transition: all 0.2s;
-            color: #1212BC;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        .day-cell:hover { background: rgba(255, 255, 255, 0.7); transform: translateY(-2px); }
-        .day-cell.active { background: #ffffff; border: 2px solid #3b82f6; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-
-        .strips-container {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            margin-top: auto;
-        }
-
-        .event-strip { height: 4px; width: 100%; border-radius: 1px; }
-
-        /* New Day Detail Panel */
-        .day-detail-panel {
-            background: rgba(255, 255, 255, 0.9);
             border-radius: 1rem;
-            margin-top: 1rem;
-            padding: 1rem;
-            min-height: 180px;
-            max-height: 220px;
-            overflow-y: auto;
-            color: #1e293b;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            background: #f0f9ff;
+            border: 2px solid transparent;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            position: relative;
+            font-weight: 900;
+            color: #1e40af;
         }
 
-        .monthly-agenda-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background: rgba(240, 244, 255, 0.95);
-            border-radius: 1.5rem;
-            padding: 1.25rem;
-            border: 1px solid #ffffff;
+        .day-cell:hover {
+            transform: scale(1.1);
+            background: #ffffff;
+            z-index: 10;
         }
 
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
+        .day-cell.selected {
+            background: #fdf2f8;
+            border: 4px solid #ec4899;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.3);
+        }
+
+        /* Marker Strips (Highlighter style) */
+        .marker-strip {
+            height: 6px;
+            width: 80%;
+            border-radius: 10px;
+            margin-top: 2px;
+        }
+
+        /* Bubbly Header */
+        .cloud-header {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            box-shadow: 0 4px 0 #1d4ed8;
+        }
+
+        /* Animation for event cards */
+        @keyframes popIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .event-pop { animation: popIn 0.3s ease-out forwards; }
+
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
-<body>
+<body class="flex flex-col items-center py-4">
 
-    <div id="appContainer" class="rounded-3xl">
-        <div class="px-8 py-4 border-b border-white border-opacity-20 flex justify-between items-center bg-black bg-opacity-30">
-            <img src="https://kcp.edu.ph/wp-content/uploads/2023/06/og_kcp.png" alt="Logo" class="h-10 brightness-0 invert">
-            <div class="flex items-center gap-6">
-                <div class="text-right">
-                    <p class="text-[10px] text-gray-300 font-bold uppercase tracking-widest leading-none">Public Access</p>
-                    <p id="userIdDisplay" class="text-xs font-mono text-blue-400">ID: ...</p>
-                </div>
-                <div id="loadingIndicator" class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+    <div class="w-full max-w-5xl space-y-6">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-4">
+            <div class="cloud-header text-xl font-black">🌟 KCP EVENTS</div>
+            <div class="flex items-center gap-2 bg-white/50 p-2 rounded-2xl border-2 border-white">
+                <button id="prevMonthBtn" class="bg-orange-400 hover:bg-orange-500 text-white p-2 rounded-full transition-transform active:scale-90">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <h2 id="currentMonthYear" class="text-xl font-black text-blue-900 px-4 min-w-[150px] text-center">...</h2>
+                <button id="nextMonthBtn" class="bg-cyan-400 hover:bg-cyan-500 text-white p-2 rounded-full transition-transform active:scale-90">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>
+                </button>
             </div>
         </div>
 
-        <div class="main-content-split">
-            <div class="calendar-section">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 id="currentMonthYear" class="text-3xl font-black text-white"></h2>
-                    <div class="flex gap-2">
-                        <button id="prevMonthBtn" class="p-2 rounded-lg bg-white text-gray-600 hover:bg-blue-50 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                        </button>
-                        <button id="nextMonthBtn" class="p-2 rounded-lg bg-white text-gray-600 hover:bg-blue-50 transition-colors">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                        </button>
-                    </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 px-2">
+            
+            <div class="lg:col-span-2 glass-card p-4 md:p-6">
+                <div class="grid grid-cols-7 gap-2 mb-4">
+                    <div class="text-center text-xs font-black text-blue-400">Sun</div>
+                    <div class="text-center text-xs font-black text-blue-400">Mon</div>
+                    <div class="text-center text-xs font-black text-blue-400">Tue</div>
+                    <div class="text-center text-xs font-black text-blue-400">Wed</div>
+                    <div class="text-center text-xs font-black text-blue-400">Thu</div>
+                    <div class="text-center text-xs font-black text-blue-400">Fri</div>
+                    <div class="text-center text-xs font-black text-blue-400">Sat</div>
                 </div>
+                <div id="calendarGrid" class="grid grid-cols-7 gap-2 md:gap-3"></div>
 
-                <div class="grid grid-cols-7 gap-2 text-center text-[10px] font-black text-blue-800 uppercase tracking-widest mb-2">
-                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
-                </div>
-                
-                <div id="calendarGrid" class="grid grid-cols-7 gap-2"></div>
-
-                <div class="day-detail-panel custom-scroll">
-                    <div id="detailHeader" class="flex justify-between items-center mb-3 border-b pb-2">
-                        <h3 id="selectedDateTitle" class="font-black text-blue-900">Select a date</h3>
-                        <span id="eventCountBadge" class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold"></span>
+                <div id="dayDetailPanel" class="mt-6 p-4 bg-white/80 border-4 border-dashed border-blue-200 rounded-3xl hidden event-pop">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <span class="bg-yellow-400 text-yellow-900 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider">Selected Date</span>
+                            <h3 id="selectedDateTitle" class="text-2xl font-black text-blue-900">...</h3>
+                        </div>
+                        <div id="eventCount" class="text-3xl">🎉</div>
                     </div>
-                    <div id="dayEventsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <p class="text-gray-400 text-sm italic">Click on any day in the calendar to view scheduled activities.</p>
-                    </div>
+                    <div id="dayEventsList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
                 </div>
             </div>
 
-            <div class="sidebar-section">
-                <div class="bg-blue-700 rounded-2xl p-5 text-white shadow-lg border border-blue-500">
-                    <h3 class="text-xs font-bold flex items-center gap-2 mb-3 tracking-widest">UPCOMING</h3>
-                    <div id="upcomingEventsList" class="space-y-2"></div>
+            <div class="space-y-6">
+                <div class="glass-card p-5 border-blue-400/30">
+                    <h3 class="text-blue-900 font-black mb-4 flex items-center gap-2">
+                        <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs">UPCOMING</span>
+                    </h3>
+                    <div id="upcomingEventsList" class="space-y-3"></div>
                 </div>
 
-                <div class="monthly-agenda-container">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-slate-700 mb-2">Monthly Agenda</h3>
-                    <input type="text" id="monthlySearchInput" placeholder="Filter..." class="w-full mb-3 p-2 bg-white rounded-lg text-xs border border-gray-300 text-gray-800 outline-none focus:ring-2 focus:ring-blue-400">
-                    <ul id="monthlyEventsList" class="custom-scroll space-y-2"></ul>
+                <div class="glass-card p-5 border-purple-400/30">
+                    <h3 class="text-purple-900 font-black mb-3 text-xs uppercase tracking-widest">Monthly Agenda</h3>
+                    <input type="text" id="monthlySearchInput" placeholder="Find an activity..." class="w-full p-3 rounded-2xl bg-white border-2 border-purple-100 text-sm focus:border-purple-400 outline-none transition-all">
+                    <ul id="monthlyEventsList" class="mt-4 space-y-2 max-h-[300px] overflow-y-auto custom-scroll"></ul>
                 </div>
             </div>
         </div>
@@ -193,7 +169,8 @@
         const currentMonthYear = document.getElementById('currentMonthYear');
         const upcomingEventsList = document.getElementById('upcomingEventsList');
         const monthlyEventsList = document.getElementById('monthlyEventsList');
-        const dayEventsContainer = document.getElementById('dayEventsContainer');
+        const dayDetailPanel = document.getElementById('dayDetailPanel');
+        const dayEventsList = document.getElementById('dayEventsList');
         const selectedDateTitle = document.getElementById('selectedDateTitle');
 
         const initialize = async () => {
@@ -201,13 +178,7 @@
             const auth = getAuth(app);
             db = getFirestore(app);
             await signInAnonymously(auth);
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    document.getElementById('userIdDisplay').textContent = `ID: ${user.uid.substring(0,6)}`;
-                    document.getElementById('loadingIndicator').classList.add('hidden');
-                    setupListener();
-                }
-            });
+            setupListener();
         };
 
         const setupListener = () => {
@@ -244,79 +215,76 @@
                 cell.innerHTML = `<span>${d}</span>`;
 
                 if (events[ds]) {
-                    const strips = document.createElement('div');
-                    strips.className = 'strips-container';
-                    events[ds].forEach(ev => {
-                        const s = document.createElement('div');
-                        s.className = 'event-strip';
-                        s.style.backgroundColor = ev.color || '#3b82f6';
-                        strips.appendChild(s);
+                    events[ds].slice(0, 3).forEach(ev => {
+                        const strip = document.createElement('div');
+                        strip.className = 'marker-strip';
+                        strip.style.backgroundColor = ev.color || '#3b82f6';
+                        cell.appendChild(strip);
                     });
-                    cell.appendChild(strips);
                 }
 
                 cell.onclick = () => {
-                    document.querySelectorAll('.day-cell').forEach(c => c.classList.remove('active'));
-                    cell.classList.add('active');
-                    showDaily(ds);
+                    document.querySelectorAll('.day-cell').forEach(c => c.classList.remove('selected'));
+                    cell.classList.add('selected');
+                    showDailyDetails(ds);
                 };
                 calendarGrid.appendChild(cell);
             }
         };
 
-        const showDaily = (date) => {
-            dayEventsContainer.innerHTML = '';
+        const showDailyDetails = (date) => {
+            dayDetailPanel.classList.remove('hidden');
+            dayEventsList.innerHTML = '';
             const dayEvents = events[date] || [];
-            selectedDateTitle.textContent = new Date(date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-            document.getElementById('eventCountBadge').textContent = `${dayEvents.length} Activities`;
+            
+            selectedDateTitle.textContent = new Date(date + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
 
             if (dayEvents.length === 0) {
-                dayEventsContainer.innerHTML = '<p class="text-gray-400 text-sm col-span-2">No events scheduled for this day.</p>';
+                dayEventsList.innerHTML = '<p class="text-slate-400 italic">No events today—time to relax! ☕</p>';
                 return;
             }
 
             dayEvents.forEach(e => {
-                const div = document.createElement('div');
-                div.className = 'p-3 bg-white rounded-xl border-l-4 shadow-sm';
-                div.style.borderColor = e.color || '#3b82f6';
-                div.innerHTML = `
-                    <p class="font-bold text-sm text-gray-800">${e.title}</p>
-                    <p class="text-[11px] text-gray-500 mt-1 line-clamp-2">${e.description || 'No description available.'}</p>
+                const card = document.createElement('div');
+                card.className = 'p-4 bg-white rounded-2xl border-2 transition-transform hover:scale-[1.02] shadow-sm';
+                card.style.borderColor = e.color || '#3b82f6';
+                card.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <div class="w-2 h-10 rounded-full" style="background:${e.color}"></div>
+                        <div>
+                            <p class="font-black text-blue-900">${e.title}</p>
+                            <p class="text-xs text-slate-500 mt-1">${e.description || 'Join us for this event!'}</p>
+                        </div>
+                    </div>
                 `;
-                dayEventsContainer.appendChild(div);
+                dayEventsList.appendChild(card);
             });
+            dayDetailPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         };
 
         const renderUpcoming = () => {
             upcomingEventsList.innerHTML = '';
             const todayStr = new Date().toISOString().split('T')[0];
-            const groupedByTitle = {};
-            
+            const allItems = [];
+
             Object.keys(events).forEach(date => {
                 events[date].forEach(ev => {
-                    if (!groupedByTitle[ev.title]) groupedByTitle[ev.title] = [];
-                    groupedByTitle[ev.title].push(date);
+                    if (date >= todayStr) allItems.push({ ...ev, date });
                 });
             });
 
-            const displayItems = [];
-            Object.keys(groupedByTitle).forEach(title => {
-                const dates = groupedByTitle[title].sort();
-                const start = dates[0], end = dates[dates.length - 1];
-                if (todayStr >= start && todayStr <= end) displayItems.push({ title, status: 'ONGOING', dateLabel: 'Currently Active', sortKey: '0' });
-                else if (start > todayStr) displayItems.push({ title, status: 'UPCOMING', dateLabel: new Date(start + 'T00:00:00').toDateString(), sortKey: start });
-            });
-
-            displayItems.sort((a, b) => a.sortKey.localeCompare(b.sortKey)).slice(0, 3).forEach(item => {
-                const isOngoing = item.status === 'ONGOING';
+            allItems.sort((a,b) => a.date.localeCompare(b.date)).slice(0, 3).forEach(item => {
                 const div = document.createElement('div');
-                div.className = `p-3 rounded-xl border ${isOngoing ? 'bg-orange-500/20 border-orange-400' : 'bg-white/10 border-white/10'}`;
+                div.className = 'p-3 bg-white/60 rounded-2xl border-2 border-white flex gap-3 items-center';
                 div.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <p class="text-[10px] font-bold ${isOngoing ? 'text-orange-300' : 'text-sky-200'} uppercase">${item.dateLabel}</p>
-                        ${isOngoing ? '<span class="text-[8px] bg-orange-600 px-1.5 py-0.5 rounded font-black animate-pulse">LIVE</span>' : ''}
+                    <div class="bg-blue-100 text-blue-600 p-2 rounded-xl text-[10px] font-black text-center leading-tight">
+                        ${new Date(item.date + 'T00:00:00').toLocaleDateString(undefined, {day:'2-digit', month:'short'})}
                     </div>
-                    <p class="font-bold text-xs text-white truncate">${item.title}</p>`;
+                    <div class="overflow-hidden">
+                        <p class="font-bold text-blue-900 text-sm truncate">${item.title}</p>
+                        <p class="text-[10px] text-blue-400 font-bold">READY TO GO</p>
+                    </div>
+                `;
                 upcomingEventsList.appendChild(div);
             });
         };
@@ -324,31 +292,23 @@
         const renderMonthlyList = () => {
             const query = document.getElementById('monthlySearchInput').value.toLowerCase();
             monthlyEventsList.innerHTML = '';
-            const inMonth = [];
+            
             Object.keys(events).forEach(d => {
                 const dateObj = new Date(d + 'T00:00:00');
                 if (dateObj.getMonth() === currentMonth && dateObj.getFullYear() === currentYear) {
-                    events[d].forEach(e => inMonth.push({ ...e, dateObj }));
+                    events[d].forEach(e => {
+                        if (e.title.toLowerCase().includes(query)) {
+                            const li = document.createElement('li');
+                            li.className = 'flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border-2 border-transparent hover:border-purple-200 cursor-pointer transition-all';
+                            li.innerHTML = `
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black" style="background:${e.color}33; color:${e.color}">${dateObj.getDate()}</div>
+                                <span class="text-xs font-bold text-slate-700 truncate">${e.title}</span>
+                            `;
+                            li.onclick = () => showDailyDetails(d);
+                            monthlyEventsList.appendChild(li);
+                        }
+                    });
                 }
-            });
-
-            const grouped = inMonth.reduce((acc, e) => {
-                if (!acc[e.title]) acc[e.title] = { title: e.title, color: e.color, dates: [] };
-                acc[e.title].dates.push(e.dateObj);
-                return acc;
-            }, {});
-
-            Object.values(grouped).filter(g => g.title.toLowerCase().includes(query)).forEach(g => {
-                g.dates.sort((a,b) => a-b);
-                const start = g.dates[0], end = g.dates[g.dates.length-1];
-                const dateLabel = start.getDate() === end.getDate() ? `${start.getDate()}` : `${start.getDate()}-${end.getDate()}`;
-                const li = document.createElement('li');
-                li.className = 'flex items-center gap-3 p-2 bg-white rounded-lg shadow-sm border border-gray-100';
-                li.innerHTML = `
-                    <div class="w-8 text-center font-black text-blue-600 text-[10px] border-r pr-2">${dateLabel}</div>
-                    <div class="flex-1 text-[11px] font-bold text-slate-700 truncate">${g.title}</div>
-                    <div class="w-2 h-2 rounded-full" style="background:${g.color}"></div>`;
-                monthlyEventsList.appendChild(li);
             });
         };
 
