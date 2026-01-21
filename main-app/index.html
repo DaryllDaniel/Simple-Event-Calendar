@@ -103,6 +103,7 @@
                     
                     <div class="flex flex-wrap gap-2" id="filterContainer">
                         <div class="filter-pill active text-[9px] font-bold uppercase px-3 py-1.5 rounded-full" data-org="All">All</div>
+                        <div class="filter-pill text-[9px] font-bold uppercase px-3 py-1.5 rounded-full" data-org="Institution">Institution</div>
                         <div class="filter-pill text-[9px] font-bold uppercase px-3 py-1.5 rounded-full" data-org="Loquitur">Loquitur</div>
                         <div class="filter-pill text-[9px] font-bold uppercase px-3 py-1.5 rounded-full" data-org="SSC">SSC</div>
                         <div class="filter-pill text-[9px] font-bold uppercase px-3 py-1.5 rounded-full" data-org="Sports">Sports</div>
@@ -141,6 +142,7 @@
                         <div class="col-span-1">
                             <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Organization</label>
                             <select id="f-org" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 focus:outline-none">
+                                <option value="Institution">Institution</option>
                                 <option value="Loquitur">Loquitur</option>
                                 <option value="SSC">SSC</option>
                                 <option value="Sports">Sports</option>
@@ -204,6 +206,7 @@
         const path = `artifacts/default-app-id/public/data/events`;
         
         const orgColors = { 
+            "Institution": "#ffffff", // White for Institution
             "Loquitur": "#FBFFC5", 
             "SSC": "#ef4444", 
             "Sports": "#38bdf8", 
