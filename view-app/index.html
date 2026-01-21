@@ -99,11 +99,12 @@
                 <div id="dayDetailPanel" class="mt-6 p-4 bg-white/80 border-4 border-dashed border-blue-200 rounded-3xl hidden event-pop">
                     <div class="flex justify-between items-center mb-4">
                         <div>
-                            <span class="bg-yellow-400 text-yellow-900 text-[10px] font-black px-2 py-1 rounded-lg uppercase">Day Schedule</span>
-                            <h3 id="selectedDateTitle" class="text-2xl font-black text-blue-900">...</h3>
+                            <span class="bg-yellow-400 text-yellow-900 text-[10px] font-black px-2 py-1 rounded-lg uppercase">Schedule for</span>
+                            <h3 id="selectedDateTitle" class="text-2xl font-black text-blue-900 leading-tight">...</h3>
                         </div>
+                        <div class="text-3xl animate-bounce">🎈</div>
                     </div>
-                    <div id="dayEventsList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                    <div id="dayEventsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                 </div>
             </div>
 
@@ -179,8 +180,6 @@
             renderMonthlyList();
         };
 
-        // --- GROUPING LOGIC ---
-        // Converts array of dates ["2023-01-01", "2023-01-02"] into ranges like "01 - 02"
         const groupDates = (dateList) => {
             if (dateList.length === 0) return "";
             const sorted = dateList.map(d => new Date(d + 'T00:00:00')).sort((a,b) => a-b);
@@ -247,17 +246,28 @@
             selectedDateTitle.textContent = new Date(date + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
 
             if (dayEvents.length === 0) {
-                dayEventsList.innerHTML = '<p class="text-slate-400 italic">No events today.</p>';
+                dayEventsList.innerHTML = '<p class="text-slate-400 italic col-span-2">No events today.</p>';
                 return;
             }
 
             dayEvents.forEach(e => {
                 const card = document.createElement('div');
-                card.className = 'p-4 bg-white rounded-2xl border-2 transition-transform hover:scale-[1.02] shadow-sm';
+                card.className = 'p-4 bg-white rounded-3xl border-2 transition-transform hover:scale-[1.02] shadow-sm flex flex-col justify-between';
                 card.style.borderColor = e.color || '#3b82f6';
+                
+                // Added Venue section with a location icon
                 card.innerHTML = `
-                    <p class="font-black text-blue-900 text-sm">${e.title}</p>
-                    <p class="text-[10px] text-slate-500 mt-1">${e.description || 'No description.'}</p>
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                             <div class="w-3 h-3 rounded-full" style="background:${e.color}"></div>
+                             <p class="font-black text-blue-900 text-sm leading-tight">${e.title}</p>
+                        </div>
+                        <p class="text-[11px] text-slate-500 line-clamp-2 mb-3">${e.description || 'No description available.'}</p>
+                    </div>
+                    <div class="flex items-center gap-1.5 mt-auto pt-2 border-t border-slate-100">
+                        <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span class="text-[10px] font-bold text-blue-600 truncate">${e.venue || 'TBA'}</span>
+                    </div>
                 `;
                 dayEventsList.appendChild(card);
             });
@@ -268,7 +278,6 @@
             upcomingEventsList.innerHTML = '';
             const todayStr = new Date().toISOString().split('T')[0];
             
-            // Group by name for the upcoming list
             const grouped = {};
             Object.keys(events).forEach(date => {
                 events[date].forEach(ev => {
@@ -300,7 +309,6 @@
             const query = document.getElementById('monthlySearchInput').value.toLowerCase();
             monthlyEventsList.innerHTML = '';
             
-            // Group by event title within the current month
             const groupedInMonth = {};
             Object.keys(events).forEach(d => {
                 const dateObj = new Date(d + 'T00:00:00');
