@@ -132,13 +132,14 @@
 
                 <div class="space-y-4 border-t border-white/10 pt-6">
                     <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2">Create New Entry</p>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Event Title</label>
-                        <input type="text" id="f-title" placeholder="Event Name" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-blue-500">
-                    </div>
+                    
                     <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Org</label>
+                        <div class="col-span-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Event Title</label>
+                            <input type="text" id="f-title" placeholder="Event Name" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div class="col-span-1">
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Organization</label>
                             <select id="f-org" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 focus:outline-none">
                                 <option value="Loquitur">Loquitur</option>
                                 <option value="SSC">SSC</option>
@@ -152,11 +153,30 @@
                                 <option value="COT">COT</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">End Date (Optional)</label>
                             <input type="date" id="f-endDate" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 focus:outline-none">
                         </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Venue</label>
+                            <select id="f-venue" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 focus:outline-none">
+                                <option value="Ebenezer Convention Center">Ebenezer Convention Center</option>
+                                <option value="Function Hall">Function Hall</option>
+                                <option value="Founder's Hall">Founder's Hall</option>
+                                <option value="KCP Grounds">KCP Grounds</option>
+                                <option value="Others">Others...</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <div id="other-venue-container" class="hidden">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Specify Venue</label>
+                        <input type="text" id="f-venue-other" placeholder="Enter venue name" class="w-full bg-slate-800/50 border border-white/10 rounded-xl p-3 focus:outline-none focus:border-blue-500">
+                    </div>
+
                     <button onclick="handleSave()" class="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-2xl font-bold transition-all uppercase text-xs tracking-widest mt-2">
                         Add Event
                     </button>
@@ -183,7 +203,6 @@
         const db = getFirestore(app);
         const path = `artifacts/default-app-id/public/data/events`;
         
-        // Comprehensive color mapping for all departments
         const orgColors = { 
             "Loquitur": "#FBFFC5", 
             "SSC": "#ef4444", 
@@ -200,6 +219,16 @@
         let allEvents = [], filteredEvents = [];
         let currentMonth = new Date().getMonth(), currentYear = new Date().getFullYear();
         let selectedDate = "", activeFilter = "All", searchQuery = "";
+
+        // Toggle logic for 'Others' venue
+        document.getElementById('f-venue').addEventListener('change', (e) => {
+            const container = document.getElementById('other-venue-container');
+            if(e.target.value === 'Others') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        });
 
         const init = async () => {
             await signInAnonymously(getAuth(app));
@@ -236,6 +265,8 @@
             document.getElementById('modalTitle').textContent = new Date(dateStr).toLocaleDateString(undefined, { dateStyle: 'long' });
             document.getElementById('f-title').value = "";
             document.getElementById('f-endDate').value = "";
+            document.getElementById('f-venue').value = "Ebenezer Convention Center";
+            document.getElementById('other-venue-container').classList.add('hidden');
             
             const dayEvents = allEvents.filter(e => e.date === dateStr);
             const list = document.getElementById('modalExistingEvents');
@@ -245,7 +276,12 @@
                 const item = document.createElement('div');
                 item.className = "flex justify-between items-center bg-white/5 p-3 rounded-xl border-l-4 hover:bg-red-500/20 hover:border-red-500 cursor-pointer mb-2 group transition-all";
                 item.style.borderColor = ev.color;
-                item.innerHTML = `<div><p class="text-[9px] font-bold opacity-50 uppercase">${ev.org}</p><p class="font-bold text-sm">${ev.title}</p></div><span class="text-red-500 text-[9px] font-bold opacity-0 group-hover:opacity-100">DELETE</span>`;
+                item.innerHTML = `
+                    <div>
+                        <p class="text-[9px] font-bold opacity-50 uppercase">${ev.org} • ${ev.venue || 'No Venue'}</p>
+                        <p class="font-bold text-sm">${ev.title}</p>
+                    </div>
+                    <span class="text-red-500 text-[9px] font-bold opacity-0 group-hover:opacity-100">DELETE</span>`;
                 item.onclick = (e) => { e.stopPropagation(); quickDelete(ev); };
                 list.appendChild(item);
             });
@@ -266,7 +302,13 @@
             const title = document.getElementById('f-title').value;
             const org = document.getElementById('f-org').value;
             const endDate = document.getElementById('f-endDate').value;
+            const venueSelect = document.getElementById('f-venue').value;
+            const venueOther = document.getElementById('f-venue-other').value;
+            
+            const finalVenue = venueSelect === 'Others' ? venueOther : venueSelect;
+
             if(!title) return alert("Title required");
+            if(venueSelect === 'Others' && !venueOther) return alert("Please specify the venue");
 
             const batch = writeBatch(db);
             const gid = Date.now().toString();
@@ -275,7 +317,14 @@
 
             while(curr <= end) {
                 const dRef = doc(collection(db, path));
-                batch.set(dRef, { title, org, groupId: gid, date: curr.toISOString().split('T')[0], color: orgColors[org] || "#38bdf8" });
+                batch.set(dRef, { 
+                    title, 
+                    org, 
+                    venue: finalVenue,
+                    groupId: gid, 
+                    date: curr.toISOString().split('T')[0], 
+                    color: orgColors[org] || "#38bdf8" 
+                });
                 curr.setDate(curr.getDate() + 1);
             }
             await batch.commit();
@@ -296,7 +345,7 @@
                 const card = document.createElement('div');
                 card.className = "p-4 glass rounded-2xl border-l-4 cursor-pointer hover:bg-slate-800 transition-all";
                 card.style.borderColor = g.color;
-                card.innerHTML = `<p class="text-[9px] font-bold opacity-50 uppercase">${g.org}</p><h4 class="font-bold text-sm truncate">${g.title}</h4>`;
+                card.innerHTML = `<p class="text-[9px] font-bold opacity-50 uppercase">${g.org} • ${g.venue || 'No Venue'}</p><h4 class="font-bold text-sm truncate">${g.title}</h4>`;
                 card.onclick = () => openDay(g.dates[0]);
                 list.appendChild(card);
             });
@@ -305,7 +354,6 @@
         window.closeModal = () => document.getElementById('eventModal').classList.remove('active');
         document.getElementById('searchBar').oninput = (e) => { searchQuery = e.target.value; applyFilters(); };
         
-        // Use event delegation for filter pills to handle all departments
         document.getElementById('filterContainer').onclick = (e) => {
             const pill = e.target.closest('.filter-pill');
             if (!pill) return;
