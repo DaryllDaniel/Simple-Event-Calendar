@@ -7,18 +7,37 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #a5f3fc 0%, #ddd6fe 100%);
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --text-main: #1e40af;
+            --text-muted: #64748b;
+            --day-bg: #f0f9ff;
+            --border-color: #ffffff;
+        }
+
+        .dark {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --day-bg: #334155;
+            --border-color: #475569;
+        }
+
         body {
             font-family: 'Nunito', sans-serif;
-            background: linear-gradient(135deg, #a5f3fc 0%, #ddd6fe 100%);
+            background: var(--bg-gradient);
             min-height: 100vh;
             margin: 0;
             padding: 10px;
+            transition: background 0.5s ease;
         }
 
         .glass-card {
-            background: rgba(255, 255, 255, 0.7);
+            background: var(--card-bg);
             backdrop-filter: blur(10px);
-            border: 4px solid #ffffff;
+            border: 4px solid var(--border-color);
             border-radius: 2rem;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
@@ -30,21 +49,21 @@
             align-items: center;
             justify-content: center;
             border-radius: 1rem;
-            background: #f0f9ff;
+            background: var(--day-bg);
             border: 2px solid transparent;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer;
-            position: relative;
             font-weight: 900;
-            color: #1e40af;
+            color: var(--text-main);
         }
 
-        .day-cell:hover { transform: scale(1.1); background: #ffffff; z-index: 10; }
+        .day-cell:hover { transform: scale(1.1); background: var(--border-color); z-index: 10; }
         .day-cell.selected {
             background: #fdf2f8;
             border: 4px solid #ec4899;
-            transform: scale(1.05);
+            color: #ec4899;
         }
+        .dark .day-cell.selected { background: #500733; color: #f472b6; }
 
         .marker-strip { height: 6px; width: 80%; border-radius: 10px; margin-top: 2px; }
 
@@ -71,13 +90,19 @@
 
     <div class="w-full max-w-5xl space-y-6">
         <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-4">
-            <div class="cloud-header text-xl font-black">🌟 KCP EVENTS</div>
-            <div class="flex items-center gap-2 bg-white/50 p-2 rounded-2xl border-2 border-white">
-                <button id="prevMonthBtn" class="bg-orange-400 hover:bg-orange-500 text-white p-2 rounded-full transition-transform active:scale-90">
+            <div class="flex items-center gap-4">
+                <div class="cloud-header text-xl font-black">🌟 KCP EVENTS</div>
+                <button id="darkModeToggle" class="p-3 bg-white/50 dark:bg-slate-800/50 rounded-full border-2 border-white dark:border-slate-700 shadow-sm transition-all active:scale-90">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-2 bg-white/50 dark:bg-slate-800/50 p-2 rounded-2xl border-2 border-white dark:border-slate-700">
+                <button id="prevMonthBtn" class="bg-orange-400 text-white p-2 rounded-full transition-transform active:scale-90">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
                 </button>
-                <h2 id="currentMonthYear" class="text-xl font-black text-blue-900 px-4 min-w-[150px] text-center">...</h2>
-                <button id="nextMonthBtn" class="bg-cyan-400 hover:bg-cyan-500 text-white p-2 rounded-full transition-transform active:scale-90">
+                <h2 id="currentMonthYear" class="text-xl font-black text-blue-900 dark:text-blue-200 px-4 min-w-[150px] text-center">...</h2>
+                <button id="nextMonthBtn" class="bg-cyan-400 text-white p-2 rounded-full transition-transform active:scale-90">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/></svg>
                 </button>
             </div>
@@ -86,21 +111,21 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 px-2">
             <div class="lg:col-span-2 glass-card p-4 md:p-6">
                 <div class="grid grid-cols-7 gap-2 mb-4">
-                    <div class="text-center text-xs font-black text-blue-400">Sun</div>
-                    <div class="text-center text-xs font-black text-blue-400">Mon</div>
-                    <div class="text-center text-xs font-black text-blue-400">Tue</div>
-                    <div class="text-center text-xs font-black text-blue-400">Wed</div>
-                    <div class="text-center text-xs font-black text-blue-400">Thu</div>
-                    <div class="text-center text-xs font-black text-blue-400">Fri</div>
-                    <div class="text-center text-xs font-black text-blue-400">Sat</div>
+                    <div class="text-center text-xs font-black text-blue-400 uppercase">Sun</div>
+                    <div class="text-center text-xs font-black text-blue-400 uppercase">Mon</div>
+                    <div class="text-center text-xs font-black text-blue-400 uppercase">Tue</div>
+                    <div class="text-center text-xs font-black text-blue-400 uppercase">Wed</div>
+                    <div class="text-center text-xs font-black text-blue-400 uppercase">Thu</div>
+                    <div class="text-center text-xs font-black text-blue-400 uppercase">Fri</div>
+                    <div class="text-center text-xs font-black text-blue-400 uppercase">Sat</div>
                 </div>
                 <div id="calendarGrid" class="grid grid-cols-7 gap-2 md:gap-3"></div>
 
-                <div id="dayDetailPanel" class="mt-6 p-4 bg-white/80 border-4 border-dashed border-blue-200 rounded-3xl hidden event-pop">
+                <div id="dayDetailPanel" class="mt-6 p-4 bg-white/80 dark:bg-slate-900/60 border-4 border-dashed border-blue-200 dark:border-blue-900/50 rounded-3xl hidden event-pop">
                     <div class="flex justify-between items-center mb-4">
                         <div>
-                            <span class="bg-yellow-400 text-yellow-900 text-[10px] font-black px-2 py-1 rounded-lg uppercase">Schedule for</span>
-                            <h3 id="selectedDateTitle" class="text-2xl font-black text-blue-900 leading-tight">...</h3>
+                            <span class="bg-yellow-400 dark:bg-yellow-600 text-yellow-900 dark:text-yellow-100 text-[10px] font-black px-2 py-1 rounded-lg uppercase">Schedule for</span>
+                            <h3 id="selectedDateTitle" class="text-2xl font-black text-blue-900 dark:text-blue-100 leading-tight">...</h3>
                         </div>
                         <div class="text-3xl animate-bounce">🎈</div>
                     </div>
@@ -110,13 +135,13 @@
 
             <div class="space-y-6">
                 <div class="glass-card p-5">
-                    <h3 class="text-blue-900 font-black mb-4 flex items-center gap-2 text-xs">UPCOMING ACTIVITIES</h3>
+                    <h3 class="text-blue-900 dark:text-blue-300 font-black mb-4 flex items-center gap-2 text-xs">UPCOMING ACTIVITIES</h3>
                     <div id="upcomingEventsList" class="space-y-3"></div>
                 </div>
 
                 <div class="glass-card p-5">
-                    <h3 class="text-purple-900 font-black mb-3 text-xs uppercase tracking-widest">Monthly Agenda</h3>
-                    <input type="text" id="monthlySearchInput" placeholder="Find activity..." class="w-full p-3 rounded-2xl bg-white border-2 border-purple-100 text-sm outline-none">
+                    <h3 class="text-purple-900 dark:text-purple-300 font-black mb-3 text-xs uppercase tracking-widest">Monthly Agenda</h3>
+                    <input type="text" id="monthlySearchInput" placeholder="Find activity..." class="w-full p-3 rounded-2xl bg-white dark:bg-slate-800 border-2 border-purple-100 dark:border-purple-900/50 text-sm outline-none dark:text-white">
                     <ul id="monthlyEventsList" class="mt-4 space-y-2 max-h-[300px] overflow-y-auto custom-scroll"></ul>
                 </div>
             </div>
@@ -128,6 +153,23 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-firestore.js";
 
+        // --- THEME LOGIC ---
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        
+        darkModeToggle.onclick = () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            themeIcon.textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        };
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+            themeIcon.textContent = '☀️';
+        }
+
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyDCRT5OxfwUD25pS6igy8v3xYlaGmMXK_0",
             authDomain: "event-calendar-prototype-b11b6.firebaseapp.com",
@@ -191,7 +233,6 @@
                 const current = sorted[i];
                 const expectedNext = new Date(end);
                 expectedNext.setDate(end.getDate() + 1);
-
                 if (current && current.getTime() === expectedNext.getTime()) {
                     end = current;
                 } else {
@@ -252,21 +293,19 @@
 
             dayEvents.forEach(e => {
                 const card = document.createElement('div');
-                card.className = 'p-4 bg-white rounded-3xl border-2 transition-transform hover:scale-[1.02] shadow-sm flex flex-col justify-between';
+                card.className = 'p-4 bg-white dark:bg-slate-800 rounded-3xl border-2 transition-transform hover:scale-[1.02] shadow-sm flex flex-col justify-between';
                 card.style.borderColor = e.color || '#3b82f6';
-                
-                // Added Venue section with a location icon
                 card.innerHTML = `
                     <div>
                         <div class="flex items-center gap-2 mb-2">
                              <div class="w-3 h-3 rounded-full" style="background:${e.color}"></div>
-                             <p class="font-black text-blue-900 text-sm leading-tight">${e.title}</p>
+                             <p class="font-black text-blue-900 dark:text-blue-200 text-sm leading-tight">${e.title}</p>
                         </div>
-                        <p class="text-[11px] text-slate-500 line-clamp-2 mb-3">${e.description || 'No description available.'}</p>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">${e.description || 'No description available.'}</p>
                     </div>
-                    <div class="flex items-center gap-1.5 mt-auto pt-2 border-t border-slate-100">
+                    <div class="flex items-center gap-1.5 mt-auto pt-2 border-t border-slate-100 dark:border-slate-700">
                         <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        <span class="text-[10px] font-bold text-blue-600 truncate">${e.venue || 'TBA'}</span>
+                        <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400 truncate">${e.venue || 'TBA'}</span>
                     </div>
                 `;
                 dayEventsList.appendChild(card);
@@ -277,7 +316,6 @@
         const renderUpcoming = () => {
             upcomingEventsList.innerHTML = '';
             const todayStr = new Date().toISOString().split('T')[0];
-            
             const grouped = {};
             Object.keys(events).forEach(date => {
                 events[date].forEach(ev => {
@@ -291,14 +329,14 @@
             Object.values(grouped).sort((a,b) => a.dates[0].localeCompare(b.dates[0])).slice(0, 4).forEach(item => {
                 const dateLabel = groupDates(item.dates);
                 const div = document.createElement('div');
-                div.className = 'p-3 bg-white/60 rounded-2xl border-2 border-white flex gap-3 items-center';
+                div.className = 'p-3 bg-white/60 dark:bg-slate-800/60 rounded-2xl border-2 border-white dark:border-slate-700 flex gap-3 items-center';
                 div.innerHTML = `
-                    <div class="bg-blue-100 text-blue-600 p-2 rounded-xl text-[9px] font-black text-center min-w-[50px]">
+                    <div class="bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 p-2 rounded-xl text-[9px] font-black text-center min-w-[50px]">
                         ${dateLabel}
                     </div>
                     <div class="overflow-hidden">
-                        <p class="font-bold text-blue-900 text-[11px] truncate">${item.title}</p>
-                        <p class="text-[9px] text-blue-400 font-bold">UPCOMING</p>
+                        <p class="font-bold text-blue-900 dark:text-blue-100 text-[11px] truncate">${item.title}</p>
+                        <p class="text-[9px] text-blue-400 font-bold uppercase">Upcoming</p>
                     </div>
                 `;
                 upcomingEventsList.appendChild(div);
@@ -308,7 +346,6 @@
         const renderMonthlyList = () => {
             const query = document.getElementById('monthlySearchInput').value.toLowerCase();
             monthlyEventsList.innerHTML = '';
-            
             const groupedInMonth = {};
             Object.keys(events).forEach(d => {
                 const dateObj = new Date(d + 'T00:00:00');
@@ -324,10 +361,10 @@
 
             Object.values(groupedInMonth).forEach(item => {
                 const li = document.createElement('li');
-                li.className = 'flex items-center gap-3 p-3 bg-white rounded-xl shadow-sm border-2 border-transparent hover:border-purple-200 cursor-pointer';
+                li.className = 'flex items-center gap-3 p-3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-900/50 cursor-pointer';
                 li.innerHTML = `
                     <div class="px-2 py-1 rounded-lg text-[9px] font-black text-center" style="background:${item.color}33; color:${item.color}">${groupDates(item.dates)}</div>
-                    <span class="text-xs font-bold text-slate-700 truncate">${item.title}</span>
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">${item.title}</span>
                 `;
                 li.onclick = () => showDailyDetails(item.dates[0]);
                 monthlyEventsList.appendChild(li);
