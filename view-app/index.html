@@ -17,7 +17,7 @@
         }
 
         .fun-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(237, 231, 225, 1);
             border: 3px solid #ffdeeb;
             border-radius: 2rem;
             box-shadow: 0 8px 0 #ffdeeb;
@@ -30,7 +30,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 1rem;
-            background: #ffffff;
+            background: #f8fafc;
             border: 2px solid #f0f9ff;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer;
@@ -41,7 +41,7 @@
         .day-cell:hover { transform: scale(1.1); border-color: #f472b6; z-index: 10; }
         .day-cell.selected { background: #fdf2f8; border: 3px solid #ec4899; color: #ec4899; }
 
-        .marker-strip { height: 4px; width: 60%; border-radius: 10px; margin-top: 2px; }
+        .marker-strip { height: 4px; width: 60%; border-radius: 10px; margin-top: 2px; border: 1px solid rgba(0,0,0,0.05);}
 
         .cloud-header {
             background: linear-gradient(to right, #3b82f6, #6366f1);
@@ -212,13 +212,14 @@
                 cell.className = 'day-cell';
                 cell.innerHTML = `<span>${d}</span>`;
                 if (events[ds]) {
-                    events[ds].slice(0, 3).forEach(ev => {
-                        const strip = document.createElement('div');
-                        strip.className = 'marker-strip';
-                        strip.style.backgroundColor = ev.color || '#3b82f6';
-                        cell.appendChild(strip);
-                    });
-                }
+    events[ds].slice(0, 3).forEach(ev => {
+        const strip = document.createElement('div');
+        strip.className = 'marker-strip';
+        strip.style.backgroundColor = ev.color || '#3b82f6';
+        strip.style.boxShadow = 'inset 0 0 0 1px rgba(0,0,0,0.1)';
+        cell.appendChild(strip);
+    });
+}
                 cell.onclick = () => {
                     document.querySelectorAll('.day-cell').forEach(c => c.classList.remove('selected'));
                     cell.classList.add('selected');
